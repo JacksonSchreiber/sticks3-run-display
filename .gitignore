@@ -1,0 +1,5 @@
+# local OpenSCAD install and third-party reference model (see README)
+tools/
+# OneDrive / OS clutter
+desktop.ini
+.DS_Store
