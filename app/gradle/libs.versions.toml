@@ -1,0 +1,30 @@
+[versions]
+# AGP 9.4 needs Gradle >= 9.6 and JDK 17. See gradle/wrapper/gradle-wrapper.properties.
+agp = "9.4.1"
+# Kotlin is NOT declared here: with AGP 9's built-in Kotlin the compiler version comes
+# from AGP (which pins KGP >= 2.2.10). The `kotlin` entries below only matter if
+# android.builtInKotlin=false is used -- see gradle.properties.
+# kotlin = "2.4.20"
+
+# Deliberately conservative androidx/coroutines versions: they are known to resolve and
+# nothing here needs a newer API. Bump them in this file alone if you want newer.
+coreKtx = "1.13.1"
+appcompat = "1.7.0"
+material = "1.12.0"
+lifecycle = "2.8.7"
+coroutines = "1.8.1"
+nordicBle = "2.11.0"
+junit = "4.13.2"
+
+[libraries]
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
+material = { module = "com.google.android.material:material", version.ref = "material" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+nordic-ble = { module = "no.nordicsemi.android:ble", version.ref = "nordicBle" }
+junit = { module = "junit:junit", version.ref = "junit" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+# kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

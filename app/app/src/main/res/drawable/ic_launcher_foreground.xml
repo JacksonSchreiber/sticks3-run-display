@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Kept inside the 72dp adaptive-icon safe zone (centred on 54,54). -->
+    <path
+        android:pathData="M26,54h9l6,-17l9,34l6,-17h26"
+        android:strokeColor="#FFFF5A5F"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>
