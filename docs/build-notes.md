@@ -71,3 +71,19 @@ USB-C stays open, so it charges on the clip.
 A silicone sleeve (same pocket as the band, no straps) with a thin PETG lug frame cast into its back wall, so a standard 22 mm strap attaches with spring bars. Target thickness ≈ 16.6 mm, same as the band.
 
 Measured from the Tropic strap on 2026-09-23: end width 21 mm; thickness at the end 5.7 mm, tapering to 4.2 mm at the edges; spring-bar tip diameter 0.8 mm (print holes at 1.0 mm, drill to fit). Bar centre planned ~4 mm out from the end wall, ~3 mm up from the bottom.
+
+### Sleeve parts (`hardware/sleeve/`)
+
+![Sleeve with the Stick, and the lug frame alone](images/sleeve-preview.png)
+
+| File | What | Print |
+|---|---|---|
+| `stl/sleeve_frame.stl` | lug frame, cast into the sleeve's back | **PETG**, flat as exported, 4 walls, 100% infill |
+| `stl/sleeve_core.stl` | forms the pocket; has side ribs for the button openings | PLA, as exported, **supports on (build plate only)** |
+| `stl/sleeve_mold_bottom.stl` | shallow tray | PLA, as exported, 0.16 mm |
+| `stl/sleeve_mold_top.stl` | cavity half, side pour hole, 8 top vents | PLA, as exported (cavity up), 0.16 mm |
+| `stl/sleeve_preview_not_for_printing.stl` | the finished silicone part | don't print |
+
+Casting the sleeve: spray all four pieces with release. Drop the **frame** into the tray, horns in their slots, bar holes toward the ends. Stand the **core** in the frame's opening, back pad down; its ribs must point at the long sides. Lower the top half on (the diagonal pins only fit one way), 4 × M3×30 + nuts, snug. Inject through the **side pour hole** on the long side until silicone shows at all 8 vents on top. Cure, lift the top off, lift the sleeve + core + frame out of the tray, stretch the front lip over the core to pop it out. The frame stays in the silicone. Silicone needed ≈ 5 ml; **mix 10 g A + 10 g B** (2× for what stays in the cups and syringe). Fit the Tropic strap with 22 mm spring bars (0.8 mm tips); open the horn holes with a 1.0 mm bit if a print closed them up.
+
+There's a 0.2 mm air gap between the frame's opening and the Stick's back rim by design; it isn't a void in the silicone.
