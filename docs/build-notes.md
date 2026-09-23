@@ -65,3 +65,9 @@ The band sits across the wrist. Hole 3 of 7 is about 164 mm, hole 4 about 170 mm
 3. Bolt the clip on with 2 x M3x4 or M3x5 screws through the clip's own holes. The slots allow +/-3 mm, since the clip drawings don't dimension where the holes sit along its length.
 
 USB-C stays open, so it charges on the clip.
+
+## Planned: Tropic-strap sleeve
+
+A silicone sleeve (same pocket as the band, no straps) with a thin PETG lug frame cast into its back wall, so a standard 22 mm strap attaches with spring bars. Target thickness ≈ 16.6 mm, same as the band.
+
+Measured from the Tropic strap on 2026-09-23: end width 21 mm; thickness at the end 5.7 mm, tapering to 4.2 mm at the edges; spring-bar tip diameter 0.8 mm (print holes at 1.0 mm, drill to fit). Bar centre planned ~4 mm out from the end wall, ~3 mm up from the bottom.
