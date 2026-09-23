@@ -3,8 +3,8 @@
 // Same pocket as the band (hardware/band), same 16.6 mm thickness.
 //
 // Parts (set `part`, or use the Customizer):
-//   "frame"        PETG, print as exported (ring flat on the bed) WITH supports (build plate
-//                  only) under the down-turned horn tips. 4 walls, 100% infill. Cast into the sleeve.
+//   "frame"        PETG, print as exported (flat middle on the bed) WITH supports (build plate
+//                  only) under the curved ends and horns. 4 walls, 100% infill. Cast into the sleeve.
 //   "core"         PLA, as exported (on its side); needs SUPPORTS (build plate only):
 //                  the side ribs that form the button openings hold it off the bed.
 //   "mold_bottom"  PLA, as exported; shallow tray the frame and core sit in.
@@ -28,11 +28,13 @@ part = "sleeve"; // [frame, core, mold_bottom, mold_top, sleeve]
 /* [Strap] */
 // Inside gap between the lug horns (strap end is 21 mm)
 lug_gap = 21.4;
-// Spring-bar centre: this far out from the sleeve's end wall, and this far above the
-// sleeve's back face. Negative = below it, so the horns turn down toward the wrist
-// like watch lugs and the strap leaves from under the sleeve's edge.
+// Spring-bar centre, this far out from the sleeve's end wall
 bar_out = 2.0;
-bar_up = -1.5;
+// The back of the frame is flat under the Stick, then curves down toward the wrist
+// on an arc of this radius, starting this far from the centre (the edge of the
+// back window). The horns ride that curve, so the strap leaves from the wrist.
+curve_R = 18;
+curve_start = 21.0;
 bar_hole_d = 1.0;
 
 /* [Fit] */
@@ -68,7 +70,7 @@ frame_t = back_t;               // frame is the whole back wall; bottom face exp
 frame_clear = 0.2;              // frame opening around the core's back pad
 horn_t = 3.0;                   // inside the sleeve's end wall
 horn_flare = 1.0;               // extra thickness outward, only outside the sleeve
-horn_h = 5.0;                   // horn height at the sleeve end; it tapers down to the bar
+horn_h = 5.0;                   // horn height at its root; it tapers down to the bar
 horn_tip_r = 2.2;               // material around the bar hole: 1.7 mm
 horn_len = bar_out + horn_tip_r; // beyond the sleeve end
 horn_y = lug_gap / 2 + horn_t / 2;
@@ -77,6 +79,11 @@ horn_y = lug_gap / 2 + horn_t / 2;
 HORN_X0 = CORE_L_NOM / 2 - 0.3;
 HORN_X1 = POCKET_L / 2 + horn_len;
 BAR_X = POCKET_L / 2 + bar_out;
+// how far the back surface has dropped below z = 0 at |x|
+function drop(x) = abs(x) <= curve_start ? 0 : curve_R - sqrt(curve_R * curve_R - pow(abs(x) - curve_start, 2));
+BAR_Z = -drop(BAR_X) + horn_tip_r;      // tip circle sits on the curve
+assert(curve_start >= BACK_WIN[0] / 2 + frame_clear - eps, "curve must start outside the core's back pad");
+assert(drop(HORN_X1) < bottom_t - back_t - 1, "horn tips reach through the bottom tray");
 assert(horn_y + horn_t / 2 <= POCKET_W / 2 - 0.1, "lug horns wider than the sleeve");
 
 // ---- Mold ----------------------------------------------------------------
@@ -99,14 +106,26 @@ sprue_d = 3.5;
 SPRUE = [10, 3.5];              // x position and z height of the side pour hole (-y side)
 
 echo(str("Sleeve ", POCKET_L, " x ", POCKET_W, " x ", POCKET_T, " mm; lug gap ", lug_gap,
-         "; bar at ", bar_out, " out / ", bar_up, " up; mold ", 2 * MX, " x ", 2 * MY,
+         "; bar at ", bar_out, " out, z=", BAR_Z, "; curve R", curve_R, " from x=", curve_start, "; mold ", 2 * MX, " x ", 2 * MY,
          ", bottom ", bottom_t, " + top ", TOP_H, " = ", bottom_t + TOP_H, " mm (M3x30)"));
 
 module rrect(l, w, r) { offset(r = r) square([l - 2 * r, w - 2 * r], center = true); }
 module rbox(l, w, r, z0, z1) { translate([0, 0, z0]) linear_extrude(z1 - z0) rrect(l, w, r); }
 
 // ---- Pieces -----------------------------------------------------------------
-module pocket_body() { rbox(POCKET_L, POCKET_W, POCKET_R, 0, POCKET_T); }
+// Solid region above the curved back surface (flat for |x| <= curve_start, then the arc).
+// `r` and `z0` let the same shape describe the frame's top surface (offset inward).
+// The curve is convex (a wrist): the arc is the top of a circle of radius curve_R whose
+// centre is curve_R below the flat back, at x = +/-curve_start. "Above" it = outside that
+// circle. A larger r (curve_R + t) gives the parallel surface t above it.
+module above_curve(r = curve_R, z0 = 0) {
+    translate([-curve_start, -100, z0]) cube([2 * curve_start, 200, 60]);
+    for (sx = [-1, 1]) difference() {
+        translate([sx > 0 ? curve_start : -curve_start - 60, -100, -curve_R]) cube([60, 200, 60 + curve_R]);
+        translate([sx * curve_start, 0, -curve_R]) rotate([90, 0, 0]) cylinder(r = r, h = 201, center = true, $fn = 240);
+    }
+}
+module pocket_body() { intersection() { rbox(POCKET_L, POCKET_W, POCKET_R, -10, POCKET_T); above_curve(); } }
 
 module core_block() {
     rbox(CORE_L, CORE_W, CORE_R, Z_CORE0, Z_CORE1);
@@ -128,31 +147,42 @@ module core_part() { core_block(); core_ribs(); }
 
 // one lug horn: a plate in the x-z plane, rounded around the spring-bar hole.
 // Outside the sleeve it thickens outward (away from the strap) for strength.
+// The profile is drawn generously deep, then cut to the curved back surface, so the
+// horn's underside follows the wrist curve and its top tapers straight to the bar.
 module horn_profile(sx, grow, x0) {
     hull() {
-        translate([sx > 0 ? x0 : -BAR_X, -grow]) square([BAR_X - x0, horn_h + 2 * grow]);
-        translate([sx * BAR_X, bar_up]) circle(r = horn_tip_r + grow);
+        translate([sx > 0 ? x0 : -BAR_X, -10]) square([BAR_X - x0, 10 + horn_h + grow]);
+        translate([sx * BAR_X, BAR_Z]) circle(r = horn_tip_r + grow);
     }
 }
 module horn(sx, sy, grow = 0) {
-    translate([0, sy * horn_y, 0]) rotate([90, 0, 0]) translate([0, 0, -(horn_t / 2 + grow)])
-        linear_extrude(horn_t + 2 * grow) horn_profile(sx, grow, HORN_X0);
-    // flared section, starts 0.2 mm past the sleeve's end so it never sits in the silicone
-    translate([0, sy * (horn_y + horn_flare / 2), 0]) rotate([90, 0, 0]) translate([0, 0, -(horn_t / 2 + horn_flare / 2 + grow)])
-        linear_extrude(horn_t + horn_flare + 2 * grow) horn_profile(sx, grow, POCKET_L / 2 + 0.2);
+    intersection() {
+        union() {
+            translate([0, sy * horn_y, 0]) rotate([90, 0, 0]) translate([0, 0, -(horn_t / 2 + grow)])
+                linear_extrude(horn_t + 2 * grow) horn_profile(sx, grow, HORN_X0);
+            // flared section, starts 0.2 mm past the sleeve's end so it never sits in the silicone
+            translate([0, sy * (horn_y + horn_flare / 2), 0]) rotate([90, 0, 0]) translate([0, 0, -(horn_t / 2 + horn_flare / 2 + grow)])
+                linear_extrude(horn_t + horn_flare + 2 * grow) horn_profile(sx, grow, POCKET_L / 2 + 0.2);
+        }
+        translate([0, 0, -grow]) above_curve();
+    }
 }
 module horns(grow = 0) { for (sx = [-1, 1], sy = [-1, 1]) horn(sx, sy, grow); }
 
 module frame_part() {
     difference() {
         union() {
-            difference() {
-                rbox(POCKET_L - 2 * skin, POCKET_W - 2 * skin, max(POCKET_R - skin, 0.4), 0, frame_t);
-                rbox(BACK_WIN[0] + 2 * frame_clear, BACK_WIN[1] + 2 * frame_clear, 1.0 + frame_clear, -1, frame_t + 1);
+            intersection() {
+                difference() {
+                    rbox(POCKET_L - 2 * skin, POCKET_W - 2 * skin, max(POCKET_R - skin, 0.4), -10, 10);
+                    rbox(BACK_WIN[0] + 2 * frame_clear, BACK_WIN[1] + 2 * frame_clear, 1.0 + frame_clear, -11, 11);
+                }
+                // the ring is frame_t thick, measured normal to the curved back
+                difference() { above_curve(); above_curve(curve_R + frame_t, frame_t); }
             }
             horns();
         }
-        for (sx = [-1, 1]) translate([sx * BAR_X, 0, bar_up]) rotate([90, 0, 0]) cylinder(d = bar_hole_d, h = 100, center = true, $fn = 16);
+        for (sx = [-1, 1]) translate([sx * BAR_X, 0, BAR_Z]) rotate([90, 0, 0]) cylinder(d = bar_hole_d, h = 100, center = true, $fn = 16);
     }
 }
 
@@ -170,8 +200,8 @@ module silicone() {
 module mold_bottom() {
     difference() {
         translate([0, 0, back_t - bottom_t]) linear_extrude(bottom_t) rrect(2 * MX, 2 * MY, 4);
-        // tray: pocket outline, back_t deep (frame + core back pad + skin sit in it)
-        rbox(POCKET_L, POCKET_W, POCKET_R, -eps, back_t + 1);
+        // tray: pocket outline down to the curved back surface (frame, core back pad and skin sit in it)
+        intersection() { rbox(POCKET_L, POCKET_W, POCKET_R, -10, back_t + 1); above_curve(); }
         // lower part of the horn slots
         horns(slot_clear);
         for (b = BOLTS) translate([b[0], b[1], -10]) cylinder(d = bolt_d, h = 40);
