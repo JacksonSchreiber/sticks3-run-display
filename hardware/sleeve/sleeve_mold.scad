@@ -83,7 +83,11 @@ BAR_X = POCKET_L / 2 + bar_out;
 function drop(x) = abs(x) <= curve_start ? 0 : curve_R - sqrt(curve_R * curve_R - pow(abs(x) - curve_start, 2));
 BAR_Z = -drop(BAR_X) + horn_tip_r;      // tip circle sits on the curve
 assert(curve_start >= BACK_WIN[0] / 2 + frame_clear - eps, "curve must start outside the core's back pad");
-assert(drop(HORN_X1) < bottom_t - back_t - 1, "horn tips reach through the bottom tray");
+// the tray must hold the sleeve's curved ends and the horn's lowest point (under the bar);
+// beyond the bar the horn is its rounded tip, which stays above the arc
+assert(drop(POCKET_L / 2) < bottom_t - back_t - 2, "sleeve ends reach through the bottom tray");
+assert(BAR_Z - horn_tip_r - slot_clear > -(bottom_t - back_t) + 1, "horn tips reach through the bottom tray");
+assert(curve_R + eps >= HORN_X1 - curve_start, "curve too tight: it turns vertical before the horn tips");
 assert(horn_y + horn_t / 2 <= POCKET_W / 2 - 0.1, "lug horns wider than the sleeve");
 
 // ---- Mold ----------------------------------------------------------------
