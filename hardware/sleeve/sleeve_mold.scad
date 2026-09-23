@@ -3,7 +3,8 @@
 // Same pocket as the band (hardware/band), same 16.6 mm thickness.
 //
 // Parts (set `part`, or use the Customizer):
-//   "frame"        PETG, print flat as exported, 4 walls, 100% infill. Cast into the sleeve.
+//   "frame"        PETG, print as exported (ring flat on the bed) WITH supports (build plate
+//                  only) under the down-turned horn tips. 4 walls, 100% infill. Cast into the sleeve.
 //   "core"         PLA, as exported (on its side); needs SUPPORTS (build plate only):
 //                  the side ribs that form the button openings hold it off the bed.
 //   "mold_bottom"  PLA, as exported; shallow tray the frame and core sit in.
@@ -27,9 +28,11 @@ part = "sleeve"; // [frame, core, mold_bottom, mold_top, sleeve]
 /* [Strap] */
 // Inside gap between the lug horns (strap end is 21 mm)
 lug_gap = 21.4;
-// Spring-bar centre: this far out from the sleeve's end wall, this far up from the back
+// Spring-bar centre: this far out from the sleeve's end wall, and this far above the
+// sleeve's back face. Negative = below it, so the horns turn down toward the wrist
+// like watch lugs and the strap leaves from under the sleeve's edge.
 bar_out = 2.0;
-bar_up = 3.0;
+bar_up = -1.5;
 bar_hole_d = 1.0;
 
 /* [Fit] */
@@ -65,7 +68,7 @@ frame_t = back_t;               // frame is the whole back wall; bottom face exp
 frame_clear = 0.2;              // frame opening around the core's back pad
 horn_t = 3.0;                   // inside the sleeve's end wall
 horn_flare = 1.0;               // extra thickness outward, only outside the sleeve
-horn_h = 5.5;
+horn_h = 5.0;                   // horn height at the sleeve end; it tapers down to the bar
 horn_tip_r = 2.2;               // material around the bar hole: 1.7 mm
 horn_len = bar_out + horn_tip_r; // beyond the sleeve end
 horn_y = lug_gap / 2 + horn_t / 2;
@@ -78,7 +81,7 @@ assert(horn_y + horn_t / 2 <= POCKET_W / 2 - 0.1, "lug horns wider than the slee
 
 // ---- Mold ----------------------------------------------------------------
 slot_clear = 0.15;
-bottom_t = 5.0;                 // bottom tray under the frame
+bottom_t = 7.5;                 // bottom tray; deep enough for the down-turned horn tips
 top_floor = 4.0;                // material above the cavity ceiling
 margin = 8.5;
 MX = HORN_X1 + slot_clear + margin;          // mold half-length
