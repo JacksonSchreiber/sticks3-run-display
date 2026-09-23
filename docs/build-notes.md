@@ -49,7 +49,7 @@ curl -L -O https://raw.githubusercontent.com/m5stack/M5_Hardware/master/Products
 
 1. Sand both parting faces flat. Spray the halves and the core with Ease Release 200.
 2. Lay the core in the bottom half: window pads against the cavity walls, side-button post in its side pocket. Close the top half. Bolt with 8 x M3x30 + nuts, snug. Heads and nuts drop into the pockets on the outer faces.
-3. Vinyl gloves, never latex. Mix ~28 ml of silicone, scrape the sides. Smooth-Sil 945 is 1A:1B by weight with a 25 min pot life. For black, stir 1.5-2% Silc Pig black into Part A first; the 945 base cures purple, so black is the one colour that covers cleanly.
+3. Vinyl gloves, never latex. The band needs ~18 ml, but cups, sticks and the syringe swallow a lot, so **mix at least 2x that: 20 g Part A + 20 g Part B** (Smooth-Sil 945 is 1A:1B by weight, 25 min pot life). For black, stir pigment into Part A first at **3% of total weight (about 1.2 g for 40 g)**, the maximum Smooth-On allows. The 945 base cures a strong purple; 1.5% black left it visibly purple, so use the full 3% and a concentrated pigment such as Silc Pig.
 4. Inject slowly through the pour hole with a 60 ml syringe until silicone shows at every vent. Tap the mold on the table to free bubbles.
 5. Wait 6 h (Smooth-Sil 945; SORTA-Clear 37 is 4 h). Unbolt, lift the band and core out, stretch the front lip over the core to pop it out. Trim the vent nubs and the seam.
 6. Punch the 7 strap holes with a 3 mm leather punch, centred between the notches on the strap edges.
