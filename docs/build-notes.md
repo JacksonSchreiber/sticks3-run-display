@@ -68,7 +68,7 @@ USB-C stays open, so it charges on the clip.
 
 ## Planned: Tropic-strap sleeve
 
-A silicone sleeve (same pocket as the band, no straps) with a thin PETG lug frame cast into its back wall, so a standard 22 mm strap attaches with spring bars. Built: see "Sleeve parts" below. Thickness 16.6 mm, same as the band; lug gap 21.4 mm.
+A silicone sleeve (same pocket as the band, no straps) with a thin PETG lug frame cast into its back wall, so a standard 22 mm strap attaches with spring bars. Built: see "Sleeve parts" below. Thickness 16.6 mm, same as the band; lug gap 21.4 mm; bar 2 mm out from the end wall, horns 4.2 mm proud, 60 mm tip to tip.
 
 Measured from the Tropic strap on 2026-09-23: end width 21 mm; thickness at the end 5.7 mm, tapering to 4.2 mm at the edges; spring-bar tip diameter 0.8 mm (print holes at 1.0 mm, drill to fit). Bar centre planned ~4 mm out from the end wall, ~3 mm up from the bottom.
 

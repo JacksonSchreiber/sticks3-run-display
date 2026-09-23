@@ -28,7 +28,7 @@ part = "sleeve"; // [frame, core, mold_bottom, mold_top, sleeve]
 // Inside gap between the lug horns (strap end is 21 mm)
 lug_gap = 21.4;
 // Spring-bar centre: this far out from the sleeve's end wall, this far up from the back
-bar_out = 4.0;
+bar_out = 2.0;
 bar_up = 3.0;
 bar_hole_d = 1.0;
 
@@ -66,7 +66,8 @@ frame_clear = 0.2;              // frame opening around the core's back pad
 horn_t = 3.0;                   // inside the sleeve's end wall
 horn_flare = 1.0;               // extra thickness outward, only outside the sleeve
 horn_h = 5.5;
-horn_len = bar_out + 2.5;       // beyond the sleeve end
+horn_tip_r = 2.2;               // material around the bar hole: 1.7 mm
+horn_len = bar_out + horn_tip_r; // beyond the sleeve end
 horn_y = lug_gap / 2 + horn_t / 2;
 // The horn stands at full height from just past the core's rounded corner, so
 // its root runs the whole end wall (about 2.3 mm) instead of a 1 mm stub.
@@ -127,7 +128,7 @@ module core_part() { core_block(); core_ribs(); }
 module horn_profile(sx, grow, x0) {
     hull() {
         translate([sx > 0 ? x0 : -BAR_X, -grow]) square([BAR_X - x0, horn_h + 2 * grow]);
-        translate([sx * BAR_X, bar_up]) circle(r = 2.5 + grow);
+        translate([sx * BAR_X, bar_up]) circle(r = horn_tip_r + grow);
     }
 }
 module horn(sx, sy, grow = 0) {
