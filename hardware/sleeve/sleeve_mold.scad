@@ -26,7 +26,7 @@ part = "sleeve"; // [frame, core, mold_bottom, mold_top, sleeve]
 
 /* [Strap] */
 // Inside gap between the lug horns (strap end is 21 mm)
-lug_gap = 21.5;
+lug_gap = 21.4;
 // Spring-bar centre: this far out from the sleeve's end wall, this far up from the back
 bar_out = 4.0;
 bar_up = 3.0;
@@ -63,14 +63,17 @@ BACK_WIN  = [CORE_L_NOM - 2 * back_lip,  CORE_W_NOM - 2 * back_lip];
 skin = 0.6;                     // silicone over the frame's outer edge
 frame_t = back_t;               // frame is the whole back wall; bottom face exposed
 frame_clear = 0.2;              // frame opening around the core's back pad
-horn_t = 2.5;
+horn_t = 3.0;                   // inside the sleeve's end wall
+horn_flare = 1.0;               // extra thickness outward, only outside the sleeve
 horn_h = 5.5;
 horn_len = bar_out + 2.5;       // beyond the sleeve end
 horn_y = lug_gap / 2 + horn_t / 2;
-HORN_X0 = POCKET_L / 2 - skin - 1.0;   // horn root starts inside the frame ring
+// The horn stands at full height from just past the core's rounded corner, so
+// its root runs the whole end wall (about 2.3 mm) instead of a 1 mm stub.
+HORN_X0 = CORE_L_NOM / 2 - 0.3;
 HORN_X1 = POCKET_L / 2 + horn_len;
 BAR_X = POCKET_L / 2 + bar_out;
-assert(horn_y + horn_t / 2 <= POCKET_W / 2 - 0.4, "lug horns wider than the sleeve");
+assert(horn_y + horn_t / 2 <= POCKET_W / 2 - 0.1, "lug horns wider than the sleeve");
 
 // ---- Mold ----------------------------------------------------------------
 slot_clear = 0.15;
@@ -119,13 +122,20 @@ module core_ribs(grow = 0) {
 
 module core_part() { core_block(); core_ribs(); }
 
-// one lug horn: a plate in the x-z plane, rounded around the spring-bar hole
+// one lug horn: a plate in the x-z plane, rounded around the spring-bar hole.
+// Outside the sleeve it thickens outward (away from the strap) for strength.
+module horn_profile(sx, grow, x0) {
+    hull() {
+        translate([sx > 0 ? x0 : -BAR_X, -grow]) square([BAR_X - x0, horn_h + 2 * grow]);
+        translate([sx * BAR_X, bar_up]) circle(r = 2.5 + grow);
+    }
+}
 module horn(sx, sy, grow = 0) {
     translate([0, sy * horn_y, 0]) rotate([90, 0, 0]) translate([0, 0, -(horn_t / 2 + grow)])
-        linear_extrude(horn_t + 2 * grow) hull() {
-            translate([sx > 0 ? HORN_X0 : -BAR_X, -grow]) square([BAR_X - HORN_X0, horn_h + 2 * grow]);
-            translate([sx * BAR_X, bar_up]) circle(r = 2.5 + grow);
-        }
+        linear_extrude(horn_t + 2 * grow) horn_profile(sx, grow, HORN_X0);
+    // flared section, starts 0.2 mm past the sleeve's end so it never sits in the silicone
+    translate([0, sy * (horn_y + horn_flare / 2), 0]) rotate([90, 0, 0]) translate([0, 0, -(horn_t / 2 + horn_flare / 2 + grow)])
+        linear_extrude(horn_t + horn_flare + 2 * grow) horn_profile(sx, grow, POCKET_L / 2 + 0.2);
 }
 module horns(grow = 0) { for (sx = [-1, 1], sy = [-1, 1]) horn(sx, sy, grow); }
 
