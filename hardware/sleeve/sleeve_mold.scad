@@ -155,7 +155,9 @@ module core_part() { core_block(); core_ribs(); }
 // horn's underside follows the wrist curve and its top tapers straight to the bar.
 module horn_profile(sx, grow, x0) {
     hull() {
-        translate([sx > 0 ? x0 : -BAR_X, -10]) square([BAR_X - x0, 10 + horn_h + grow]);
+        // rect bottom sits at the arc's depth under the bar, so past the bar the horn is only
+        // its rounded tip and doesn't grow a heel that follows the plunging arc into the wrist
+        translate([sx > 0 ? x0 : -BAR_X, -drop(BAR_X) - grow]) square([BAR_X - x0, drop(BAR_X) + horn_h + 2 * grow]);
         translate([sx * BAR_X, BAR_Z]) circle(r = horn_tip_r + grow);
     }
 }
