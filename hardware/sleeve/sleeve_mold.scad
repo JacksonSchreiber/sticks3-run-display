@@ -33,7 +33,7 @@ bar_out = 2.0;
 // The back of the frame is flat under the Stick, then curves down toward the wrist
 // on an arc of this radius, starting this far from the centre (the edge of the
 // back window). The horns ride that curve, so the strap leaves from the wrist.
-curve_R = 12;
+curve_R = 9;
 curve_start = 21.0;
 bar_hole_d = 1.0;
 
