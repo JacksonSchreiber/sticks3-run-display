@@ -4,6 +4,10 @@ A wrist display that shows two numbers while running: **heart rate** from a Blue
 
 The point is to keep Strava recording on the phone, untouched, and still see live numbers without buying a running watch.
 
+![The silicone band with the StickS3 in its pocket, and the band's side profile](docs/images/band-preview.png)
+
+*The one-piece silicone band (grey) with the StickS3 (orange) in its pocket; right, the molded side profile. Rendered from `hardware/band/stl/band_preview_not_for_printing.stl`.*
+
 ## How it fits together
 
 ```
