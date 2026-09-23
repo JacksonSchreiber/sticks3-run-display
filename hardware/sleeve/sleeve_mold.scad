@@ -30,11 +30,12 @@ part = "sleeve"; // [frame, core, mold_bottom, mold_top, sleeve]
 lug_gap = 21.4;
 // Spring-bar centre, this far out from the sleeve's end wall
 bar_out = 2.0;
-// The back of the frame is flat under the Stick, then curves down toward the wrist
-// on an arc of this radius, starting this far from the centre (the edge of the
-// back window). The horns ride that curve, so the strap leaves from the wrist.
-curve_R = 9;
-curve_start = 21.0;
+// The back is flat in the middle, then curves down toward the wrist on an arc of this
+// radius, starting this far from the centre. Starting under the Stick means the flat
+// Stick rests on the middle and a silicone wedge fills under its ends; the sleeve,
+// frame and horns all wrap the wrist. Horns must stay short of curve_start + curve_R.
+curve_R = 15;
+curve_start = 16.0;
 bar_hole_d = 1.0;
 
 /* [Fit] */
@@ -82,7 +83,7 @@ BAR_X = POCKET_L / 2 + bar_out;
 // how far the back surface has dropped below z = 0 at |x|
 function drop(x) = abs(x) <= curve_start ? 0 : curve_R - sqrt(curve_R * curve_R - pow(abs(x) - curve_start, 2));
 BAR_Z = -drop(BAR_X) + horn_tip_r;      // tip circle sits on the curve
-assert(curve_start >= BACK_WIN[0] / 2 + frame_clear - eps, "curve must start outside the core's back pad");
+assert(curve_start >= 8, "curve must leave a flat middle for the Stick to rest on");
 // the tray must hold the sleeve's curved ends and the horn's lowest point (under the bar);
 // beyond the bar the horn is its rounded tip, which stays above the arc
 assert(drop(POCKET_L / 2) < bottom_t - back_t - 2, "sleeve ends reach through the bottom tray");
@@ -92,7 +93,8 @@ assert(horn_y + horn_t / 2 <= POCKET_W / 2 - 0.1, "lug horns wider than the slee
 
 // ---- Mold ----------------------------------------------------------------
 slot_clear = 0.15;
-bottom_t = 7.5;                 // bottom tray; deep enough for the down-turned horn tips
+bottom_t = 9.0;                 // bottom tray; deep enough for the down-turned horn tips
+bolt_head_pocket = 2.5;         // recess for the bolt heads on the top half, so M3x30 reaches
 top_floor = 4.0;                // material above the cavity ceiling
 margin = 8.5;
 MX = HORN_X1 + slot_clear + margin;          // mold half-length
@@ -111,7 +113,8 @@ SPRUE = [10, 3.5];              // x position and z height of the side pour hole
 
 echo(str("Sleeve ", POCKET_L, " x ", POCKET_W, " x ", POCKET_T, " mm; lug gap ", lug_gap,
          "; bar at ", bar_out, " out, z=", BAR_Z, "; curve R", curve_R, " from x=", curve_start, "; mold ", 2 * MX, " x ", 2 * MY,
-         ", bottom ", bottom_t, " + top ", TOP_H, " = ", bottom_t + TOP_H, " mm (M3x30)"));
+         ", bottom ", bottom_t, " + top ", TOP_H, " = ", bottom_t + TOP_H, " mm, ",
+         bottom_t + TOP_H - bolt_head_pocket, " mm through the bolts (M3x30)"));
 
 module rrect(l, w, r) { offset(r = r) square([l - 2 * r, w - 2 * r], center = true); }
 module rbox(l, w, r, z0, z1) { translate([0, 0, z0]) linear_extrude(z1 - z0) rrect(l, w, r); }
@@ -134,7 +137,10 @@ module pocket_body() { intersection() { rbox(POCKET_L, POCKET_W, POCKET_R, -10, 
 module core_block() {
     rbox(CORE_L, CORE_W, CORE_R, Z_CORE0, Z_CORE1);
     rbox(FRONT_WIN[0], FRONT_WIN[1], 1.0, Z_CORE1 - eps, POCKET_T);   // fills the screen window
-    rbox(BACK_WIN[0],  BACK_WIN[1],  1.0, 0, Z_CORE0 + eps);          // fills the back window
+    intersection() {                                                   // fills the back window,
+        rbox(BACK_WIN[0], BACK_WIN[1], 1.0, -10, Z_CORE0 + eps);        // down to the curved back
+        above_curve();
+    }
 }
 
 // ribs on the core reach the cavity wall and leave the side-button openings
@@ -223,7 +229,10 @@ module mold_top() {
         rbox(POCKET_L, POCKET_W, POCKET_R, back_t - eps, POCKET_T);
         // upper part of the horn slots, open to the parting face
         horns(slot_clear);
-        for (b = BOLTS) translate([b[0], b[1], -10]) cylinder(d = bolt_d, h = 60);
+        for (b = BOLTS) {
+            translate([b[0], b[1], -10]) cylinder(d = bolt_d, h = 60);
+            translate([b[0], b[1], back_t + TOP_H - bolt_head_pocket]) cylinder(d = 6.6, h = bolt_head_pocket + 1);
+        }
         // vents from the top face down into the lip ring
         for (v = VENTS) translate([v[0], v[1], POCKET_T - 0.3]) cylinder(d = vent_d, h = top_floor + 1, $fn = 12);
         // side pour hole, low on the -y long side, with a funnel

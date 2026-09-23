@@ -68,7 +68,7 @@ USB-C stays open, so it charges on the clip.
 
 ## Planned: Tropic-strap sleeve
 
-A silicone sleeve (same pocket as the band, no straps) with a thin PETG lug frame cast into its back wall, so a standard 22 mm strap attaches with spring bars. Built: see "Sleeve parts" below. Thickness 16.6 mm, same as the band; lug gap 21.4 mm; bar 2 mm out from the end wall; the back is flat under the Stick and from 21 mm out curves down on a 9 mm radius, so the ends and horns follow the wrist (1.4 mm down at the sleeve end, 3.1 mm under the bar); 60 mm tip to tip.
+A silicone sleeve (same pocket as the band, no straps) with a thin PETG lug frame cast into its back wall, so a standard 22 mm strap attaches with spring bars. Built: see "Sleeve parts" below. Thickness 16.6 mm, same as the band; lug gap 21.4 mm; bar 2 mm out from the end wall; the back is flat for the middle 32 mm and from 16 mm out curves down on a 15 mm radius, so the sleeve ends, frame and horns wrap the wrist (2.3 mm down at the Stick's end, 3.7 mm at the sleeve end, 5.7 mm under the bar); a silicone wedge fills under the Stick's flat ends; 60 mm tip to tip.
 
 Measured from the Tropic strap on 2026-09-23: end width 21 mm; thickness at the end 5.7 mm, tapering to 4.2 mm at the edges; spring-bar tip diameter 0.8 mm (print holes at 1.0 mm, drill to fit). Bar centre planned ~4 mm out from the end wall, ~3 mm up from the bottom.
 
@@ -79,7 +79,7 @@ Measured from the Tropic strap on 2026-09-23: end width 21 mm; thickness at the 
 | File | What | Print |
 |---|---|---|
 | `stl/sleeve_frame.stl` | lug frame, cast into the sleeve's back; ends and horns curve down toward the wrist | **PETG**, as exported, **supports on (build plate only)** under the curved ends and horns, 4 walls, 100% infill |
-| `stl/sleeve_core.stl` | forms the pocket; has side ribs for the button openings | PLA, as exported, **supports on (build plate only)** |
+| `stl/sleeve_core.stl` | forms the pocket; side ribs for the button openings; its back pad follows the wrist curve | PLA, as exported, **supports on (build plate only)** |
 | `stl/sleeve_mold_bottom.stl` | shallow tray | PLA, as exported, 0.16 mm |
 | `stl/sleeve_mold_top.stl` | cavity half, side pour hole, 8 top vents | PLA, as exported (cavity up), 0.16 mm |
 | `stl/sleeve_preview_not_for_printing.stl` | the finished silicone part | don't print |
