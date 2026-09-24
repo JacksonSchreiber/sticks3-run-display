@@ -212,16 +212,21 @@ module lug_profile(grow = 0) {
 // break-off tabs: from each lug plate's outer face at the rim, out over the cup rim,
 // sloping 45 degrees down into it (so they print support-free upside down). They sit
 // in matching notches, which fixes the staple's position and height while curing.
-TAB_W = 4.0; TAB_T = 2.0; TAB_L = 6.0; TAB_FOOT = 1.5;
-TAB_RISE = BAR_Z1 - TAB_T;   // the tab's outer end tops out level with the bar's top, so both sit on the bed when printed upside down
+TAB_W = 4.0; TAB_T = 2.0; TAB_L = 6.0;
 module tab(s, grow = 0) {
     hull() {
         translate([BAR_X - TAB_W / 2 - grow, s > 0 ? BODY_HW - 0.3 : -(BODY_HW - 0.3) - eps, -grow]) cube([TAB_W + 2 * grow, eps, TAB_T + 2 * grow]);
-        translate([BAR_X - TAB_W / 2 - grow, s > 0 ? BODY_HW + TAB_L - TAB_FOOT : -(BODY_HW + TAB_L + grow), TAB_RISE - grow])
-            cube([TAB_W + 2 * grow, TAB_FOOT + grow, TAB_T + 2 * grow]);
+        translate([BAR_X - TAB_W / 2 - grow, s > 0 ? BODY_HW + TAB_L + grow : -(BODY_HW + TAB_L + grow) - eps, TAB_L - grow]) cube([TAB_W + 2 * grow, eps, TAB_T + 2 * grow]);
     }
 }
-module staple_tabs(grow = 0) { for (s = [-1, 1]) tab(s, grow); }
+// the tabs are clipped at the bar's top plane, so nothing hangs below the bed when the
+// staple prints upside down (the notches are cut from the unclipped tab and still fit)
+module staple_tabs(grow = 0) {
+    intersection() {
+        union() { for (s = [-1, 1]) tab(s, grow); }
+        translate([-50, -50, -50]) cube([100, 100, 50 + BAR_Z1 + grow]);
+    }
+}
 // the notch is the tab's slot swept upward, so the staple drops in and lifts straight out
 module tab_notches(grow = 0) {
     for (m = [0, 1]) mirror([m, 0, 0]) for (s = [-1, 1]) hull() { tab(s, grow); translate([0, 0, -12]) tab(s, grow); }
