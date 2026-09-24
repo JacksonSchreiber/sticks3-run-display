@@ -66,24 +66,23 @@ The band sits across the wrist. Hole 3 of 7 is about 164 mm, hole 4 about 170 mm
 
 USB-C stays open, so it charges on the clip.
 
-## Planned: Tropic-strap sleeve
+## Sleeve (`hardware/sleeve/`)
 
-A silicone sleeve (same pocket as the band, no straps) with a thin PETG lug frame cast into its back wall, so a standard 22 mm strap attaches with spring bars. Built: see "Sleeve parts" below. Thickness 16.6 mm, same as the band; lug gap 21.4 mm; bar 2 mm out from the end wall; the back is flat for the middle 32 mm and from 16 mm out curves down on a 15 mm radius, so the sleeve ends, frame and horns wrap the wrist (2.3 mm down at the Stick's end, 3.7 mm at the sleeve end, 5.7 mm under the bar); the frame itself is thick under the Stick's flat ends, so it prints upside down with no supports; 60 mm tip to tip.
+![Sealed sleeve with the lug staples, and one staple alone](images/sleeve-preview.png)
 
-Measured from the Tropic strap on 2026-09-23: end width 21 mm; thickness at the end 5.7 mm, tapering to 4.2 mm at the edges; spring-bar tip diameter 0.8 mm (print holes at 1.0 mm, drill to fit). Bar centre planned ~4 mm out from the end wall, ~3 mm up from the bottom.
-
-### Sleeve parts (`hardware/sleeve/`)
-
-![Sleeve with the Stick, and the lug frame alone](images/sleeve-preview.png)
+A sealed silicone jacket around the Stick (2.6 mm walls, 2.5 mm back, 2.0 mm over the face) with two PETG **staples** cast into its thick end blocks: each is a 3 x 5 mm bar buried across the full width, with two lug plates flush with the sleeve's sides that sweep down under the nose to the spring bar. The strap tucks under the nose. The only opening is the screen window (19 x 31.5 mm); the buttons are covered, with a 0.5 mm pad over each side button and 2 mm of silicone over the front button. 65.4 x 28.6 x 18.3 mm, lug gap 21.4 mm. Fit is tight (0.3 mm squeeze per side). Silicone does not bond to PETG, so the staples hold by being buried: pulling one out means tearing through 8.5 mm of silicone.
 
 | File | What | Print |
 |---|---|---|
-| `stl/sleeve_frame.stl` | lug frame, cast into the sleeve's back; flat top (horns included), curved underside that thickens toward the ends | **PETG**, as exported (flat face down), **no supports**, 4 walls, 100% infill, elephant-foot compensation 0.15 mm |
-| `stl/sleeve_core.stl` | forms the pocket; side ribs for the button openings; its back pad follows the wrist curve | PLA, as exported, **supports on (build plate only)** |
-| `stl/sleeve_mold_bottom.stl` | shallow tray | PLA, as exported, 0.16 mm |
-| `stl/sleeve_mold_top.stl` | cavity half, side pour hole, 8 top vents | PLA, as exported (cavity up), 0.16 mm |
+| `stl/sleeve_staple.stl` | lug staple, print **two** | **PETG**, as exported (upside down, bar on the bed), brim, no supports, 100% infill, elephant-foot compensation 0.15 mm |
+| `stl/sleeve_core_a.stl` | USB-C-end half of the core | PLA, as exported, no supports, 3 walls |
+| `stl/sleeve_core_b.stl` | top-end half of the core | PLA, as exported, no supports, 3 walls |
+| `stl/sleeve_cup.stl` | front half of the mold: window face, walls, noses, pour hole, core pins | PLA, as exported (opening up), no supports, 0.16 mm |
+| `stl/sleeve_backplate.stl` | back half: flat back, lug slots, vents | PLA, as exported (parting face up), no supports, 0.16 mm |
 | `stl/sleeve_preview_not_for_printing.stl` | the finished silicone part | don't print |
 
-Casting the sleeve: spray all four pieces with release. Drop the **frame** into the tray, horns in their open-topped slots; its flat top (horns included) ends up flush with the tray's parting face. Stand the **core** in the frame's opening, back pad down; its ribs must point at the long sides. Lower the top half on (the diagonal pins only fit one way), 4 × M3×30 + nuts, snug. Inject through the **side pour hole** on the long side until silicone shows at all 8 vents on top. Cure, lift the top off, lift the sleeve + core + frame out of the tray, stretch the front lip over the core to pop it out. The frame stays in the silicone: it is held mechanically (silicone doesn't bond to PETG) by the walls sitting on its outer band, the skin around its edge, and a 0.6 mm silicone foot in the step under its edge. Silicone needed ≈ 5 ml; **mix 10 g A + 10 g B** (2× for what stays in the cups and syringe). Fit the Tropic strap with 22 mm spring bars (0.8 mm tips); open the horn holes with a 1.0 mm bit if a print closed them up. The horns are 3 mm thick in the wall and flare to 4 mm outside it; print the frame in PETG at 245-250 C with the part fan at 20-30% so the layers fuse, let the plate cool fully and flex it to release. Never lever the part up by the horns, and never pry supports off it (it no longer needs any).
+**Casting** (cup on the table, window face down): spray release on everything. Stand core A and core B on the cup floor, window pads down, each on its pin (they meet in the middle). Clip both staples into the back plate's slots, lugs down, and tape across the lug tips on the outside so they can't fall out. Lower the plate onto the cup (diagonal pins), 4 x M3x30 + nuts, snug. Inject through the side pour hole until silicone shows at every vent: the six around the body and the two at the nose tips. Needs ~15 ml; **mix 15 g A + 15 g B**, 3-4% pigment. Cure overnight. Lift the plate off (the staples stay in the silicone), lift the sleeve with the cores out of the cup. Tilt core B's outer end up through the window and slide it out; slide core A toward the middle and lift it out. Trim the vent nubs and the thin skirt around each lug root.
 
-There's a 0.2 mm air gap between the frame's opening and the Stick's back rim by design; it isn't a void in the silicone.
+**Fitting the Stick:** USB-C end first, under the deep lip, then stretch the short lip over the top end. Spring bars (0.8 mm tips) through the lugs; open the holes with a 1.0 mm bit if a print closed them. To charge, pull the top end out from under the short lip.
+
+`hardware/sleeve/old/` keeps the earlier frame-based design for reference.
