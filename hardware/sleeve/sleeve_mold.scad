@@ -3,8 +3,8 @@
 // Same pocket as the band (hardware/band), same 16.6 mm thickness.
 //
 // Parts (set `part`, or use the Customizer):
-//   "frame"        PETG, print as exported (flat middle on the bed) WITH supports (build plate
-//                  only) under the curved ends and horns. 4 walls, 100% infill. Cast into the sleeve.
+//   "frame"        PETG, print as exported: its flat top face is on the bed, the curved side
+//                  is up, NO supports needed. 4 walls, 100% infill. Cast into the sleeve.
 //   "core"         PLA, as exported (on its side); needs SUPPORTS (build plate only):
 //                  the side ribs that form the button openings hold it off the bed.
 //   "mold_bottom"  PLA, as exported; shallow tray the frame and core sit in.
@@ -71,13 +71,13 @@ frame_t = back_t;               // frame is the whole back wall; bottom face exp
 frame_clear = 0.2;              // frame opening around the core's back pad
 horn_t = 3.0;                   // inside the sleeve's end wall
 horn_flare = 1.0;               // extra thickness outward, only outside the sleeve
-horn_h = 5.0;                   // horn height at its root; it tapers down to the bar
+horn_h = back_t;                // horns never rise above the frame's flat top (prints support-free)
 horn_tip_r = 2.2;               // material around the bar hole: 1.7 mm
 horn_len = bar_out + horn_tip_r; // beyond the sleeve end
 horn_y = lug_gap / 2 + horn_t / 2;
 // The horn stands at full height from just past the core's rounded corner, so
 // its root runs the whole end wall (about 2.3 mm) instead of a 1 mm stub.
-HORN_X0 = CORE_L_NOM / 2 - 0.3;
+HORN_X0 = curve_start + 5.0;    // horn root runs along the thick end of the ring
 HORN_X1 = POCKET_L / 2 + horn_len;
 BAR_X = POCKET_L / 2 + bar_out;
 // how far the back surface has dropped below z = 0 at |x|
@@ -186,11 +186,12 @@ module frame_part() {
         union() {
             intersection() {
                 difference() {
-                    rbox(POCKET_L - 2 * skin, POCKET_W - 2 * skin, max(POCKET_R - skin, 0.4), -10, 10);
+                    rbox(POCKET_L - 2 * skin, POCKET_W - 2 * skin, max(POCKET_R - skin, 0.4), -10, frame_t);
                     rbox(BACK_WIN[0] + 2 * frame_clear, BACK_WIN[1] + 2 * frame_clear, 1.0 + frame_clear, -11, 11);
                 }
-                // the ring is frame_t thick, measured normal to the curved back
-                difference() { above_curve(); above_curve(curve_R + frame_t, frame_t); }
+                // flat top at frame_t (the Stick's back plane), curved underside: the ring
+                // thickens toward the ends, so it prints upside down without supports
+                above_curve();
             }
             horns();
         }
@@ -202,7 +203,9 @@ module frame_part() {
 module silicone() {
     difference() {
         pocket_body();
-        core_part();
+        // the core's back plane and the frame's top coincide; nudge the core so the
+        // preview mesh stays a clean solid instead of growing zero-thickness slivers
+        translate([0, 0, -0.02]) core_part();
         frame_part();
         horns(0.001);
     }
@@ -242,7 +245,7 @@ module mold_top() {
     for (p = PINS) translate([p[0], p[1], back_t + eps]) mirror([0, 0, 1]) cylinder(d1 = 5, d2 = 4, h = 4);
 }
 
-if (part == "frame") frame_part();
+if (part == "frame") translate([0, 0, back_t]) rotate([180, 0, 0]) frame_part();   // flat top face down
 else if (part == "core") translate([0, 0, POCKET_W / 2]) rotate([90, 0, 0]) core_part();    // -y face down
 else if (part == "mold_bottom") translate([0, 0, bottom_t - back_t]) mold_bottom();          // flat face down
 else if (part == "mold_top") translate([0, 0, TOP_H + back_t]) rotate([180, 0, 0]) mold_top(); // parting face up
