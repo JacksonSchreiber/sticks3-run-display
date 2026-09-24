@@ -220,12 +220,16 @@ module mold_bottom() {
         // horn slots, only outside the sleeve outline: inside it the tray floor already
         // follows the curve the horns sit on, and clearance there would let a film of
         // silicone creep under the horn roots
-        horns();                                   // exact seat inside the outline (they rest on the curved floor)
-        intersection() {                           // clearance only where they leave the sleeve
+        // Horn slots with clearance, from 1.5 mm inside the sleeve's end outward. Inside
+        // the outline the horns already rest on the curved tray floor; the slot only needs
+        // to cover the rounded outline corners the horns pass through. (An exact-fit cut
+        // would put coincident faces in the mesh; a 0.15 mm film under 1.5 mm of horn root
+        // trims off in a second.)
+        intersection() {
             horns(slot_clear);
             union() {
-                translate([POCKET_L / 2, -50, -50]) cube([50, 100, 100]);
-                translate([-POCKET_L / 2 - 50, -50, -50]) cube([50, 100, 100]);
+                translate([POCKET_L / 2 - 1.5, -50, -50]) cube([50, 100, 100]);
+                translate([-POCKET_L / 2 + 1.5 - 50, -50, -50]) cube([50, 100, 100]);
             }
         }
         for (b = BOLTS) translate([b[0], b[1], -10]) cylinder(d = bolt_d, h = 40);
