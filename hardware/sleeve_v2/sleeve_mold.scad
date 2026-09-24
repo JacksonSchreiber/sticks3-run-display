@@ -7,8 +7,11 @@
 //             break-off tabs that sit the staple in notches in the cup rim while the
 //             silicone cures. Print as exported (upside down, bar on the bed), brim,
 //             no supports, 100% infill.
-//   "core"    PLA. The Stick's shape plus the pad that keeps the screen window open.
-//             Print as exported (back face down), no supports.
+//   "core"    PLA. The Stick's shape plus the pad that keeps the screen window open and,
+//             with `port`, the block that forms the charging tunnel. Print as exported
+//             (back face down); the tunnel block needs slicer support under it (a 6 mm
+//             pad on the bed, build plate only). Two M3 screws through the cup floor hold
+//             it down, else it floats in the silicone.
 //   "cup"     PLA. The one-piece mold: window face at the bottom, walls, noses, rim
 //             notches for the staple tabs. Open top. Print as exported.
 //   "cup_fused"  PLA. The cup with the core grown out of its floor through the window,
@@ -24,14 +27,16 @@
 //
 // Casting (open pour, window face down):
 //   1. Spray release on the cup, core and staples. Stand the core on the cup floor,
-//      pad down, on its two pins. Drop the staples into the rim notches, lugs up.
+//      pad down, and drive the two M3x8 screws up through the floor into it. Drop the
+//      staples into the rim notches, lugs up.
 //   2. Mix 15 g A + 15 g B (+ pigment). With the syringe, fill from the bottom first:
 //      tip down beside the core, into the lip layer and the front-button pocket, then
 //      fill to above the rim. Tap the cup on the table, top up, and scrape the surface
 //      flat with a card across the rim.
 //   3. Cure overnight (24 h for the fused cup). Flex the cup and lift the sleeve out with the core inside.
 //      Snip the four staple tabs flush with the lug tips and file them smooth. Work
-//      one end of the core up through the window and slide the core out.
+//      one end of the core up through the window and slide the core out. Cut the port
+//      slit: one straight stroke with a fresh blade, centred across the skin, slit_len long.
 //   4. Fit the Stick: USB-C end in under the deep lip first, then stretch the short
 //      lip over the top end. Spring bars through the lugs.
 
@@ -50,6 +55,15 @@ end_in = 2.5;      // Stick end -> staple bar
 end_out = 3.5;     // staple bar -> nose tip
 side_bump = 0.5;   // extra silicone over the side buttons
 front_min = 2.0;   // silicone over the front button's top
+
+/* [Charging port] */
+port = true;            // tunnel through the USB-C end block, closed by a thin skin you slit after curing
+port_w = 14.0;          // clear width for the plug's housing (port centred across the Stick)
+port_h = 7.5;           // clear height
+port_from_face = 4.1;   // USB-C centre below the Stick's front face (measured on the M5Stack model)
+skin_t = 2.0;           // skin over the tunnel mouth, middle
+skin_end_t = 3.5;       // skin at the ends of the slit (tear stop)
+slit_len = 12.0;        // how long to cut the slit
 
 /* [Strap] */
 lug_gap = 21.4;
@@ -148,12 +162,42 @@ module core_full() {
     translate([sx(FRONT_BTN[1][0]), sy(FRONT_BTN[0][0]), Z1 - eps])
         cube([FRONT_BTN[1][1] - FRONT_BTN[1][0], FRONT_BTN[0][1] - FRONT_BTN[0][0], FRONT_BTN[2] + eps]);
 }
-PINS = [[-6, 0], [13, 0]];                  // inside the window, so they leave no mark
-pin_d = 3.0; pin_h = 1.6;
+// ---- Charging tunnel (USB-C end, -x) -------------------------------------------
+// A block on the core's end face that reaches to within skin_t of the nose surface. The
+// nose is vertical below NOSE_TIP_Z and slopes above it, so the skin follows both.
+PORT_Z = Z1 - port_from_face;                          // tunnel centre
+NOSE_DIR = [BODY_HL - NOSE_HL, (TOP - 1) - NOSE_TIP_Z]; // slope, +x end, in x-z
+NOSE_ANG = atan2(NOSE_DIR[1], -NOSE_DIR[0]);           // slope angle from horizontal
+assert(!port || PORT_Z - port_h / 2 > BAR_Z1 + 0.5, "tunnel would cut the staple bar");
+assert(!port || PORT_Z + port_h / 2 < Z1, "tunnel taller than the Stick's face allows");
+
+// everything inside the -x nose surface offset inward by t
+module inside_nose(t) {
+    intersection() {
+        translate([-(NOSE_HL - t), -50, -50]) cube([100, 100, 100]);
+        // sloped face: rotate a half-space so its face lies along the nose slope
+        translate([-NOSE_HL, 0, NOSE_TIP_Z]) rotate([0, 90 - NOSE_ANG, 0]) translate([t, -50, -50]) cube([100, 100, 100]);
+    }
+}
+module port_prism(half_w) {
+    translate([-(HL - 0.5), 0, PORT_Z]) rotate([0, -90, 0]) linear_extrude(30) rrect(port_h, 2 * half_w, 2);
+}
+module port_core(t, half_w) { intersection() { port_prism(half_w); inside_nose(t); } }
+// thin skin in the middle, blending to a thicker skin where the slit ends
+module tunnel_block() {
+    hull() {
+        port_core(skin_t, slit_len / 2 - 2.0);
+        port_core(skin_end_t, port_w / 2);
+    }
+}
+
+// hold-down screws through the cup floor into the core, inside the window (no mark)
+SCREWS = [[-6, 0], [13, 0]];
+screw_d = 3.0; screw_head_d = 6.5; screw_head_h = 3.0;
 module core_part() {
     difference() {
-        core_full();
-        for (p = PINS) translate([p[0], p[1], TOP - pin_h]) cylinder(d = pin_d + 0.3, h = pin_h + 1);
+        union() { core_full(); if (port) tunnel_block(); }
+        for (p = SCREWS) translate([p[0], p[1], TOP - 8]) cylinder(d = screw_d - 0.4, h = 9);   // self-tapping M3
     }
 }
 
@@ -206,6 +250,7 @@ module silicone() {
     difference() {
         envelope();
         core_full();
+        if (port) tunnel_block();
         // cut the window clear through (the pad's top is coplanar with the face)
         translate([(WIN[0][0] + WIN[0][1]) / 2, 0, TOP - 1]) linear_extrude(3) rrect(WIN[0][1] - WIN[0][0], WIN[1][1] - WIN[1][0], WIN_R);
         staples();
@@ -221,7 +266,7 @@ CUP_H = TOP + FRONT_BUMP + cup_floor;
 
 module block(z0, h) { translate([0, 0, z0]) linear_extrude(h) rrect(2 * MX, 2 * MY, 4); }
 
-module cup() {
+module cup_body() {
     difference() {
         block(0, CUP_H);
         envelope();
@@ -229,18 +274,22 @@ module cup() {
         // which sets the staple's height, and the notch sides set its position
         tab_notches(notch_clear);
     }
-    // core pins, inside the window, rooted 1 mm into the cup floor
-    for (p = PINS) translate([p[0], p[1], TOP - pin_h]) cylinder(d = pin_d, h = pin_h + 1);
+}
+module cup() {
+    difference() {
+        cup_body();
+        for (p = SCREWS) translate([p[0], p[1], 0]) {
+            translate([0, 0, TOP - 1]) cylinder(d = screw_d + 0.4, h = 20);                         // clearance
+            translate([0, 0, CUP_H - screw_head_h]) cylinder(d = screw_head_d, h = screw_head_h + 1); // head recess, from the outside
+        }
+    }
 }
 
 // the same cup with the core fused to the floor through the window pad
 module cup_fused() {
-    difference() {
-        block(0, CUP_H);
-        envelope();
-        tab_notches(notch_clear);
-    }
+    cup_body();
     core_full();
+    if (port) tunnel_block();
     // the window pad continues 1 mm into the floor so the core is solidly one with it
     translate([(WIN[0][0] + WIN[0][1]) / 2, 0, TOP - eps]) linear_extrude(1 + eps)
         rrect(WIN[0][1] - WIN[0][0], WIN[1][1] - WIN[1][0], WIN_R);
@@ -250,5 +299,8 @@ if (part == "staple")      translate([0, 0, BAR_Z1]) rotate([180, 0, 0]) staple(
 else if (part == "core")   translate([0, 0, -Z0]) core_part();
 else if (part == "cup")    translate([0, 0, CUP_H]) rotate([180, 0, 0]) cup();          // open top up
 else if (part == "cup_fused") cup_fused();                                               // rim down: core on support, floor bridges
+else if (part == "check_core") intersection() { core_part(); union() { cup(); staples(); } }   // must be empty
+else if (part == "check_lift") intersection() { minkowski() { core_part(); translate([0, 0, -40]) cylinder(d = 0.02, h = 40); } cup(); } // core lifts out: must be empty
+else if (part == "staples_assy") staples();                                              // both staples in place (for renders)
 else if (part == "check_fused") intersection() { cup_fused(); staples(); }              // must be empty
 else silicone();
