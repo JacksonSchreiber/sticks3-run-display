@@ -11,6 +11,11 @@
 //             Print as exported (back face down), no supports.
 //   "cup"     PLA. The one-piece mold: window face at the bottom, walls, noses, rim
 //             notches for the staple tabs. Open top. Print as exported.
+//   "cup_fused"  PLA. The cup with the core grown out of its floor through the window,
+//             so nothing is placed but the staples. Exported RIM DOWN: the core stands
+//             on 2.5 mm of slicer support (build plate only) and the front face is
+//             bridged. Demolding peels the sleeve off the core while it is still in the
+//             cup, so cure the full 24 h first. See notes below.
 //   "sleeve"  preview of the silicone (don't print).
 //
 // Coordinates: x along the Stick (USB-C end at -x), y across, z from the back (0,
@@ -24,14 +29,14 @@
 //      tip down beside the core, into the lip layer and the front-button pocket, then
 //      fill to above the rim. Tap the cup on the table, top up, and scrape the surface
 //      flat with a card across the rim.
-//   3. Cure overnight. Flex the cup and lift the sleeve out with the core inside.
+//   3. Cure overnight (24 h for the fused cup). Flex the cup and lift the sleeve out with the core inside.
 //      Snip the four staple tabs flush with the lug tips and file them smooth. Work
 //      one end of the core up through the window and slide the core out.
 //   4. Fit the Stick: USB-C end in under the deep lip first, then stretch the short
 //      lip over the top end. Spring bars through the lugs.
 
 /* [Part] */
-part = "sleeve"; // [staple, core, cup, sleeve]
+part = "sleeve"; // [staple, core, cup, cup_fused, sleeve]
 
 /* [Fit] */
 // Stick is this much bigger than the pocket, per side. 0.3 = tight.
@@ -228,7 +233,22 @@ module cup() {
     for (p = PINS) translate([p[0], p[1], TOP - pin_h]) cylinder(d = pin_d, h = pin_h + 1);
 }
 
+// the same cup with the core fused to the floor through the window pad
+module cup_fused() {
+    difference() {
+        block(0, CUP_H);
+        envelope();
+        tab_notches(notch_clear);
+    }
+    core_full();
+    // the window pad continues 1 mm into the floor so the core is solidly one with it
+    translate([(WIN[0][0] + WIN[0][1]) / 2, 0, TOP - eps]) linear_extrude(1 + eps)
+        rrect(WIN[0][1] - WIN[0][0], WIN[1][1] - WIN[1][0], WIN_R);
+}
+
 if (part == "staple")      translate([0, 0, BAR_Z1]) rotate([180, 0, 0]) staple(1);   // upside down: bar top on the bed, lugs and tabs rise from it
 else if (part == "core")   translate([0, 0, -Z0]) core_part();
 else if (part == "cup")    translate([0, 0, CUP_H]) rotate([180, 0, 0]) cup();          // open top up
+else if (part == "cup_fused") cup_fused();                                               // rim down: core on support, floor bridges
+else if (part == "check_fused") intersection() { cup_fused(); staples(); }              // must be empty
 else silicone();
