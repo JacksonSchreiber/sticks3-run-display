@@ -19,6 +19,9 @@
 //             on 2.5 mm of slicer support (build plate only) and the front face is
 //             bridged. Demolding peels the sleeve off the core while it is still in the
 //             cup, so cure the full 24 h first. See notes below.
+//   "lid"     PLA, optional. A plate that sits on the cup rim right after the pour, with
+//             slots for the four lugs and a bleed gap, so the sleeve's back comes out flat
+//             instead of card-scraped. Print flat, no supports.
 //   "sleeve"  preview of the silicone (don't print).
 //
 // Coordinates: x along the Stick (USB-C end at -x), y across, z from the back (0,
@@ -41,7 +44,7 @@
 //      lip over the top end. Spring bars through the lugs.
 
 /* [Part] */
-part = "sleeve"; // [staple, core, cup, cup_fused, sleeve]
+part = "sleeve"; // [staple, core, cup, cup_fused, lid, sleeve]
 
 /* [Fit] */
 // Stick is this much bigger than the pocket, per side. 0.3 = tight.
@@ -302,9 +305,29 @@ module cup_fused() {
         rrect(WIN[0][1] - WIN[0][0], WIN[1][1] - WIN[1][0], WIN_R);
 }
 
+// ---- Lid (optional) ---------------------------------------------------------------
+// Sits on the rim (z = 0, the outside is -z) on four 0.3 mm feet, so excess silicone
+// bleeds out under it, through the lug slots and two vents. Lug plates pass through the
+// slots with 0.4 mm clearance per side. The vents leave two small nubs on the back: snip.
+LID_T = 3.0; LID_GAP = 0.3; LID_SLOT_CLR = 0.4;
+module lid() {
+    difference() {
+        union() {
+            translate([0, 0, -(LID_T + LID_GAP)]) linear_extrude(LID_T) rrect(2 * MX, 2 * MY, 4);
+            for (sx_ = [-1, 1], sy_ = [-1, 1]) translate([sx_ * (MX - 3), sy_ * (MY - 3), -LID_GAP - eps]) cylinder(d = 4, h = LID_GAP + eps);
+        }
+        for (m = [0, 1]) mirror([m, 0, 0]) for (sy_ = [-1, 1])
+            translate([STAPLE_X0 - LID_SLOT_CLR, sy_ * (LUG_Y0 + LUG_T / 2) - LUG_T / 2 - LID_SLOT_CLR, -LID_T - LID_GAP - 1])
+                cube([NOSE_HL - STAPLE_X0 + 2 * LID_SLOT_CLR, LUG_T + 2 * LID_SLOT_CLR, LID_T + 3]);
+        for (x = [-12, 12]) translate([x, 0, -LID_T - LID_GAP - 1]) cylinder(d = 2.5, h = LID_T + 3);
+    }
+}
+
 if (part == "staple")      translate([0, 0, BAR_Z1]) rotate([180, 0, 0]) staple(1);   // upside down: bar top on the bed, lugs and tabs rise from it
 else if (part == "core")   translate([0, 0, -Z0]) core_part();
 else if (part == "cup")    translate([0, 0, CUP_H]) rotate([180, 0, 0]) cup();          // open top up
+else if (part == "lid")    translate([0, 0, LID_T + LID_GAP]) lid();                        // flat, feet up
+else if (part == "check_lid") intersection() { lid(); union() { cup(); staples(); } }    // must be empty
 else if (part == "cup_fused") cup_fused();                                               // rim down: core on support, floor bridges
 else if (part == "check_core") intersection() { core_part(); union() { cup(); staples(); } }   // must be empty
 else if (part == "check_lift") intersection() { minkowski() { core_part(); translate([0, 0, -40]) cylinder(d = 0.02, h = 40); } cup(); } // core lifts out: must be empty
