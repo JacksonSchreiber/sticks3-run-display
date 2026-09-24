@@ -157,14 +157,19 @@ module core_part() { core_block(); core_ribs(); }
 
 // one lug horn: a plate in the x-z plane, rounded around the spring-bar hole.
 // Outside the sleeve it thickens outward (away from the strap) for strength.
-// The profile is drawn generously deep, then cut to the curved back surface, so the
-// horn's underside follows the wrist curve and its top tapers straight to the bar.
+// Flat top level with the frame's top all the way to the tip, underside cut to the wrist
+// curve, rounded lower corner around the bar. A flat top means the tray slot is an
+// open-topped pocket the frame drops into, and the top mold half seals it flat.
 module horn_profile(sx, grow, x0) {
-    hull() {
-        // rect bottom sits at the arc's depth under the bar, so past the bar the horn is only
-        // its rounded tip and doesn't grow a heel that follows the plunging arc into the wrist
-        translate([sx > 0 ? x0 : -BAR_X, -drop(BAR_X) - grow]) square([BAR_X - x0, drop(BAR_X) + horn_h + 2 * grow]);
-        translate([sx * BAR_X, BAR_Z]) circle(r = horn_tip_r + grow);
+    intersection() {
+        hull() {
+            translate([sx > 0 ? x0 : -HORN_X1, BAR_Z - grow]) square([HORN_X1 - x0, horn_h - BAR_Z + 2 * grow]);
+            translate([sx * BAR_X, BAR_Z]) circle(r = horn_tip_r + grow);   // rounds the lower outer corner
+        }
+        // start square at x0: the circle must not poke back past it, or the flared section
+        // gets a rounded inner edge that jams when the frame is lifted out of the tray
+        if (sx > 0) translate([x0 - grow, -100]) square([200, 200]);
+        else        translate([-200, -100]) square([200 - x0 + grow, 200]);
     }
 }
 module horn(sx, sy, grow = 0) {
@@ -243,8 +248,6 @@ module mold_top() {
         translate([0, 0, back_t]) linear_extrude(TOP_H) rrect(2 * MX, 2 * MY, 4);
         // cavity above the parting plane
         rbox(POCKET_L, POCKET_W, POCKET_R, back_t - eps, POCKET_T);
-        // upper part of the horn slots, open to the parting face
-        horns(slot_clear);
         for (b = BOLTS) {
             translate([b[0], b[1], -10]) cylinder(d = bolt_d, h = 60);
             translate([b[0], b[1], back_t + TOP_H - bolt_head_pocket]) cylinder(d = 6.6, h = bolt_head_pocket + 1);
