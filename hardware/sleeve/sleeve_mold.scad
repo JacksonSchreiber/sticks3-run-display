@@ -67,6 +67,7 @@ BACK_WIN  = [CORE_L_NOM - 2 * back_lip,  CORE_W_NOM - 2 * back_lip];
 
 // ---- Frame ------------------------------------------------------------------
 skin = 0.6;                     // silicone over the frame's outer edge
+foot = 0.6;                     // step around the frame's underside edge; silicone fills it and locks the frame in
 frame_t = back_t;               // frame is the whole back wall; bottom face exposed
 frame_clear = 0.2;              // frame opening around the core's back pad
 horn_t = 3.0;                   // inside the sleeve's end wall
@@ -189,14 +190,23 @@ module horns(grow = 0) { for (sx = [-1, 1], sy = [-1, 1]) horn(sx, sy, grow); }
 module frame_part() {
     difference() {
         union() {
-            intersection() {
-                difference() {
-                    rbox(POCKET_L - 2 * skin, POCKET_W - 2 * skin, max(POCKET_R - skin, 0.4), -10, frame_t);
-                    rbox(BACK_WIN[0] + 2 * frame_clear, BACK_WIN[1] + 2 * frame_clear, 1.0 + frame_clear, -11, 11);
+            difference() {
+                intersection() {
+                    difference() {
+                        rbox(POCKET_L - 2 * skin, POCKET_W - 2 * skin, max(POCKET_R - skin, 0.4), -10, frame_t);
+                        rbox(BACK_WIN[0] + 2 * frame_clear, BACK_WIN[1] + 2 * frame_clear, 1.0 + frame_clear, -11, 11);
+                    }
+                    // flat top at frame_t (the Stick's back plane), curved underside: the ring
+                    // thickens toward the ends, so it prints upside down without supports
+                    above_curve();
                 }
-                // flat top at frame_t (the Stick's back plane), curved underside: the ring
-                // thickens toward the ends, so it prints upside down without supports
-                above_curve();
+                // undercut step along the bottom outer edge: silicone doesn't stick to PETG,
+                // so the skin needs a foot under the frame or the frame could drop out
+                difference() {
+                    translate([-100, -100, -50]) cube([200, 200, 100]);
+                    rbox(POCKET_L - 2 * (skin + foot), POCKET_W - 2 * (skin + foot), 0.4, -60, 60);
+                    above_curve(curve_R + foot, foot);
+                }
             }
             horns();
         }
