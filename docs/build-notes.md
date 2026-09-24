@@ -68,20 +68,20 @@ USB-C stays open, so it charges on the clip.
 
 ## Sleeve v2 (`hardware/sleeve_v2/`)
 
-![Sealed sleeve with the lug staples, and one staple alone](images/sleeve-preview.png)
+![Sealed sleeve with the lug staples; the one-piece cup with the core; one staple as printed](images/sleeve-preview.png)
 
 A sealed silicone jacket around the Stick (2.6 mm walls, 2.5 mm back, 2.0 mm over the face) with two PETG **staples** cast into its thick end blocks: each is a 3 x 5 mm bar buried across the full width, with two lug plates flush with the sleeve's sides that sweep down under the nose to the spring bar. The strap tucks under the nose. The only opening is the screen window (19 x 31.5 mm); the buttons are covered, with a 0.5 mm pad over each side button and 2 mm of silicone over the front button. 65.4 x 28.6 x 18.3 mm, lug gap 21.4 mm. Fit is tight (0.3 mm squeeze per side). Silicone does not bond to PETG, so the staples hold by being buried: pulling one out means tearing through 8.5 mm of silicone.
 
+One mold piece, one core, two staples:
+
 | File | What | Print |
 |---|---|---|
-| `stl/sleeve_staple.stl` | lug staple, print **two** | **PETG**, as exported (upside down, bar on the bed), brim, no supports, 100% infill, elephant-foot compensation 0.15 mm |
-| `stl/sleeve_core_a.stl` | USB-C-end half of the core | PLA, as exported, no supports, 3 walls |
-| `stl/sleeve_core_b.stl` | top-end half of the core | PLA, as exported, no supports, 3 walls |
-| `stl/sleeve_cup.stl` | front half of the mold: window face, walls, noses, pour hole, core pins | PLA, as exported (opening up), no supports, 0.16 mm |
-| `stl/sleeve_backplate.stl` | back half: flat back, lug slots, vents | PLA, as exported (parting face up), no supports, 0.16 mm |
+| `stl/sleeve_staple.stl` | lug staple with break-off locating tabs, print **two** | **PETG**, as exported (upside down, bar on the bed), brim, no supports, 100% infill, elephant-foot compensation 0.15 mm |
+| `stl/sleeve_core.stl` | the Stick's shape + the window pad | PLA, as exported, no supports, 3 walls |
+| `stl/sleeve_cup.stl` | the mold: window face at the bottom, walls, noses, rim notches; open top | PLA, as exported, no supports, 0.16 mm |
 | `stl/sleeve_preview_not_for_printing.stl` | the finished silicone part | don't print |
 
-**Casting** (cup on the table, window face down): spray release on everything. Stand core A and core B on the cup floor, window pads down, each on its pin (they meet in the middle). Clip both staples into the back plate's slots, lugs down, and tape across the lug tips on the outside so they can't fall out. Lower the plate onto the cup (diagonal pins), 4 x M3x30 + nuts, snug. Inject through the side pour hole until silicone shows at every vent: the six around the body and the two at the nose tips. Needs ~15 ml; **mix 15 g A + 15 g B**, 3-4% pigment. Cure overnight. Lift the plate off (the staples stay in the silicone), lift the sleeve with the cores out of the cup. Tilt core B's outer end up through the window and slide it out; slide core A toward the middle and lift it out. Trim the vent nubs and the thin skirt around each lug root.
+**Casting** (open pour, window face down): spray release on the cup, core and staples. Stand the core on the cup floor, pad down, on its two pins. Drop the staples into the rim notches, lugs up; the tabs rest on the notch floors and set the height. **Mix 15 g A + 15 g B** with 3-4% pigment. Fill with the syringe from the bottom up: tip down beside the core into the lip layer and the front-button pocket first, then fill to just above the rim. Tap the cup on the table, top up, scrape the surface flat with a card across the rim. Cure overnight. Flex the cup and lift the sleeve out with the core inside. Snip the four tabs flush with the lug tips and file smooth. Work one end of the core up through the window and slide it out.
 
 **Fitting the Stick:** USB-C end first, under the deep lip, then stretch the short lip over the top end. Spring bars (0.8 mm tips) through the lugs; open the holes with a 1.0 mm bit if a print closed them. To charge, pull the top end out from under the short lip.
 

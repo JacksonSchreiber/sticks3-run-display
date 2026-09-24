@@ -2,34 +2,36 @@
 // standard 22 mm strap. No frame under the wrist, no holes except the screen window.
 //
 // Parts (set `part`, or use the Customizer):
-//   "staple"    PETG x2. A bar that gets buried across each end block, with two lug
-//               plates that sweep down under the nose to the spring bar. Print as
-//               exported (upside down, bar on the bed), brim, no supports, 100% infill.
-//   "core_a"    PLA. USB-C-end half of the core (the Stick's shape + the window pad).
-//   "core_b"    PLA. Top-end half. Both print as exported (back face down), no supports.
-//   "cup"       PLA. Front half of the mold: window face, walls, noses. Print as exported.
-//   "backplate" PLA. Back half: flat back, lug slots, vents. Print as exported.
-//   "sleeve"    preview of the silicone (don't print).
+//   "staple"  PETG x2. A bar that gets buried across each end block, with two lug
+//             plates that sweep down under the nose to the spring bar, and two
+//             break-off tabs that sit the staple in notches in the cup rim while the
+//             silicone cures. Print as exported (upside down, bar on the bed), brim,
+//             no supports, 100% infill.
+//   "core"    PLA. The Stick's shape plus the pad that keeps the screen window open.
+//             Print as exported (back face down), no supports.
+//   "cup"     PLA. The one-piece mold: window face at the bottom, walls, noses, rim
+//             notches for the staple tabs. Open top. Print as exported.
+//   "sleeve"  preview of the silicone (don't print).
 //
 // Coordinates: x along the Stick (USB-C end at -x), y across, z from the back (0,
-// wrist side) to the front. The mold parts at z = 0: the cup holds everything above
-// it, the back plate everything below (the exposed parts of the lugs).
+// wrist side) to the front. The cup's rim is the z = 0 plane: the sleeve's back is
+// the top of the pour, scraped flat at the rim.
 //
-// Casting (cup on the table, window face down):
-//   1. Spray release on everything. Stand core A and core B on the cup floor, pads
-//      down, on their pins (they meet at the middle). Clip the two staples into the
-//      back plate's slots (a strip of tape across the lug tips holds them), lower the
-//      plate on, 4x M3x30 + nuts.
-//   2. Inject through the side pour hole until silicone shows at all vents (body
-//      corners and both nose tips). ~12 ml; mix 15 g A + 15 g B.
-//   3. Cure overnight. Lift the plate (staples stay in the silicone), lift the sleeve
-//      + cores out of the cup. Tilt core B's outer end up through the window and
-//      slide it out; slide core A toward the middle and lift it out.
-//   4. Fit the Stick the same way in reverse: USB-C end in under the deep lip first,
-//      then stretch the short lip over the top end. Spring bars through the lugs.
+// Casting (open pour, window face down):
+//   1. Spray release on the cup, core and staples. Stand the core on the cup floor,
+//      pad down, on its two pins. Drop the staples into the rim notches, lugs up.
+//   2. Mix 15 g A + 15 g B (+ pigment). With the syringe, fill from the bottom first:
+//      tip down beside the core, into the lip layer and the front-button pocket, then
+//      fill to above the rim. Tap the cup on the table, top up, and scrape the surface
+//      flat with a card across the rim.
+//   3. Cure overnight. Flex the cup and lift the sleeve out with the core inside.
+//      Snip the four staple tabs flush with the lug tips and file them smooth. Work
+//      one end of the core up through the window and slide the core out.
+//   4. Fit the Stick: USB-C end in under the deep lip first, then stretch the short
+//      lip over the top end. Spring bars through the lugs.
 
 /* [Part] */
-part = "sleeve"; // [staple, core_a, core_b, cup, backplate, sleeve]
+part = "sleeve"; // [staple, core, cup, sleeve]
 
 /* [Fit] */
 // Stick is this much bigger than the pocket, per side. 0.3 = tight.
@@ -79,7 +81,7 @@ NOSE_HL = STAPLE_X1 + end_out;              // overall half-length
 NOSE_TIP_Z = 10.5;                          // nose top at the tip
 BAR_Z0 = back_t;  BAR_Z1 = back_t + STAPLE_H;
 WIN = [[sx(14), sx(45.5)], [-9.5, 9.5]];   // screen window; starts above the front button
-WIN_R = 2.0;
+WIN_R = 3.0;           // generous corners: the core comes out through this window
 BAR_X = STAPLE_X0 + bar_x_off;              // spring bar centre
 LUG_T = BODY_HW - lug_gap / 2;              // lug plates fill from the strap gap to the side face
 LUG_Y0 = lug_gap / 2;
@@ -141,16 +143,12 @@ module core_full() {
     translate([sx(FRONT_BTN[1][0]), sy(FRONT_BTN[0][0]), Z1 - eps])
         cube([FRONT_BTN[1][1] - FRONT_BTN[1][0], FRONT_BTN[0][1] - FRONT_BTN[0][0], FRONT_BTN[2] + eps]);
 }
-PINS = [[-6, 0], [13, 0]];                  // inside the window, one per half
+PINS = [[-6, 0], [13, 0]];                  // inside the window, so they leave no mark
 pin_d = 3.0; pin_h = 1.6;
-module core_half(a) {                        // a: -1 = USB-C end half, +1 = top half
+module core_part() {
     difference() {
-        intersection() {
-            core_full();
-            translate([a > 0 ? 0 : -100, -50, -10]) cube([100, 100, 100]);
-        }
-        for (p = PINS) if ((p[0] > 0) == (a > 0))
-            translate([p[0], p[1], TOP - pin_h]) cylinder(d = pin_d + 0.3, h = pin_h + 1);
+        core_full();
+        for (p = PINS) translate([p[0], p[1], TOP - pin_h]) cylinder(d = pin_d + 0.3, h = pin_h + 1);
     }
 }
 
@@ -162,8 +160,25 @@ module lug_profile(grow = 0) {
         translate([BAR_X, bar_z]) circle(r = lug_tip_r + grow);
     }
 }
-module staple(end = 1, grow = 0, hole = true) {
+// break-off tabs: from each lug plate's outer face at the rim, out over the cup rim,
+// sloping 45 degrees down into it (so they print support-free upside down). They sit
+// in matching notches, which fixes the staple's position and height while curing.
+TAB_W = 4.0; TAB_T = 2.0; TAB_L = 6.0;
+module tab(s, grow = 0) {
+    hull() {
+        translate([BAR_X - TAB_W / 2 - grow, s > 0 ? BODY_HW - 0.3 : -(BODY_HW - 0.3) - eps, -grow]) cube([TAB_W + 2 * grow, eps, TAB_T + 2 * grow]);
+        translate([BAR_X - TAB_W / 2 - grow, s > 0 ? BODY_HW + TAB_L + grow : -(BODY_HW + TAB_L + grow) - eps, TAB_L - grow]) cube([TAB_W + 2 * grow, eps, TAB_T + 2 * grow]);
+    }
+}
+module staple_tabs(grow = 0) { for (s = [-1, 1]) tab(s, grow); }
+// the notch is the tab's slot swept upward, so the staple drops in and lifts straight out
+module tab_notches(grow = 0) {
+    for (m = [0, 1]) mirror([m, 0, 0]) for (s = [-1, 1]) hull() { tab(s, grow); translate([0, 0, -12]) tab(s, grow); }
+}
+module staple(end = 1, grow = 0, hole = true, tabs = true) {
     mirror([end < 0 ? 1 : 0, 0, 0]) difference() {
+        union() {
+        if (tabs) staple_tabs(grow);
         intersection() {
         // keep the staple inside the nose's rounded footprint (the lug tips get rounded too)
         translate([0, 0, -50]) linear_extrude(100) rrect(2 * NOSE_HL - 0.1 + 2 * grow, 2 * BODY_HW - 0.1 + 2 * grow, 6 + grow);
@@ -175,75 +190,45 @@ module staple(end = 1, grow = 0, hole = true) {
                 translate([0, 0, -(LUG_T - 0.05) / 2 - grow]) linear_extrude(LUG_T - 0.05 + 2 * grow) lug_profile(grow);
         }
         }
+        }
         if (hole) translate([BAR_X, 0, bar_z]) rotate([90, 0, 0]) cylinder(d = bar_hole_d, h = 100, center = true, $fn = 16);
     }
 }
-// hole = false for the mold slots, or the slot keeps a pin where the bar hole is
-module staples(grow = 0, hole = true) { staple(1, grow, hole); staple(-1, grow, hole); }
+module staples(grow = 0, hole = true, tabs = true) { staple(1, grow, hole, tabs); staple(-1, grow, hole, tabs); }
 
 // ---- Silicone preview --------------------------------------------------------------
 module silicone() {
     difference() {
         envelope();
         core_full();
+        // cut the window clear through (the pad's top is coplanar with the face)
+        translate([(WIN[0][0] + WIN[0][1]) / 2, 0, TOP - 1]) linear_extrude(3) rrect(WIN[0][1] - WIN[0][0], WIN[1][1] - WIN[1][0], WIN_R);
         staples();
     }
 }
 
-// ---- Mold ----------------------------------------------------------------------------
-margin = 8;
+// ---- Mold (one piece, open top) -----------------------------------------------------
+margin = 6;
 MX = NOSE_HL + margin;  MY = BODY_HW + margin;
 cup_floor = 4;
-plate_t = 10;                                 // deep enough for the lugs
-bolt_d = 3.4;
-BOLTS = [[-(MX - 5), -(MY - 5)], [MX - 5, -(MY - 5)], [-(MX - 5), MY - 5], [MX - 5, MY - 5]];
-MPINS = [[-16, -(MY - 4.5)], [16, MY - 4.5]];
-VENTS = [[-(BODY_HL - 2), -(BODY_HW - 2)], [BODY_HL - 2, -(BODY_HW - 2)], [-(BODY_HL - 2), BODY_HW - 2], [BODY_HL - 2, BODY_HW - 2],
-         [0, -(BODY_HW - 1.5)], [0, BODY_HW - 1.5], [-(NOSE_HL - 3), 0], [NOSE_HL - 3, 0]];
-vent_d = 1.5;
-sprue_d = 3.5;
-SPRUE = [10, Z1 - 1.5];                       // x, z of the side pour hole on the -y side
-slot_clear = 0.35;
-head_pocket = 4;
+notch_clear = 0.2;
 CUP_H = TOP + FRONT_BUMP + cup_floor;
-
-assert(bar_z - lug_tip_r - slot_clear > -plate_t + 2, "back plate too thin for the lugs");
 
 module block(z0, h) { translate([0, 0, z0]) linear_extrude(h) rrect(2 * MX, 2 * MY, 4); }
 
-// front half: everything above z = 0
 module cup() {
     difference() {
         block(0, CUP_H);
         envelope();
-        for (b = BOLTS) translate([b[0], b[1], -1]) cylinder(d = bolt_d, h = 100);
-        for (p = MPINS) translate([p[0], p[1], -eps]) cylinder(d = 5.4, h = 4.5);
-        // pour hole into the -y side wall, near the front face (the cup floor when casting)
-        translate([SPRUE[0], -BODY_HW + 0.3, SPRUE[1]]) rotate([90, 0, 0]) cylinder(d = sprue_d, h = MY);
-        translate([SPRUE[0], -MY - eps, SPRUE[1]]) rotate([-90, 0, 0]) cylinder(d1 = sprue_d + 5, d2 = sprue_d, h = 2.5);
+        // notches in the rim for the staple tabs: they rest on the sloped notch floors,
+        // which sets the staple's height, and the notch sides set its position
+        tab_notches(notch_clear);
     }
     // core pins, inside the window, rooted 1 mm into the cup floor
     for (p = PINS) translate([p[0], p[1], TOP - pin_h]) cylinder(d = pin_d, h = pin_h + 1);
 }
 
-// back half: flat parting face at z = 0, lug slots below it, vents through
-module backplate() {
-    difference() {
-        block(-plate_t, plate_t);
-        // exposed parts of the lugs (below z = 0), with clearance
-        intersection() { staples(slot_clear, false); translate([-100, -100, -100]) cube([200, 200, 100 + eps]); }
-        for (b = BOLTS) {
-            translate([b[0], b[1], -100]) cylinder(d = bolt_d, h = 200);
-            translate([b[0], b[1], -plate_t - 1]) cylinder(d = 6.6, h = head_pocket + 1);
-        }
-        for (v = VENTS) translate([v[0], v[1], -plate_t - 1]) cylinder(d = vent_d, h = plate_t + 2, $fn = 12);
-    }
-    for (p = MPINS) translate([p[0], p[1], -eps]) cylinder(d1 = 5, d2 = 4, h = 4);
-}
-
-if (part == "staple")         translate([0, 0, BAR_Z1]) rotate([180, 0, 0]) staple(1);   // upside down: bar top on the bed, lug plates rise from it
-else if (part == "core_a")    translate([0, 0, -Z0]) core_half(-1);
-else if (part == "core_b")    translate([0, 0, -Z0]) core_half(1);
-else if (part == "cup")       translate([0, 0, CUP_H]) rotate([180, 0, 0]) cup();          // window face up
-else if (part == "backplate") translate([0, 0, plate_t]) backplate();                      // parting face up
+if (part == "staple")      translate([0, 0, BAR_Z1]) rotate([180, 0, 0]) staple(1);   // upside down: bar top on the bed, lugs and tabs rise from it
+else if (part == "core")   translate([0, 0, -Z0]) core_part();
+else if (part == "cup")    translate([0, 0, CUP_H]) rotate([180, 0, 0]) cup();          // open top up
 else silicone();
