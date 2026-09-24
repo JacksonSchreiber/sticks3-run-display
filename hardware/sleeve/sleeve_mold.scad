@@ -92,7 +92,7 @@ assert(curve_R + eps >= HORN_X1 - curve_start, "curve too tight: it turns vertic
 assert(horn_y + horn_t / 2 <= POCKET_W / 2 - 0.1, "lug horns wider than the sleeve");
 
 // ---- Mold ----------------------------------------------------------------
-slot_clear = 0.15;
+slot_clear = 0.35;                 // per side; FDM horns come out fat and the first layers spread
 bottom_t = 9.0;                 // bottom tray; deep enough for the down-turned horn tips
 bolt_head_pocket = 2.5;         // recess for the bolt heads on the top half, so M3x30 reaches
 top_floor = 4.0;                // material above the cavity ceiling
