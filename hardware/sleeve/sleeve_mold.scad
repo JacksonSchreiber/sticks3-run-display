@@ -217,8 +217,16 @@ module mold_bottom() {
         translate([0, 0, back_t - bottom_t]) linear_extrude(bottom_t) rrect(2 * MX, 2 * MY, 4);
         // tray: pocket outline down to the curved back surface (frame, core back pad and skin sit in it)
         intersection() { rbox(POCKET_L, POCKET_W, POCKET_R, -10, back_t + 1); above_curve(); }
-        // lower part of the horn slots
-        horns(slot_clear);
+        // horn slots, only outside the sleeve outline: inside it the tray floor already
+        // follows the curve the horns sit on, and clearance there would let a film of
+        // silicone creep under the horn roots
+        intersection() {
+            horns(slot_clear);
+            union() {
+                translate([POCKET_L / 2 - 0.3, -50, -50]) cube([50, 100, 100]);
+                translate([-POCKET_L / 2 + 0.3 - 50, -50, -50]) cube([50, 100, 100]);
+            }
+        }
         for (b = BOLTS) translate([b[0], b[1], -10]) cylinder(d = bolt_d, h = 40);
         for (p = PINS) translate([p[0], p[1], back_t - 4.5]) cylinder(d = 5.4, h = 4.5 + eps);
     }
