@@ -212,11 +212,13 @@ module lug_profile(grow = 0) {
 // break-off tabs: from each lug plate's outer face at the rim, out over the cup rim,
 // sloping 45 degrees down into it (so they print support-free upside down). They sit
 // in matching notches, which fixes the staple's position and height while curing.
-TAB_W = 4.0; TAB_T = 2.0; TAB_L = 6.0;
+TAB_W = 4.0; TAB_T = 2.0; TAB_L = 6.0; TAB_FOOT = 1.5;
+TAB_RISE = BAR_Z1 - TAB_T;   // the tab's outer end tops out level with the bar's top, so both sit on the bed when printed upside down
 module tab(s, grow = 0) {
     hull() {
         translate([BAR_X - TAB_W / 2 - grow, s > 0 ? BODY_HW - 0.3 : -(BODY_HW - 0.3) - eps, -grow]) cube([TAB_W + 2 * grow, eps, TAB_T + 2 * grow]);
-        translate([BAR_X - TAB_W / 2 - grow, s > 0 ? BODY_HW + TAB_L + grow : -(BODY_HW + TAB_L + grow) - eps, TAB_L - grow]) cube([TAB_W + 2 * grow, eps, TAB_T + 2 * grow]);
+        translate([BAR_X - TAB_W / 2 - grow, s > 0 ? BODY_HW + TAB_L - TAB_FOOT : -(BODY_HW + TAB_L + grow), TAB_RISE - grow])
+            cube([TAB_W + 2 * grow, TAB_FOOT + grow, TAB_T + 2 * grow]);
     }
 }
 module staple_tabs(grow = 0) { for (s = [-1, 1]) tab(s, grow); }
@@ -302,5 +304,6 @@ else if (part == "cup_fused") cup_fused();                                      
 else if (part == "check_core") intersection() { core_part(); union() { cup(); staples(); } }   // must be empty
 else if (part == "check_lift") intersection() { minkowski() { core_part(); translate([0, 0, -40]) cylinder(d = 0.02, h = 40); } cup(); } // core lifts out: must be empty
 else if (part == "staples_assy") staples();                                              // both staples in place (for renders)
+else if (part == "check_staple") intersection() { staples(); cup(); }                         // staples seat in the notches: must be empty
 else if (part == "check_fused") intersection() { cup_fused(); staples(); }              // must be empty
 else silicone();
