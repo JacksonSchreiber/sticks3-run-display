@@ -66,7 +66,7 @@ The band sits across the wrist. Hole 3 of 7 is about 164 mm, hole 4 about 170 mm
 
 USB-C stays open, so it charges on the clip.
 
-## Sleeve (`hardware/sleeve/`)
+## Sleeve v2 (`hardware/sleeve_v2/`)
 
 ![Sealed sleeve with the lug staples, and one staple alone](images/sleeve-preview.png)
 
@@ -85,4 +85,4 @@ A sealed silicone jacket around the Stick (2.6 mm walls, 2.5 mm back, 2.0 mm ove
 
 **Fitting the Stick:** USB-C end first, under the deep lip, then stretch the short lip over the top end. Spring bars (0.8 mm tips) through the lugs; open the holes with a 1.0 mm bit if a print closed them. To charge, pull the top end out from under the short lip.
 
-`hardware/sleeve/old/` keeps the earlier frame-based design for reference.
+`hardware/sleeve/` is the earlier design: a thinner sleeve with a PETG lug frame cast into its back. Kept with its STLs for reference.
