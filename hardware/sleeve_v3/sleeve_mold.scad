@@ -200,7 +200,7 @@ module tab_grooves() {
     depth = (TAB_T - TAB_NECK) / 2; d = depth * sqrt(2);
     for (s = [-1, 1]) for (zc = [TAB_Z0 - TAB_T - zoff, TAB_Z0 - zoff])
         intersection() {   // clipped so the groove never cuts into the fin's own face
-            translate([TAB_X, s * (CH_HW + TAB_GROOVE_Y), zc]) rotate([45, 0, 0]) cube([TAB_W + 2, d, d], center = true);
+            translate([TAB_X, s * (CH_HW + TAB_GROOVE_Y), zc]) cube([TAB_W + 2, d, d], center = true);   // axis-aligned: a symmetric 90-degree V on the 45-degree tab face
             translate([TAB_X - 5, s > 0 ? CH_HW : -CH_HW - 10, zc - 5]) cube([10, 10, 10]);
         }
 }
