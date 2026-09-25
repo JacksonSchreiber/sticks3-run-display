@@ -91,7 +91,7 @@ Z0 = back_t;  Z1 = back_t + CORE_T;         // Stick back / face planes
 TOP = Z1 + lip_t;                          // front face of the sleeve
 HL = CORE_L / 2;  HW = CORE_W / 2;
 function sx(y_on_stick) = y_on_stick - STICK_L / 2;   // Stick's length coord -> sleeve x
-function sy(x_on_stick) = x_on_stick - STICK_W / 2;   // Stick's width coord  -> sleeve y
+function sy(x_on_stick) = STICK_W / 2 - x_on_stick;   // Stick's width coord -> sleeve y (mirrored: the Stick's x runs the other way, seen screen-up with USB-C at the bottom)
 
 // ---- Outer body ---------------------------------------------------------------
 BODY_HW = HW + wall;                        // 14.3
@@ -133,7 +133,7 @@ module body() {
 
 // shallow pads over the side buttons: side_bump proud of the wall, soft-edged
 module side_bumps(extra = 0) {
-    for (s = [[BTN_XMINUS, -1], [BTN_XPLUS, 1]]) {
+    for (s = [[BTN_XMINUS, sign(sy(0))], [BTN_XPLUS, sign(sy(STICK_W))]]) {   // power button on the Stick's x=0 side
         x0 = sx(s[0][0]) - 1.5; x1 = sx(s[0][1]) + 1.5;
         z0 = Z0 + BTN_Z[0] - 1.0; z1 = Z0 + BTN_Z[1] + 1.0;
         hull() {
@@ -146,7 +146,7 @@ module side_bumps(extra = 0) {
 }
 module front_bump(extra = 0) {
     x0 = sx(FRONT_BTN[1][0]) - 1.5; x1 = sx(FRONT_BTN[1][1]) + 1.5;
-    y0 = sy(FRONT_BTN[0][0]) - 1.5; y1 = sy(FRONT_BTN[0][1]) + 1.5;
+    y0 = min(sy(FRONT_BTN[0][0]), sy(FRONT_BTN[0][1])) - 1.5; y1 = max(sy(FRONT_BTN[0][0]), sy(FRONT_BTN[0][1])) + 1.5;
     hull() {
         translate([(x0 + x1) / 2, (y0 + y1) / 2, TOP - 0.5]) linear_extrude(eps) rrect(x1 - x0 + 2 * extra, y1 - y0 + 2 * extra, 1.5);
         translate([(x0 + x1) / 2, (y0 + y1) / 2, TOP + FRONT_BUMP + extra]) linear_extrude(eps) rrect(x1 - x0 - 2 + 2 * extra, y1 - y0 - 2 + 2 * extra, 1.0);
@@ -162,7 +162,7 @@ module core_full() {
     translate([(WIN[0][0] + WIN[0][1]) / 2, 0, Z1 - eps]) linear_extrude(TOP - Z1 + eps)
         rrect(WIN[0][1] - WIN[0][0], WIN[1][1] - WIN[1][0], WIN_R);
     // the front button, so the silicone sits right on it
-    translate([sx(FRONT_BTN[1][0]), sy(FRONT_BTN[0][0]), Z1 - eps])
+    translate([sx(FRONT_BTN[1][0]), min(sy(FRONT_BTN[0][0]), sy(FRONT_BTN[0][1])), Z1 - eps])
         cube([FRONT_BTN[1][1] - FRONT_BTN[1][0], FRONT_BTN[0][1] - FRONT_BTN[0][0], FRONT_BTN[2] + eps]);
 }
 // ---- Charging tunnel (USB-C end, -x) -------------------------------------------
