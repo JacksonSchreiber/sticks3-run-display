@@ -27,6 +27,7 @@ The Stick never talks to the strap. It receives two numbers and displays them.
 | `hardware/band/` | one-piece silicone band: 3-part mold (OpenSCAD source + STLs) |
 | `hardware/clip/` | printed cradle that bolts to a steel spring clip (source + STLs) |
 | `hardware/sleeve_v2/` | sealed silicone sleeve with cast-in lug staples for a standard 22 mm watch strap (source + STLs) |
+| `hardware/sleeve_v3/` | current: sealed sleeve with the lugs under the ends (PETG chassis with fins), 52 mm long (source + STLs) |
 | `hardware/sleeve/` | earlier sleeve with a cast-in lug frame; superseded, kept for reference |
 | `firmware/` | StickS3 firmware — not started |
 | `app/` | Android companion app — not started |

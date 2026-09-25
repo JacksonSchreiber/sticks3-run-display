@@ -89,4 +89,24 @@ One mold piece, one core, two staples:
 
 **Fitting the Stick:** USB-C end first, under the deep lip, then stretch the short lip over the top end. Spring bars (0.8 mm tips) through the lugs; open the holes with a 1.0 mm bit if a print closed them. To charge, push the cable straight into the slit at the USB-C end; the tunnel guides it onto the port. Set `port = false` in the .scad for a sleeve without the tunnel.
 
+## Sleeve v3 (`hardware/sleeve_v3/`)
+
+![Sleeve v3: fins under the ends carry the spring bars; the cup with core and chassis; the chassis as printed](images/sleeve-v3-preview.png)
+
+Same sealed jacket as v2, but the strap lugs are **under the ends instead of past them**, so the sleeve is 51.8 x 28.6 x 17.9 mm (+0.9 button bump) against v2's 65.4 x 28.6 x 18.3. A 1.2 mm PETG **chassis plate** is buried in the 2.5 mm back layer (0.5 mm of silicone between it and the Stick, 0.8 mm between it and the wrist); four **fins** grow down from it inside the sleeve's footprint, 2.2 mm thick with 1.4 mm of silicone outside them, and protrude 5.1 mm below the back. The 22 mm spring bar spans each pair (21.4 mm gap, 1.0 mm blind holes), so the strap end wraps a bar 3.5 mm under the sleeve's end, in the gap a straight sleeve leaves over a curved wrist. Strap tension goes into the plate, not the silicone. Nothing is closer than 0.5 mm to a surface and the only PETG you see is the fins.
+
+The chassis hangs in the mold from four **tabs that rest on posts on the cup rim**, entirely above the pour, so nothing gets cut near silicone: the tabs sit on 45-degree seats and slide outward until their tips meet a stop wall, which centres the chassis and sets its height. Twist them off at their 0.6 mm necks afterwards.
+
+| File | What | Print |
+|---|---|---|
+| `stl/sleeve_chassis.stl` | plate + 4 fins + 4 tabs | **PETG**, as exported (plate on the bed), brim, no supports, 100% infill, 245-250 C, fan 20-30%. Check the 1.0 mm bar holes with a spring bar tip; open with a 1 mm bit if needed |
+| `stl/sleeve_core.stl` | Stick shape + window pad + port pocket | PLA, as exported (back face down), no supports, 3 walls; the port pocket is only 0.7 mm proud so it prints without support |
+| `stl/sleeve_cup.stl` | open-top mold with four rim posts and two M3 holes in the floor | PLA, as exported (open top up), no supports, 0.16 mm |
+| `stl/sleeve_lid.stl` | optional lid with openings for the fins, tabs and posts | PLA, as exported, no supports |
+| `stl/sleeve_preview_not_for_printing.stl` | the finished silicone | don't print |
+
+**Casting** (open pour, window face down, same as v2): release on everything. Core on the floor, pad down, two M3 x 8 screws up through the cup's underside. **Mix 17 g A + 17 g B** with pigment. Syringe the lip layer and the front-button pocket first, then pour until the core's back is under about a millimetre of silicone. Lower the chassis in, fins up, one end first so the air runs out from under the plate, until the tabs land on the posts; press gently until the tab tips touch the stop walls. Top up to just above the rim, tap, then scrape the middle with a card or press the lid on. Cure 24 h (about 6 h with the cup on the printer bed at 45 C). Screws out, lift by the fins, peel the short-lip end off the core, slide the core out through the window. Twist the tabs off and shave the stubs with a blade flat on the fin. Cut the port slit: 12 mm, horizontal, centred on the USB-C end wall, where it dents under a fingernail; the wall is 1.5 mm there and 2.2 mm at the slit ends.
+
+**Strap:** spring bars into the fin holes from between the fins. The strap end sits under the sleeve's end and leaves downward.
+
 `hardware/sleeve/` is the earlier design: a thinner sleeve with a PETG lug frame cast into its back. Kept with its STLs for reference.
