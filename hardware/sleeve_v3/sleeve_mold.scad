@@ -294,7 +294,7 @@ module lid() {
 }
 
 // ---- Exports ---------------------------------------------------------------------------------------------
-if (part == "chassis")      translate([0, 0, -CH_Z0]) chassis();                          // plate on the bed, fins up
+if (part == "chassis")      translate([0, 0, CH_Z1]) rotate([180, 0, 0]) chassis();     // flipped: plate flat on the bed, fins and tabs up
 else if (part == "core")    translate([0, 0, -Z0]) core_part();
 else if (part == "cup")     translate([0, 0, CUP_H]) rotate([180, 0, 0]) cup();          // open top up
 else if (part == "lid")     translate([0, 0, LID_T + LID_GAP]) lid();                    // flat, feet up
