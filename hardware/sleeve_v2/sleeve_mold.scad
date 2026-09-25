@@ -37,7 +37,8 @@
 //      fill to above the rim. Tap the cup on the table, top up, and scrape the surface
 //      flat with a card across the rim.
 //   3. Cure overnight (24 h for the fused cup). Flex the cup and lift the sleeve out with the core inside.
-//      Snip the four staple tabs flush with the lug tips and file them smooth. Work
+//      Twist the four staple tabs off at their necks with pliers; shave any burr with a
+//      razor lying flat on the lug plate. Work
 //      one end of the core up through the window and slide the core out. Cut the port
 //      slit: one straight stroke with a fresh blade, centred across the skin, slit_len long.
 //   4. Fit the Stick: USB-C end in under the deep lip first, then stretch the short
@@ -224,10 +225,22 @@ module tab(s, grow = 0) {
 }
 // the tabs are clipped at the bar's top plane, so nothing hangs below the bed when the
 // staple prints upside down (the notches are cut from the unclipped tab and still fit)
+// V-grooves top and bottom at the tab root leave a TAB_NECK thick neck just outside the
+// lug plate's face, so the tab twists off cleanly and any burr sits on bare PETG
+TAB_NECK = 0.6; TAB_GROOVE_Y = 0.1;   // neck thickness; groove centre this far outside the side face
+module tab_grooves() {
+    zoff = (0.3 + TAB_GROOVE_Y) * TAB_L / (TAB_L + 0.3);            // the tab has already risen this much at the groove
+    depth = (TAB_T - TAB_NECK) / 2; d = depth * sqrt(2);
+    for (s = [-1, 1]) for (zc = [zoff, zoff + TAB_T])
+        translate([BAR_X, s * (BODY_HW + TAB_GROOVE_Y), zc]) rotate([45, 0, 0]) cube([TAB_W + 2, d, d], center = true);
+}
 module staple_tabs(grow = 0) {
-    intersection() {
-        union() { for (s = [-1, 1]) tab(s, grow); }
-        translate([-50, -50, -50]) cube([100, 100, 50 + BAR_Z1 + grow]);
+    difference() {
+        intersection() {
+            union() { for (s = [-1, 1]) tab(s, grow); }
+            translate([-50, -50, -50]) cube([100, 100, 50 + BAR_Z1 + grow]);
+        }
+        if (grow == 0) tab_grooves();
     }
 }
 // the notch is the tab's slot swept upward, so the staple drops in and lifts straight out
