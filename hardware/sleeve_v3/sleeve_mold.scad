@@ -39,7 +39,7 @@ part = "sleeve"; // [chassis, core, cup, lid, sleeve]
 squeeze = 0.3;          // Stick is this much bigger than the pocket, per side
 
 /* [Silicone] */
-wall = 2.6;             // long sides
+wall = 2.8;             // long sides (2.6 + room for the back round beside the fins)
 end_t = 2.2;            // end walls (Stick end -> outside)
 lip_t = 1.6;            // over the Stick's face
 over_plate = 0.5;       // silicone between the Stick's back and the chassis plate
@@ -47,6 +47,7 @@ under_plate = 1.0;      // silicone between the chassis plate and the wrist
 side_bump = 0.5;        // extra over the side buttons
 front_min = 1.6;        // silicone over the front button's top
 front_chamfer = 1.0;
+back_r = 0.8;           // round on the back (wrist-side) edge, formed by an inward lip on the cup rim
 
 /* [Chassis] */
 plate_t = 1.2;
@@ -83,7 +84,7 @@ function sx(y_on_stick) = y_on_stick - STICK_L / 2;
 function sy(x_on_stick) = STICK_W / 2 - x_on_stick;   // the Stick's x runs the other way (seen screen-up, USB-C down)
 
 // ---- Outer body ------------------------------------------------------------------------
-BODY_HW = HW + wall;            // 14.3
+BODY_HW = HW + wall;            // 14.5
 END_X = HL + end_t;             // 25.9
 BODY_R = 3.0;
 WIN = [[sx(14), sx(45.5)], [-9.5, 9.5]]; WIN_R = 3.0;
@@ -107,6 +108,7 @@ POST_WALL = 0.8;
 POST_H = -(TAB_Z0 - TAB_T - TAB_RISE - 0.2) + 0.5;     // tall enough that the stop wall covers the whole tab tip
 
 assert(BODY_HW - CH_HW >= 1.0, "not enough silicone outside the fins");
+assert(BODY_HW - back_r - CH_HW >= 0.8, "back round leaves too thin a crest beside the fins");
 FIN_CORNER_COVER = BODY_R - norm([CH_HL - (END_X - BODY_R), CH_HW - (BODY_HW - BODY_R)]);
 assert(FIN_CORNER_COVER >= 1.0, str("fin corner too close to the sleeve's rounded corner: ", FIN_CORNER_COVER));
 assert(FRONT_BUMP >= 0, "front bump negative");
@@ -121,7 +123,8 @@ module slab(l, w, r, z) { translate([0, 0, z]) linear_extrude(eps) rrect(l, w, r
 
 module body() {
     hull() {
-        slab(2 * END_X, 2 * BODY_HW, BODY_R, 0);
+        // quarter-round back edge, as a stack of slabs (the hull fills between them)
+        for (a = [0 : 15 : 90]) { inset = back_r * (1 - sin(a)); slab(2 * END_X - 2 * inset, 2 * BODY_HW - 2 * inset, BODY_R - inset, back_r * (1 - cos(a))); }
         slab(2 * END_X, 2 * BODY_HW, BODY_R, TOP - front_chamfer);
         slab(2 * END_X - 2 * front_chamfer, 2 * BODY_HW - 2 * front_chamfer, BODY_R - front_chamfer, TOP);
     }
