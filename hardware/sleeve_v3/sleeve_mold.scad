@@ -43,7 +43,7 @@ wall = 2.6;             // long sides
 end_t = 2.2;            // end walls (Stick end -> outside)
 lip_t = 1.6;            // over the Stick's face
 over_plate = 0.5;       // silicone between the Stick's back and the chassis plate
-under_plate = 0.8;      // silicone between the chassis plate and the wrist
+under_plate = 1.0;      // silicone between the chassis plate and the wrist
 side_bump = 0.5;        // extra over the side buttons
 front_min = 1.6;        // silicone over the front button's top
 front_chamfer = 1.0;
@@ -57,6 +57,7 @@ fin_drop = 5.1;         // below the back surface
 bar_in = 2.5;           // spring bar centre, in from the fin's outer end
 bar_z = -3.5;           // spring bar centre below the back
 bar_hole_d = 1.0; bar_hole_depth = 1.4;
+edge_r = 0.6;           // every convex PETG edge is rounded to this radius (plate edges fully round)
 
 /* [Charging port] */
 port = true;
@@ -76,7 +77,7 @@ BTN_XMINUS = [6.0, 11.0]; BTN_XPLUS = [19.0, 29.0]; BTN_Z = [3.6, 11.2];
 // ---- Pocket --------------------------------------------------------------------------
 CORE_L = STICK_L - 2 * squeeze; CORE_W = STICK_W - 2 * squeeze; CORE_T = STICK_T - squeeze; CORE_R = STICK_R - squeeze;
 HL = CORE_L / 2; HW = CORE_W / 2;
-back_t = under_plate + plate_t + over_plate;     // 2.5
+back_t = under_plate + plate_t + over_plate;     // 2.7
 Z0 = back_t; Z1 = back_t + CORE_T; TOP = Z1 + lip_t;
 function sx(y_on_stick) = y_on_stick - STICK_L / 2;
 function sy(x_on_stick) = STICK_W / 2 - x_on_stick;   // the Stick's x runs the other way (seen screen-up, USB-C down)
@@ -95,7 +96,7 @@ CH_HL = END_X - 2.0;                                  // 23.9: 2 mm of silicone 
 FIN_X0 = CH_HL - fin_l;                               // 15.9
 FIN_Z = -fin_drop;
 BAR_X = CH_HL - bar_in;                               // 22.4
-TAB_X = FIN_X0 + 5.5;                                 // tab centre along x
+TAB_X = FIN_X0 + 6.1;                                 // tab centre along x (whole root lands on the fin)
 TAB_W = 4.0; TAB_T = 2.0; TAB_Z0 = -1.5;              // tab root: this far above the pour surface
 TAB_RUN = 4.0;                                        // tab reaches this far out from the fin face
 TAB_RISE = TAB_RUN + 0.3;                             // ... rising this much: exactly 45 deg from its root 0.3 inside the fin
@@ -180,7 +181,7 @@ module fin_profile() {   // x-z, +x end
     hull() {
         translate([FIN_X0, CH_Z0]) square([fin_l, 0.5]);   // overlaps into the plate
         translate([CH_HL - 1.5, FIN_Z + 1.5]) circle(r = 1.5);
-        translate([FIN_X0 + 6.5, FIN_Z + 1.5]) circle(r = 1.5);
+        translate([FIN_X0 + 4.0, FIN_Z + 1.5]) circle(r = 1.5);   // fuller fin: flat bottom from here to the outer end
     }
 }
 // gw grows the tab's width (x), gz its thickness (z), gy extends its outer end along the
@@ -195,19 +196,37 @@ module tab_grooves() {
     zoff = (0.3 + TAB_GROOVE_Y);   // 45 deg: the tab has risen this much at the groove
     depth = (TAB_T - TAB_NECK) / 2; d = depth * sqrt(2);
     for (s = [-1, 1]) for (zc = [TAB_Z0 - TAB_T - zoff, TAB_Z0 - zoff])
-        translate([TAB_X, s * (CH_HW + TAB_GROOVE_Y), zc]) rotate([45, 0, 0]) cube([TAB_W + 2, d, d], center = true);
+        intersection() {   // clipped so the groove never cuts into the fin's own face
+            translate([TAB_X, s * (CH_HW + TAB_GROOVE_Y), zc]) rotate([45, 0, 0]) cube([TAB_W + 2, d, d], center = true);
+            translate([TAB_X - 5, s > 0 ? CH_HW : -CH_HW - 10, zc - 5]) cube([10, 10, 10]);
+        }
+}
+// The plate and fins are built undersize and grown by a sphere, so every outside edge of
+// the PETG is rounded (silicone wears where it rubs a sharp edge). The tabs are added
+// afterwards; they come off.
+module chassis_body() {
+    minkowski() {
+        union() {
+            translate([0, 0, CH_Z0 + edge_r]) linear_extrude(max(plate_t - 2 * edge_r, eps)) rrect(2 * CH_HL - 2 * edge_r, 2 * CH_HW - 2 * edge_r, 3 - edge_r);
+            for (m = [0, 1]) mirror([m, 0, 0]) for (s = [-1, 1])
+                translate([0, s * (LUG_Y0 + fin_t / 2), 0]) rotate([90, 0, 0]) translate([0, 0, -(fin_t - 2 * edge_r) / 2])
+                    linear_extrude(fin_t - 2 * edge_r) offset(r = -edge_r) fin_profile();
+        }
+        sphere(r = edge_r, $fn = 20);
+    }
 }
 module chassis(tabs = true) {
     difference() {
         union() {
-            translate([0, 0, CH_Z0]) linear_extrude(plate_t) rrect(2 * CH_HL, 2 * CH_HW, 3);
-            for (m = [0, 1]) mirror([m, 0, 0]) for (s = [-1, 1])
-                translate([0, s * (LUG_Y0 + fin_t / 2), 0]) rotate([90, 0, 0]) translate([0, 0, -fin_t / 2]) linear_extrude(fin_t) fin_profile();
+            chassis_body();
             if (tabs) for (m = [0, 1]) mirror([m, 0, 0]) for (s = [-1, 1]) tab(s);
         }
-        // blind spring bar holes from the slot side
+        // blind spring bar holes from the slot side, with a small lead-in
         for (m = [0, 1]) mirror([m, 0, 0]) for (s = [-1, 1])
-            translate([BAR_X, s * LUG_Y0, bar_z]) rotate([s > 0 ? -90 : 90, 0, 0]) translate([0, 0, -eps]) cylinder(d = bar_hole_d, h = bar_hole_depth + eps, $fn = 16);
+            translate([BAR_X, s * LUG_Y0, bar_z]) rotate([s > 0 ? -90 : 90, 0, 0]) {
+                translate([0, 0, -eps]) cylinder(d = bar_hole_d, h = bar_hole_depth + eps, $fn = 16);
+                translate([0, 0, -eps]) cylinder(d1 = bar_hole_d + 0.6, d2 = bar_hole_d, h = 0.3 + eps, $fn = 16);
+            }
         if (tabs) for (m = [0, 1]) mirror([m, 0, 0]) tab_grooves();
     }
 }

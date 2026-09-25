@@ -251,7 +251,10 @@ module tab_grooves() {
     zoff = (0.3 + TAB_GROOVE_Y) * TAB_L / (TAB_L + LUG_IN + 0.3);   // the tab has already risen this much at the groove
     depth = (TAB_T - TAB_NECK) / 2; d = depth * sqrt(2);
     for (s = [-1, 1]) for (zc = [zoff, zoff + TAB_T])
-        translate([BAR_X, s * (LUG_OUT + TAB_GROOVE_Y), zc]) rotate([45, 0, 0]) cube([TAB_W + 2, d, d], center = true);
+        intersection() {   // clipped so the groove never cuts into the lug plate's own face
+            translate([BAR_X, s * (LUG_OUT + TAB_GROOVE_Y), zc]) rotate([45, 0, 0]) cube([TAB_W + 2, d, d], center = true);
+            translate([BAR_X - 5, s > 0 ? LUG_OUT : -LUG_OUT - 10, zc - 5]) cube([10, 10, 10]);
+        }
 }
 module staple_tabs(grow = 0) {
     difference() {
