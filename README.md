@@ -4,9 +4,13 @@ A wrist display that shows two numbers while running: **heart rate** from a Blue
 
 The point is to keep Strava recording on the phone, untouched, and still see live numbers without buying a running watch.
 
-![The silicone band with the StickS3 in its pocket, and the band's side profile](docs/images/band-preview.png)
+![Sleeve v3: the sealed silicone sleeve from below with the PETG fins under its ends and the strap loops on the spring bars; the side view; the open-top mold with the core and chassis in place; the chassis as printed](docs/images/sleeve-v3-preview.png)
 
-*The one-piece silicone band (grey) with the StickS3 (orange) in its pocket; right, the molded side profile. Rendered from `hardware/band/stl/band_preview_not_for_printing.stl`.*
+*Sleeve v3, the current wrist mount: a sealed silicone jacket (grey) around the Stick, 52 x 29 x 18 mm, with a PETG chassis (orange) buried in its back whose four fins carry standard 22 mm spring bars under the sleeve's ends. Top left from below with the strap loops shown in black; bottom left the one-piece open-top mold with the core screwed down and the chassis hanging from its tabs; bottom right the chassis as printed. Rendered from `hardware/sleeve_v3/`.*
+
+The earlier one-piece silicone band (a pocket in a cast band, no strap hardware) is still in `hardware/band/`:
+
+![The silicone band with the StickS3 in its pocket, and the band's side profile](docs/images/band-preview.png)
 
 ## How it fits together
 
@@ -36,8 +40,10 @@ The Stick never talks to the strap. It receives two numbers and displays them.
 
 ## Status
 
-- **Hardware:** done and fit-checked against M5Stack's official StickS3 model. Not yet printed or cast.
-- **Firmware and app:** not started. See the READMEs in those folders for what they need to do.
+- **Band:** printed, cast and worn; fits well.
+- **Sleeve:** v2 printed and cast, fits the Stick and the strap. v3 (lugs under the ends, 13 mm shorter) is designed, verified and being printed; not yet cast.
+- **Clip mount:** designed, not printed.
+- **Firmware and app:** working. Real chest-strap heart rate reaches the Stick over BLE while Strava records the same strap; GPS pace is implemented but the outdoor walk test and the Stick battery run-down are still to do.
 
 ## Design decisions worth knowing
 
