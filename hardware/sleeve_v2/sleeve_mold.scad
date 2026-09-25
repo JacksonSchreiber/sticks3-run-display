@@ -106,8 +106,11 @@ BAR_Z0 = back_t;  BAR_Z1 = back_t + STAPLE_H;
 WIN = [[sx(14), sx(45.5)], [-9.5, 9.5]];   // screen window; starts above the front button
 WIN_R = 3.0;           // generous corners: the core comes out through this window
 BAR_X = STAPLE_X0 + bar_x_off;              // spring bar centre
-LUG_T = BODY_HW - lug_gap / 2;              // lug plates fill from the strap gap to the side face
+LUG_IN = 0.3;                               // lug plate faces sit this far inside the sleeve's sides,
+LUG_OUT = BODY_HW - LUG_IN;                 //   pressed against pads on the cup wall: no film over them
 LUG_Y0 = lug_gap / 2;
+LUG_T = LUG_OUT - LUG_Y0;                   // lug plates fill from the strap gap to the pad
+BAR_END_IN = 1.0;                           // bar ends stop this far inside the plate faces (buried above the plates)
 FRONT_BUMP = FRONT_BTN[2] + front_min - lip_t;   // bump above the front face
 
 assert(FRONT_BUMP >= 0 && FRONT_BUMP <= 1.5, "front bump out of range");
@@ -155,6 +158,22 @@ module front_bump(extra = 0) {
 }
 
 module envelope() { body(); side_bumps(); front_bump(); }
+
+// pads on the cup wall that the lug plates press against: a LUG_IN thick shell of the nose
+// outline over the plates' embedded footprint (sides, corners and tip; not the strap gap),
+// PAD_M larger than the plates so the recess outlines them cleanly. No silicone can form
+// over the plates, so they come out as crisp recessed rectangles instead of a thin film.
+PAD_M = 0.3;
+module nose_shell2d(t) { difference() { rrect(2 * NOSE_HL, 2 * BODY_HW, 6); rrect(2 * NOSE_HL - 2 * t, 2 * BODY_HW - 2 * t, 6 - t); } }
+module lug_pads() {
+    for (m = [0, 1]) mirror([m, 0, 0]) difference() {
+        intersection() {
+            translate([0, 0, -1]) linear_extrude(1 + back_t + PAD_M) nose_shell2d(LUG_IN);
+            translate([STAPLE_X0 - PAD_M, -50, -50]) cube([100, 100, 100]);
+        }
+        translate([-50, -(LUG_Y0 - PAD_M), -50]) cube([100, 2 * (LUG_Y0 - PAD_M), 100]);
+    }
+}
 
 // ---- Core (the Stick's shape, in two halves) --------------------------------------
 module core_full() {
@@ -219,7 +238,7 @@ module lug_profile(grow = 0) {
 TAB_W = 4.0; TAB_T = 2.0; TAB_L = 6.0;
 module tab(s, grow = 0) {
     hull() {
-        translate([BAR_X - TAB_W / 2 - grow, s > 0 ? BODY_HW - 0.3 : -(BODY_HW - 0.3) - eps, -grow]) cube([TAB_W + 2 * grow, eps, TAB_T + 2 * grow]);
+        translate([BAR_X - TAB_W / 2 - grow, s > 0 ? LUG_OUT - 0.3 : -(LUG_OUT - 0.3) - eps, -grow]) cube([TAB_W + 2 * grow, eps, TAB_T + 2 * grow]);
         translate([BAR_X - TAB_W / 2 - grow, s > 0 ? BODY_HW + TAB_L + grow : -(BODY_HW + TAB_L + grow) - eps, TAB_L - grow]) cube([TAB_W + 2 * grow, eps, TAB_T + 2 * grow]);
     }
 }
@@ -229,10 +248,10 @@ module tab(s, grow = 0) {
 // lug plate's face, so the tab twists off cleanly and any burr sits on bare PETG
 TAB_NECK = 0.6; TAB_GROOVE_Y = 0.1;   // neck thickness; groove centre this far outside the side face
 module tab_grooves() {
-    zoff = (0.3 + TAB_GROOVE_Y) * TAB_L / (TAB_L + 0.3);            // the tab has already risen this much at the groove
+    zoff = (0.3 + TAB_GROOVE_Y) * TAB_L / (TAB_L + LUG_IN + 0.3);   // the tab has already risen this much at the groove
     depth = (TAB_T - TAB_NECK) / 2; d = depth * sqrt(2);
     for (s = [-1, 1]) for (zc = [zoff, zoff + TAB_T])
-        translate([BAR_X, s * (BODY_HW + TAB_GROOVE_Y), zc]) rotate([45, 0, 0]) cube([TAB_W + 2, d, d], center = true);
+        translate([BAR_X, s * (LUG_OUT + TAB_GROOVE_Y), zc]) rotate([45, 0, 0]) cube([TAB_W + 2, d, d], center = true);
 }
 module staple_tabs(grow = 0) {
     difference() {
@@ -253,13 +272,13 @@ module staple(end = 1, grow = 0, hole = true, tabs = true) {
         if (tabs) staple_tabs(grow);
         intersection() {
         // keep the staple inside the nose's rounded footprint (the lug tips get rounded too)
-        translate([0, 0, -50]) linear_extrude(100) rrect(2 * NOSE_HL - 0.1 + 2 * grow, 2 * BODY_HW - 0.1 + 2 * grow, 6 + grow);
+        translate([0, 0, -50]) linear_extrude(100) rrect(2 * NOSE_HL - 2 * LUG_IN + 2 * grow, 2 * BODY_HW - 2 * LUG_IN + 2 * grow, 6 - LUG_IN + grow);
         union() {
-            // bar across the full width, buried in the end block
-            translate([STAPLE_X0 - grow, -BODY_HW + 0.05, BAR_Z0 - grow]) cube([STAPLE_T + 2 * grow, 2 * BODY_HW - 0.1, STAPLE_H + 2 * grow]);
-            // lug plates from the strap gap out to the side face (0.05 in from it)
-            for (s = [-1, 1]) translate([0, s * (LUG_Y0 + (LUG_T - 0.05) / 2), 0]) rotate([90, 0, 0])
-                translate([0, 0, -(LUG_T - 0.05) / 2 - grow]) linear_extrude(LUG_T - 0.05 + 2 * grow) lug_profile(grow);
+            // bar across the width, through both plates, ends buried
+            translate([STAPLE_X0 - grow, -(LUG_OUT - BAR_END_IN), BAR_Z0 - grow]) cube([STAPLE_T + 2 * grow, 2 * (LUG_OUT - BAR_END_IN), STAPLE_H + 2 * grow]);
+            // lug plates from the strap gap out to the pads
+            for (s = [-1, 1]) translate([0, s * (LUG_Y0 + LUG_T / 2), 0]) rotate([90, 0, 0])
+                translate([0, 0, -LUG_T / 2 - grow]) linear_extrude(LUG_T + 2 * grow) lug_profile(grow);
         }
         }
         }
@@ -274,6 +293,7 @@ module silicone() {
         envelope();
         core_full();
         if (port) tunnel_block();
+        lug_pads();
         // cut the window clear through (the pad's top is coplanar with the face)
         translate([(WIN[0][0] + WIN[0][1]) / 2, 0, TOP - 1]) linear_extrude(3) rrect(WIN[0][1] - WIN[0][0], WIN[1][1] - WIN[1][0], WIN_R);
         staples();
@@ -291,8 +311,10 @@ module block(z0, h) { translate([0, 0, z0]) linear_extrude(h) rrect(2 * MX, 2 * 
 
 module cup_body() {
     difference() {
-        block(0, CUP_H);
-        envelope();
+        union() {
+            difference() { block(0, CUP_H); envelope(); }
+            intersection() { lug_pads(); block(0, CUP_H); }
+        }
         // notches in the rim for the staple tabs: they rest on the sloped notch floors,
         // which sets the staple's height, and the notch sides set its position
         tab_notches(notch_clear);
