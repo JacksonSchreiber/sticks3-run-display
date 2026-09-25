@@ -8,3 +8,7 @@ app/build/
 app/app/build/
 app/local.properties
 *.apk
+
+# exported slicer output (keep only the source .3mf projects)
+hardware/**/*.gcode
+tools/bedhold_45c.gcode
