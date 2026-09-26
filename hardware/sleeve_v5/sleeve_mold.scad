@@ -177,18 +177,30 @@ module core_part() {
 // passes under the crossbar and under the raised strap end; the peg drops into a hole.
 BK_Z0 = lift; BK_Z1 = lift + strap_t;                 // the raised strap's thickness band
 BK_HW = strap_w / 2 + bk_rail_w;                      // rails outside the strap's width
+bk_r = 0.6;   // rounding on everything you touch: rails, crossbar, plate's outer edges. Plate's inner face and tongues stay square (they seal / are buried)
+module buckle_frame_raw(grow = 0, shrink = 0) {
+    x0 = X_SHORT_END;
+    // plate (the part outside the cavity face gets rounded; the inner face is kept flat by the intersection below)
+    translate([x0 - grow + shrink - 1, -(strap_w / 2 + grow - shrink), BK_Z0 - grow + shrink]) cube([bk_plate_t + 2 * grow - 2 * shrink + 1, strap_w + 2 * grow - 2 * shrink, strap_t + 2 * grow - 2 * shrink]);
+    for (s = [-1, 1]) translate([x0 - grow + shrink - 1, s * (BK_HW - bk_rail_w / 2) - bk_rail_w / 2 - grow + shrink, BK_Z0 - grow + shrink]) cube([bk_plate_t + bk_len + 2 * grow - 2 * shrink + 1, bk_rail_w + 2 * grow - 2 * shrink, strap_t + 2 * grow - 2 * shrink]);
+    translate([x0 + bk_plate_t + bk_len - bk_bar_t - grow + shrink, -BK_HW - grow + shrink, BK_Z0 - grow + shrink]) cube([bk_bar_t + 2 * grow - 2 * shrink, 2 * BK_HW + 2 * grow - 2 * shrink, strap_t + 2 * grow - 2 * shrink]);
+}
 module buckle(grow = 0) {
     x0 = X_SHORT_END;
-    // plate
-    translate([x0 - grow, -(strap_w / 2 + grow), BK_Z0 - grow]) cube([bk_plate_t + 2 * grow, strap_w + 2 * grow, strap_t + 2 * grow]);
-    // tongues into the strap, buried mid-thickness
+    if (grow == 0) {
+        // rounded frame, cut flat at the plate's inner face (x = x0) so it seals the cavity end
+        intersection() {
+            minkowski() { buckle_frame_raw(0, bk_r); sphere(r = bk_r, $fn = 16); }
+            translate([x0, -50, -50]) cube([100, 100, 100]);
+        }
+    } else {
+        buckle_frame_raw(grow, 0);
+    }
+    // tongues into the strap, buried mid-thickness (square: they are buried, and the holes key the silicone)
     for (s = [-1, 1]) translate([x0 - tongue_l - grow, s * (strap_w / 2 - 1.5 - tongue_w / 2) - tongue_w / 2 - grow, BK_Z0 + (strap_t - tongue_t) / 2 - grow])
         difference() { cube([tongue_l + eps + 2 * grow, tongue_w + 2 * grow, tongue_t + 2 * grow]); if (grow == 0) for (h = [3, 7]) translate([h, tongue_w / 2, -1]) cylinder(d = 2.2, h = 5, $fn = 16); }
-    // rails and crossbar, above the tail's passage
-    for (s = [-1, 1]) translate([x0 - grow, s * (BK_HW - bk_rail_w / 2) - bk_rail_w / 2 - grow, BK_Z0 - grow]) cube([bk_plate_t + bk_len + 2 * grow, bk_rail_w + 2 * grow, strap_t + 2 * grow]);
-    translate([x0 + bk_plate_t + bk_len - bk_bar_t - grow, -BK_HW - grow, BK_Z0 - grow]) cube([bk_bar_t + 2 * grow, 2 * BK_HW + 2 * grow, strap_t + 2 * grow]);
-    // peg, pointing at the wrist
-    translate([END_X + PEG_S, 0, 0.4 - grow]) { cylinder(d = peg_d + 2 * grow, h = BK_Z0 - 0.4 + eps + grow); translate([0, 0, 0]) sphere(d = peg_d + 2 * grow); }
+    // peg, pointing at the wrist, rounded tip
+    translate([END_X + PEG_S, 0, 0.4 - grow]) { cylinder(d = peg_d + 2 * grow, h = BK_Z0 - 0.4 + eps + grow); sphere(d = peg_d + 2 * grow); }
 }
 
 // ---- silicone preview ------------------------------------------------------------------------------------
