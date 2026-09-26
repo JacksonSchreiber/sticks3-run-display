@@ -89,6 +89,24 @@ One mold piece, one core, two staples:
 
 **Fitting the Stick:** USB-C end first, under the deep lip, then stretch the short lip over the top end. Spring bars (0.8 mm tips) through the lugs; open the holes with a 1.0 mm bit if a print closed them. To charge, push the cable straight into the slit at the USB-C end; the tunnel guides it onto the port. Set `port = false` in the .scad for a sleeve without the tunnel.
 
+## Band v5 (`hardware/sleeve_v5/`)
+
+![Band v5: the one-piece silicone band with the sealed jacket and peg buckle, from the front and from the wrist side; the single open-top cup; the buckle as printed](images/sleeve-v5-preview.png)
+
+The Fitbit-style answer: **band and jacket are one silicone part**, cast in one open pour. The jacket is v4's sealed pocket (1.5 mm back, 0.8 mm lip, port slit, button pads) with pebble styling (R4.5 plan corners, R2.5 round on the front perimeter, 0.8 round on the wrist edge); the straps grow straight out of its end walls, flaring from 22 mm to the jacket's full 29 mm width and thickening from 2.8 to 5 mm over the last 12 mm, with an R3 fillet up the end wall, so the joint is over 140 mm2 of silicone with no inside corner. No frame, no lugs, no loops: the band pulls on the jacket the way v1's did, through ten times the rubber. 16.1 mm tall, 17.0 at the button.
+
+**Closure:** a PETG peg buckle cast into the end of the short strap. A plate closes the strap end (its outer face shows), two tongues with holes anchor it mid-thickness in the strap, two rails carry a crossbar with a 2.7 mm peg pointing at the wrist. The long strap passes under the crossbar, the peg drops into one of seven cast holes (5 mm pitch, sizes 155-185 mm), and the tail tucks under the short strap, whose last 12 mm are lifted 3 mm to let it through. Rigid frame, rigid peg: a one-thumb press, unlike v1's silicone stud.
+
+| File | What | Print |
+|---|---|---|
+| `stl/band_buckle.stl` | peg buckle | **PETG**, as exported (on its side), brim, no supports, 100% infill |
+| `stl/band_core.stl` | Stick shape + window pad + port pocket | PLA, as exported, no supports, 3 walls |
+| `stl/band_cup.stl` | one 210 x 42 mm open-top mold: jacket pocket, strap troughs, buckle seat, M3 clamp and M4 jack holes, hole-pin recesses | PLA, **placed diagonally** on the bed, brim, no supports, 0.16 mm |
+| `stl/band_lid.stl` | forms the wrist face: fillet ridge, the boss that lifts the short strap's end, seven pins for the holes, vents | PLA, diagonally, no supports |
+| `stl/band_preview_not_for_printing.stl` | the finished part | don't print |
+
+**Casting:** release on everything. Core on the floor, pad down, two M3 x 8 up through the cup. Buckle into its seat at the short end, plate against the strap cavity, tongues pointing in. **Mix 22 g A + 22 g B** with pigment (cast volume 17.6 cm3, about 21 g). Syringe the lip layer and the front-button pocket, then pour along the whole length to just above the rim, tap. Lid on, one end first, press onto the rim; excess bleeds from the vents. Cure 24 h or 6 h at 45 C. **Demolding:** cut the flash round the lid, lever it off (the boss and pins pull out of the strap). M3 screws out, card down the jacket's long sides, M4 screws into the jack holes until the core and band rise. Peel the straps out, slide the core out through the window, punch any skin left in the holes, cut the port slit.
+
 ## Sleeve v4 (`hardware/sleeve_v4/`)
 
 ![Sleeve v4: bare PETG frame flush with the back, fins under the ends; side view; the cup with the core; the chassis as printed](images/sleeve-v4-preview.png)

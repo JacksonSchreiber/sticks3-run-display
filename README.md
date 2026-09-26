@@ -4,9 +4,9 @@ A wrist display that shows two numbers while running: **heart rate** from a Blue
 
 The point is to keep Strava recording on the phone, untouched, and still see live numbers without buying a running watch.
 
-![Sleeve v4: the sealed silicone sleeve from below with the PETG fins under its ends and the strap loops on the spring bars; the side view; the open-top mold with the core and chassis in place; the chassis as printed](docs/images/sleeve-v4-preview.png)
+![Band v5: one-piece silicone band with the sealed jacket and a PETG peg buckle, from the front and the wrist side; the single open-top mold; the buckle as printed](docs/images/sleeve-v5-preview.png)
 
-*Sleeve v4, the current wrist mount: a sealed silicone jacket (grey) around the Stick, 52 x 29 x 16 mm, with a PETG frame (orange) flush in its back whose four fins carry standard 22 mm spring bars under the sleeve's ends. Top left from below with the strap loops shown in black; bottom left the one-piece open-top mold with the core screwed down; bottom right the frame as printed. Rendered from `hardware/sleeve_v4/`.*
+*Band v5, the current design: a one-piece silicone band (grey) that flows out of a sealed jacket around the Stick, 16 mm tall, closed by a PETG peg buckle (orange) cast into the short strap. Top row from the front and from the wrist side; bottom left the single open-top mold with the core screwed down and the buckle seated; bottom right the buckle as printed. Rendered from `hardware/sleeve_v5/`.*
 
 The earlier one-piece silicone band (a pocket in a cast band, no strap hardware) is still in `hardware/band/`:
 
@@ -32,7 +32,8 @@ The Stick never talks to the strap. It receives two numbers and displays them.
 | `hardware/clip/` | printed cradle that bolts to a steel spring clip (source + STLs) |
 | `hardware/sleeve_v2/` | sealed silicone sleeve with cast-in lug staples for a standard 22 mm watch strap (source + STLs) |
 | `hardware/sleeve_v3/` | sealed sleeve with the lugs under the ends (buried PETG frame with fins), 52 mm long (source + STLs) |
-| `hardware/sleeve_v4/` | current: v3 with the frame flush in the back, 16 mm tall (source + STLs) |
+| `hardware/sleeve_v4/` | v3 with the frame flush in the back, 16 mm tall (source + STLs) |
+| `hardware/sleeve_v5/` | current: one-piece silicone band + sealed jacket with a PETG peg buckle, Fitbit-style (source + STLs) |
 | `hardware/sleeve/` | earlier sleeve with a cast-in lug frame; superseded, kept for reference |
 | `firmware/` | StickS3 firmware — not started |
 | `app/` | Android companion app — not started |
@@ -42,7 +43,7 @@ The Stick never talks to the strap. It receives two numbers and displays them.
 ## Status
 
 - **Band:** printed, cast and worn; fits well.
-- **Sleeve:** v2 printed and cast, fits the Stick and the strap. v3 (lugs under the ends, 13 mm shorter) cast once: fit and strap work, but it sat 1 mm higher than the band and the first mold locked. v4 (frame flush with the back, 16 mm tall) is designed and verified, not yet printed.
+- **Sleeve:** v2 printed and cast, fits the Stick and the strap. v3 (lugs under the ends, 13 mm shorter) cast once: fit and strap work, but it sat 1 mm higher than the band and the first mold locked. v4 (frame flush with the back, 16 mm tall) is designed and verified. v5 drops the separate strap altogether: a one-piece band with the sealed jacket and a PETG peg buckle, designed and verified, not yet printed.
 - **Clip mount:** designed, not printed.
 - **Firmware and app:** working. Real chest-strap heart rate reaches the Stick over BLE while Strava records the same strap; GPS pace is implemented but the outdoor walk test and the Stick battery run-down are still to do.
 
