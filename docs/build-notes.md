@@ -99,7 +99,7 @@ The Fitbit-style answer: **band and jacket are one silicone part**, cast in one 
 
 | File | What | Print |
 |---|---|---|
-| `stl/band_buckle.stl` | peg buckle | **PETG**, as exported (frame flat, peg up), brim, no supports, 100% infill, 0.16 mm. The two thin ribs under the tongues are print aids: snap them off before casting (the stubs end up buried in the strap) |
+| `stl/band_buckle.stl` | peg buckle | **PETG**, as exported (frame flat, peg up), brim, no supports, 100% infill, 0.16 mm. The four thin posts under the tongues are print aids: snap them off before casting (the stubs end up buried in the strap) |
 | `stl/band_core.stl` | Stick shape + window pad + port pocket | PLA, as exported, no supports, 3 walls |
 | `stl/band_cup.stl` | one 210 x 42 mm open-top mold: jacket pocket, strap troughs, buckle seat, M3 clamp and M4 jack holes, hole-pin recesses | PLA, **placed diagonally** on the bed, brim, no supports, 0.16 mm |
 | `stl/band_lid.stl` | forms the wrist face: fillet ridge, the boss that lifts the short strap's end, seven pins for the holes, vents | PLA, diagonally, no supports |

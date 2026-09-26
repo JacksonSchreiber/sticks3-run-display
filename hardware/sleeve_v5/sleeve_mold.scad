@@ -6,7 +6,7 @@
 //
 // Parts (set `part`, or use the Customizer):
 //   "buckle"  PETG x1, 100% infill. Print as exported (frame flat, peg up), brim, no supports;
-//             the two thin ribs under the tongues are print aids: snap them off afterwards.
+//             the four thin posts under the tongues are print aids: snap them off afterwards.
 //   "core"    PLA. Print as exported (back face down), no supports.
 //   "cup"     PLA. One long open-top mold: jacket pocket in the middle, strap troughs either
 //             side, a seat for the buckle at the short strap's end, M3 clamp + M4 jack holes.
@@ -190,8 +190,9 @@ module buckle(grow = 0, print_ribs = false) {
     x0 = X_SHORT_END;
     // sacrificial print ribs: stand each tongue on the bed when the buckle prints frame-flat,
     // peg up. Snap them off before casting; the stubs are buried in the strap.
-    if (print_ribs) for (s = [-1, 1]) translate([x0 - tongue_l + 0.5, s * (strap_w / 2 - 1.5 - tongue_w / 2) - 0.3, BK_Z0 + (strap_t + tongue_t) / 2 - eps])
-        cube([tongue_l - 1.0, 0.6, BK_Z1 - (BK_Z0 + (strap_t + tongue_t) / 2) + eps]);
+    // two single-line posts per tongue (0.4 wide, 1.5 long), so they snap off with a fingernail
+    if (print_ribs) for (s = [-1, 1], xo = [1.0, tongue_l - 3.0]) translate([x0 - tongue_l + xo, s * (strap_w / 2 - 1.5 - tongue_w / 2) - 0.2, BK_Z0 + (strap_t + tongue_t) / 2 - eps])
+        cube([1.5, 0.4, BK_Z1 - (BK_Z0 + (strap_t + tongue_t) / 2) + eps]);
     if (grow == 0) {
         // rounded frame, cut flat at the plate's inner face (x = x0) so it seals the cavity end
         intersection() {
