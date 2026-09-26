@@ -251,9 +251,12 @@ module cup() {
         translate([0, 0, -1]) linear_extrude(1 + REBATE_D) footprint2d(RIDGE_OVER + 0.1);   // rebate for the lid ridge
         buckle(0.2);                                                                     // seat for the buckle (plate seals the cavity end)
         translate([0, 0, -1]) linear_extrude(1 + lift + eps) lift_outline2d(0.1);       // room for the lid boss under the lifted strap end
-        // open pocket round the buckle frame, from the plate's back face out, up to the seat's ceiling:
-        // the plate (full strap width) is what closes the strap cavity; the rails beside it sit in the open
-        translate([X_SHORT_END - 0.2, -BK_HW - 2, -1]) cube([bk_plate_t + bk_len + 4.2, 2 * BK_HW + 4, 1 + BK_Z1 + 0.2]);
+        // open pocket round the buckle frame, starting 0.2 outside the plate's outer face, so the seat
+        // keeps a wall the plate bears on when the pour pushes it outward (the rails pass through
+        // that wall in their own clearance slots)
+        translate([X_SHORT_END + bk_plate_t + 0.2, -BK_HW - 2, -1]) cube([bk_len + 4, 2 * BK_HW + 4, 1 + BK_Z1 + 0.2]);
+        // and nothing above the plate or the rail roots, so the buckle drops in and lifts out straight
+        translate([X_SHORT_END - 0.5, -(BK_HW + 0.2), -1]) cube([bk_plate_t + 0.7, 2 * (BK_HW + 0.2), 1 + lift + 0.2]);
         for (p = SCREWS) translate([p[0], p[1], 0]) { translate([0, 0, TOP - 1]) cylinder(d = screw_d + 0.4, h = 20); translate([0, 0, CUP_H - screw_head_h]) cylinder(d = screw_head_d, h = screw_head_h + 1); }
         for (p = JACKS) translate([p[0], p[1], TOP - 1]) cylinder(d = jack_d, h = 20);
         // shallow recesses under the hole pins so the holes cast through cleanly
