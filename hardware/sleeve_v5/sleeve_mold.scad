@@ -234,6 +234,7 @@ module band() {
 margin = 6; cup_floor = 4;
 CUP_H = TOP + FRONT_BUMP + cup_floor;
 LID_T = 3.0; RIDGE_OVER = 0.15; REBATE_D = 0.9;
+seat_wall = 1.5;        // cup wall outside the buckle plate that takes the pour pressure
 module footprint2d(o) { offset(r = o) outline2d(); }
 module block(z0, h) { translate([0, 0, z0]) linear_extrude(h) offset(r = margin) offset(delta = 0) outline2d(); }
 module lid_ridge() {
@@ -254,9 +255,11 @@ module cup() {
         // open pocket round the buckle frame, starting 0.2 outside the plate's outer face, so the seat
         // keeps a wall the plate bears on when the pour pushes it outward (the rails pass through
         // that wall in their own clearance slots)
-        translate([X_SHORT_END + bk_plate_t + 0.2, -BK_HW - 2, -1]) cube([bk_len + 4, 2 * BK_HW + 4, 1 + BK_Z1 + 0.2]);
-        // and nothing above the plate or the rail roots, so the buckle drops in and lifts out straight
+        translate([X_SHORT_END + bk_plate_t + 0.2 + seat_wall, -BK_HW - 2, -1]) cube([bk_len + 4, 2 * BK_HW + 4, 1 + BK_Z1 + 0.2]);
+        // nothing above the plate, and open-topped slots for the rails through the seat wall, so the
+        // buckle drops in and lifts out straight
         translate([X_SHORT_END - 0.5, -(BK_HW + 0.2), -1]) cube([bk_plate_t + 0.7, 2 * (BK_HW + 0.2), 1 + lift + 0.2]);
+        for (s = [-1, 1]) translate([X_SHORT_END - 0.5, s * (BK_HW - bk_rail_w / 2) - bk_rail_w / 2 - 0.2, -1]) cube([bk_plate_t + 0.7 + seat_wall + 0.2, bk_rail_w + 0.4, 1 + BK_Z1 + 0.2]);
         for (p = SCREWS) translate([p[0], p[1], 0]) { translate([0, 0, TOP - 1]) cylinder(d = screw_d + 0.4, h = 20); translate([0, 0, CUP_H - screw_head_h]) cylinder(d = screw_head_d, h = screw_head_h + 1); }
         for (p = JACKS) translate([p[0], p[1], TOP - 1]) cylinder(d = jack_d, h = 20);
         // shallow recesses under the hole pins so the holes cast through cleanly
