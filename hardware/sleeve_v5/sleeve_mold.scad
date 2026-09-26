@@ -5,7 +5,8 @@
 // the tail tucks under the short strap. All silicone except the buckle; no frame.
 //
 // Parts (set `part`, or use the Customizer):
-//   "buckle"  PETG x1, 100% infill. Print as exported (on its side), brim, no supports.
+//   "buckle"  PETG x1, 100% infill. Print as exported (frame flat, peg up), brim, no supports;
+//             the two thin ribs under the tongues are print aids: snap them off afterwards.
 //   "core"    PLA. Print as exported (back face down), no supports.
 //   "cup"     PLA. One long open-top mold: jacket pocket in the middle, strap troughs either
 //             side, a seat for the buckle at the short strap's end, M3 clamp + M4 jack holes.
@@ -185,8 +186,12 @@ module buckle_frame_raw(grow = 0, shrink = 0) {
     for (s = [-1, 1]) translate([x0 - grow + shrink - 1, s * (BK_HW - bk_rail_w / 2) - bk_rail_w / 2 - grow + shrink, BK_Z0 - grow + shrink]) cube([bk_plate_t + bk_len + 2 * grow - 2 * shrink + 1, bk_rail_w + 2 * grow - 2 * shrink, strap_t + 2 * grow - 2 * shrink]);
     translate([x0 + bk_plate_t + bk_len - bk_bar_t - grow + shrink, -BK_HW - grow + shrink, BK_Z0 - grow + shrink]) cube([bk_bar_t + 2 * grow - 2 * shrink, 2 * BK_HW + 2 * grow - 2 * shrink, strap_t + 2 * grow - 2 * shrink]);
 }
-module buckle(grow = 0) {
+module buckle(grow = 0, print_ribs = false) {
     x0 = X_SHORT_END;
+    // sacrificial print ribs: stand each tongue on the bed when the buckle prints frame-flat,
+    // peg up. Snap them off before casting; the stubs are buried in the strap.
+    if (print_ribs) for (s = [-1, 1]) translate([x0 - tongue_l + 0.5, s * (strap_w / 2 - 1.5 - tongue_w / 2) - 0.3, BK_Z0 + (strap_t + tongue_t) / 2 - eps])
+        cube([tongue_l - 1.0, 0.6, BK_Z1 - (BK_Z0 + (strap_t + tongue_t) / 2) + eps]);
     if (grow == 0) {
         // rounded frame, cut flat at the plate's inner face (x = x0) so it seals the cavity end
         intersection() {
@@ -273,7 +278,7 @@ module lid() {
 }
 
 // ---- exports ----------------------------------------------------------------------------------------------------
-if (part == "buckle")      translate([0, 0, BK_HW]) rotate([90, 0, 0]) translate([-X_SHORT_END, 0, 0]) buckle();   // on its side
+if (part == "buckle")      translate([0, 0, BK_Z1]) rotate([180, 0, 0]) translate([-X_SHORT_END - 6, 0, 0]) buckle(print_ribs = true);   // frame flat on the bed, peg up, tongues on their ribs
 else if (part == "core")   translate([0, 0, -Z0]) core_part();
 else if (part == "cup")    translate([0, 0, CUP_H]) rotate([180, 0, 0]) cup();
 else if (part == "lid")    translate([0, 0, LID_T]) lid();
