@@ -269,6 +269,8 @@ module lid() {
             n = 24; s_end = short_len + bk_plate_t + 0.2;
             for (k = [0 : n - 1]) { s0 = S_A + (s_end - S_A) * k / n; s1 = S_A + (s_end - S_A) * (k + 1) / n;
                 hull() { translate([END_X + s0, -w_at(s0) / 2, -eps]) cube([eps, w_at(s0), lift_at(s0) + eps]); translate([END_X + s1, -w_at(s1) / 2, -eps]) cube([eps, w_at(s1), lift_at(s1) + eps]); } }
+            // 0.2 mm step over the buckle plate: the lid presses the plate onto its seat floor
+            translate([X_SHORT_END - 0.5, -(strap_w / 2 - 0.2), -eps]) cube([bk_plate_t + 0.7, strap_w - 0.4, lift + 0.2 + eps]);
             // pins for the holes
             for (i = [0 : hole_count - 1]) translate([-(END_X + hole_s(i)), 0, -eps]) cylinder(d = hole_d, h = strap_t + 0.5);
         }
