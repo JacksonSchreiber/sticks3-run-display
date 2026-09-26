@@ -57,7 +57,7 @@ tail = 25;              // long strap beyond the last hole
 
 /* [Buckle] */
 bk_plate_t = 1.5; bk_rail_w = 3.0; bk_len = 12; bk_bar_t = 3.0; bk_clear = 3.1;
-peg_d = 2.4; peg_head_d = 3.3; tongue_l = 10; tongue_w = 6; tongue_t = 1.2;   // headed peg: the 3.0 hole snaps over the head onto the neck
+peg_d = 2.4; peg_bump = 0.9; PEG_TIP = -1.2; tongue_l = 10; tongue_w = 6; tongue_t = 1.2;   // peg neck 2.4 with a one-sided 0.9 bump: the 3.0 hole snaps over it
 
 /* [Charging port] */
 port = true; port_w = 14.0; port_h = 7.5; port_from_face = 4.1; skin_t = 1.5; slit_len = 12.0;
@@ -200,13 +200,17 @@ module buckle(grow = 0) {
     for (s = [-1, 1]) translate([x0 - tongue_l - grow, s * (strap_w / 2 - 1.5 - tongue_w / 2) - tongue_w / 2 - grow, BK_Z0 + (strap_t - tongue_t) / 2 - grow])
         difference() { cube([tongue_l + 0.5 + 2 * grow, tongue_w + 2 * grow, tongue_t + 2 * grow]);  /* runs 0.5 into the plate */ if (grow == 0) for (h = [3, 7]) translate([h, tongue_w / 2, -1]) cylinder(d = 2.2, h = 5, $fn = 16); }
     // peg, pointing at the wrist, rounded tip
-    // peg: 45-degree tip, short head, 45-degree shoulder back to the neck (prints on its side without islands)
+    // peg: passes through the long strap (2.8) and 1.2 mm beyond its wrist face; a one-sided
+    // bump on the +y edge (0.9 proud, 45-degree ramps) is what the 3.0 hole snaps over.
+    // One-sided so it prints on its side (+y up) with no overhang or island.
     translate([END_X + PEG_S, 0, 0]) {
-        tip = (peg_head_d - 1.4) / 2; head = 0.6; sh = (peg_head_d - peg_d) / 2;
-        translate([0, 0, 0.2 - grow]) cylinder(d1 = 1.4 + 2 * grow, d2 = peg_head_d + 2 * grow, h = tip);
-        translate([0, 0, 0.2 + tip - eps]) cylinder(d = peg_head_d + 2 * grow, h = head + 2 * eps);
-        translate([0, 0, 0.2 + tip + head]) cylinder(d1 = peg_head_d + 2 * grow, d2 = peg_d + 2 * grow, h = sh);
-        translate([0, 0, 0.2 + tip + head + sh - eps]) cylinder(d = peg_d + 2 * grow, h = BK_Z0 + 0.5 - (0.2 + tip + head + sh) + grow);   // neck, 0.5 into the crossbar
+        translate([0, 0, PEG_TIP - grow]) cylinder(d1 = 1.4 + 2 * grow, d2 = peg_d + 2 * grow, h = 0.5 + grow);
+        translate([0, 0, PEG_TIP + 0.5 - eps]) cylinder(d = peg_d + 2 * grow, h = BK_Z0 + 0.5 - (PEG_TIP + 0.5) + eps);
+        hull() {
+            translate([0, 0, PEG_TIP + 0.5]) cylinder(d = peg_d + 2 * grow, h = eps);
+            translate([0, peg_bump, PEG_TIP + 0.5 + peg_bump]) cylinder(d = peg_d + 2 * grow, h = eps);
+            translate([0, 0, PEG_TIP + 0.5 + 2 * peg_bump]) cylinder(d = peg_d + 2 * grow, h = eps);
+        }
     }
 }
 
