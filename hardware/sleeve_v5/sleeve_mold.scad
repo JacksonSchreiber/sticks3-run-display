@@ -57,7 +57,7 @@ tail = 25;              // long strap beyond the last hole
 
 /* [Buckle] */
 bk_plate_t = 1.5; bk_rail_w = 3.0; bk_len = 12; bk_bar_t = 3.0; bk_clear = 3.1;
-peg_d = 2.7; tongue_l = 10; tongue_w = 6; tongue_t = 1.2;
+peg_d = 2.4; peg_head_d = 3.3; tongue_l = 10; tongue_w = 6; tongue_t = 1.2;   // headed peg: the 3.0 hole snaps over the head onto the neck
 
 /* [Charging port] */
 port = true; port_w = 14.0; port_h = 7.5; port_from_face = 4.1; skin_t = 1.5; slit_len = 12.0;
@@ -200,7 +200,10 @@ module buckle(grow = 0) {
     for (s = [-1, 1]) translate([x0 - tongue_l - grow, s * (strap_w / 2 - 1.5 - tongue_w / 2) - tongue_w / 2 - grow, BK_Z0 + (strap_t - tongue_t) / 2 - grow])
         difference() { cube([tongue_l + 0.5 + 2 * grow, tongue_w + 2 * grow, tongue_t + 2 * grow]);  /* runs 0.5 into the plate */ if (grow == 0) for (h = [3, 7]) translate([h, tongue_w / 2, -1]) cylinder(d = 2.2, h = 5, $fn = 16); }
     // peg, pointing at the wrist, rounded tip
-    translate([END_X + PEG_S, 0, 0.4 - grow]) { cylinder(d = peg_d + 2 * grow, h = BK_Z0 - 0.4 + 0.5 + grow); sphere(d = peg_d + 2 * grow); }   // runs 0.5 into the crossbar
+    translate([END_X + PEG_S, 0, 0]) {
+        translate([0, 0, peg_head_d / 2 - grow]) cylinder(d = peg_d + 2 * grow, h = BK_Z0 - peg_head_d / 2 + 0.5 + grow);   // neck, runs 0.5 into the crossbar
+        translate([0, 0, peg_head_d / 2]) sphere(d = peg_head_d + 2 * grow);                                                 // head, tip at the wrist plane
+    }
 }
 
 // ---- silicone preview ------------------------------------------------------------------------------------
