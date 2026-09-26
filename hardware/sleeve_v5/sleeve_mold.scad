@@ -198,7 +198,7 @@ module buckle(grow = 0) {
     }
     // tongues into the strap, buried mid-thickness (square: they are buried, and the holes key the silicone)
     for (s = [-1, 1]) translate([x0 - tongue_l - grow, s * (strap_w / 2 - 1.5 - tongue_w / 2) - tongue_w / 2 - grow, BK_Z0 + (strap_t - tongue_t) / 2 - grow])
-        difference() { cube([tongue_l + 0.5 + 2 * grow, tongue_w + 2 * grow, tongue_t + 2 * grow]);   // runs 0.5 into the plate if (grow == 0) for (h = [3, 7]) translate([h, tongue_w / 2, -1]) cylinder(d = 2.2, h = 5, $fn = 16); }
+        difference() { cube([tongue_l + 0.5 + 2 * grow, tongue_w + 2 * grow, tongue_t + 2 * grow]);  /* runs 0.5 into the plate */ if (grow == 0) for (h = [3, 7]) translate([h, tongue_w / 2, -1]) cylinder(d = 2.2, h = 5, $fn = 16); }
     // peg, pointing at the wrist, rounded tip
     translate([END_X + PEG_S, 0, 0.4 - grow]) { cylinder(d = peg_d + 2 * grow, h = BK_Z0 - 0.4 + 0.5 + grow); sphere(d = peg_d + 2 * grow); }   // runs 0.5 into the crossbar
 }
