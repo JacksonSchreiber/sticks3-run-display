@@ -5,14 +5,17 @@
 // curved wrist. Overall length is the Stick plus two thin end walls.
 //
 // Parts (set `part`, or use the Customizer):
-//   "chassis"  PETG x1, 100% infill. Plate + 4 fins + 4 twist-off locating tabs. Print as
-//              exported (plate on the bed, fins up), brim, no supports.
+//   "chassis"  PETG x1, 100% infill. A frame: two end brackets carrying the fins, joined by
+//              two thin rails along the sides (so the back stays flexible), plus 4 twist-off
+//              locating tabs. Print as exported (flat on the bed, fins up), brim, no supports.
 //   "core"     PLA. The Stick's shape, the window pad, the port pocket. Print as exported
 //              (back face down), no supports. Held down by two M3x8 screws through the cup.
-//   "cup"      PLA. One-piece open-top mold with four posts on the rim that the chassis
-//              tabs rest on. Print as exported (open top up), no supports.
-//   "lid"      PLA, optional. Plate that sits on the rim after the pour for a flat back;
-//              openings clear the fins, tabs and posts.
+//   "cup"      PLA. One-piece open-top mold, straight rim (no undercut), four posts on the
+//              rim that the chassis tabs rest on, two M3 clamp holes and two M4 jack holes in
+//              the floor. Print as exported (open top up), no supports.
+//   "lid"      PLA. Plate that sits on the rim after the pour: gives a flat back and, with
+//              the fillet ridge on its underside, the rounded back edge. Openings clear the
+//              fins, tabs and posts. Lifts straight off.
 //   "sleeve"   preview of the silicone (don't print).
 //
 // Coordinates: x along the Stick (USB-C end at -x), y across, z from the back (0, wrist
@@ -28,9 +31,11 @@
 //      sloped post seats until they touch the outer walls, which centres it.
 //   4. Top up to just above the rim, tap, then either scrape the middle flat with a card or
 //      press the lid on. Cure 24 h (or ~6 h at 45 C on the printer bed).
-//   5. Screws out. Lift the sleeve by the fins, core inside. Peel the short-lip end off the
-//      core, slide the core out through the window. Twist the tabs off at their necks and
-//      shave the stubs with a blade flat on the fin. Cut the port slit. Spring bars in.
+//   5. Lid off (cut the flash round its edge, lever a corner). M3 screws out. Card down the
+//      long sides to break the vacuum. Two M4 screws into the JACK holes in the floor, turned
+//      alternately: they tap the PLA and push the core, and the sleeve, up and out. Peel the
+//      short-lip end off the core, slide the core out through the window. Twist the tabs off
+//      at their necks and shave the stubs with a blade flat on the fin. Cut the port slit.
 
 /* [Part] */
 part = "sleeve"; // [chassis, core, cup, lid, sleeve]
@@ -47,10 +52,12 @@ under_plate = 1.0;      // silicone between the chassis plate and the wrist
 side_bump = 0.5;        // extra over the side buttons
 front_min = 1.6;        // silicone over the front button's top
 front_chamfer = 1.0;
-back_r = 0.8;           // round on the back (wrist-side) edge, formed by an inward lip on the cup rim
+back_r = 0.8;           // round on the back (wrist-side) edge, formed by a fillet ridge on the LID (never an undercut in the cup)
 
 /* [Chassis] */
-plate_t = 1.2;
+plate_t = 1.2;          // end brackets
+rail_t = 1.0; rail_w = 2.2;  // side rails joining the brackets (tension members; thin so the back can flex)
+bracket_l = 10.0;       // bracket length along the Stick (covers the fins)
 lug_gap = 21.4;         // between the fins (strap 21 mm)
 fin_t = 2.2;
 fin_l = 9.0;            // along the Stick
@@ -58,7 +65,7 @@ fin_drop = 5.1;         // below the back surface
 bar_in = 2.5;           // spring bar centre, in from the fin's outer end
 bar_z = -3.5;           // spring bar centre below the back
 bar_hole_d = 1.0; bar_hole_depth = 1.4;
-edge_r = 0.6;           // every convex PETG edge is rounded to this radius (plate edges fully round)
+edge_r = 0.4;           // every convex PETG edge is rounded to this radius
 
 /* [Charging port] */
 port = true;
@@ -123,8 +130,7 @@ module slab(l, w, r, z) { translate([0, 0, z]) linear_extrude(eps) rrect(l, w, r
 
 module body() {
     hull() {
-        // quarter-round back edge, as a stack of slabs (the hull fills between them)
-        for (a = [0 : 15 : 90]) { inset = back_r * (1 - sin(a)); slab(2 * END_X - 2 * inset, 2 * BODY_HW - 2 * inset, BODY_R - inset, back_r * (1 - cos(a))); }
+        slab(2 * END_X, 2 * BODY_HW, BODY_R, 0);
         slab(2 * END_X, 2 * BODY_HW, BODY_R, TOP - front_chamfer);
         slab(2 * END_X - 2 * front_chamfer, 2 * BODY_HW - 2 * front_chamfer, BODY_R - front_chamfer, TOP);
     }
@@ -172,6 +178,8 @@ module tunnel_block() { hull() { port_core(skin_t, slit_len / 2 - 2.0); port_cor
 
 SCREWS = [[-6, 0], [13, 0]];
 screw_d = 3.0; screw_head_d = 6.5; screw_head_h = 3.0;
+JACKS = [[3.5, 0], [18.0, 0]];   // M4 jacking screws for demolding: they tap these holes and push on the core's pad
+jack_d = 3.3;
 module core_part() {
     difference() {
         union() { core_full(); if (port) tunnel_block(); }
@@ -210,12 +218,18 @@ module tab_grooves() {
 module chassis_body() {
     minkowski() {
         union() {
-            translate([0, 0, CH_Z0 + edge_r]) linear_extrude(max(plate_t - 2 * edge_r, eps)) rrect(2 * CH_HL - 2 * edge_r, 2 * CH_HW - 2 * edge_r, 3 - edge_r);
+            // end brackets
+            for (m = [0, 1]) mirror([m, 0, 0])
+                translate([CH_HL - bracket_l + edge_r, -(CH_HW - edge_r), CH_Z0 + edge_r]) cube([bracket_l - 2 * edge_r, 2 * (CH_HW - edge_r), plate_t - 2 * edge_r]);
+            // side rails, under the pocket's edge, in line with the fins
+            for (s = [-1, 1])
+                translate([-(CH_HL - bracket_l + 0.5), s * (LUG_Y0 + rail_w / 2) - (rail_w / 2 - edge_r), CH_Z0 + edge_r]) cube([2 * (CH_HL - bracket_l + 0.5), rail_w - 2 * edge_r, rail_t - 2 * edge_r]);
+            // fins
             for (m = [0, 1]) mirror([m, 0, 0]) for (s = [-1, 1])
                 translate([0, s * (LUG_Y0 + fin_t / 2), 0]) rotate([90, 0, 0]) translate([0, 0, -(fin_t - 2 * edge_r) / 2])
                     linear_extrude(fin_t - 2 * edge_r) offset(r = -edge_r) fin_profile();
         }
-        sphere(r = edge_r, $fn = 20);
+        sphere(r = edge_r, $fn = 16);
     }
 }
 module chassis(tabs = true) {
@@ -242,6 +256,7 @@ module silicone() {
         if (port) tunnel_block();
         translate([(WIN[0][0] + WIN[0][1]) / 2, 0, TOP - 1]) linear_extrude(3) rrect(WIN[0][1] - WIN[0][0], WIN[1][1] - WIN[1][0], WIN_R);
         chassis(tabs = false);
+        lid_ridge();
     }
 }
 
@@ -264,6 +279,8 @@ module cup_body() {
     difference() {
         block(0, CUP_H);
         envelope();
+        // rebate along the rim's inner edge that the lid ridge sits in
+        translate([0, 0, -1]) linear_extrude(1 + REBATE_D) rrect(2 * END_X + 2 * (RIDGE_OVER + 0.1), 2 * BODY_HW + 2 * (RIDGE_OVER + 0.1), BODY_R + RIDGE_OVER + 0.1);
     }
     posts();
 }
@@ -274,15 +291,33 @@ module cup() {
             translate([0, 0, TOP - 1]) cylinder(d = screw_d + 0.4, h = 20);
             translate([0, 0, CUP_H - screw_head_h]) cylinder(d = screw_head_d, h = screw_head_h + 1);
         }
+        for (p = JACKS) translate([p[0], p[1], TOP - 1]) cylinder(d = jack_d, h = 20);
     }
 }
 
 // ---- Lid (optional) -----------------------------------------------------------------------------------
 LID_T = 3.0; LID_GAP = 0.3;
+RIDGE_OVER = 0.15;      // the ridge overlaps the cavity outline by this much, into a rebate in the rim (no flash fin)
+REBATE_D = 0.9;         // rebate depth below the rim
+// fillet ridge on the lid's underside, along the cavity edge: fills the corner so the
+// sleeve's back edge comes out rounded (radius back_r). Built as thin stacked rings.
+module lid_ridge() {
+    steps = 6;
+    for (i = [0 : steps - 1]) {
+        h0 = back_r * i / steps; h1 = back_r * (i + 1) / steps;
+        inset = back_r - sqrt(back_r * back_r - (back_r - h0) * (back_r - h0));
+        translate([0, 0, h0 - eps]) linear_extrude(h1 - h0 + 2 * eps) difference() {
+            rrect(2 * END_X + 2 * RIDGE_OVER, 2 * BODY_HW + 2 * RIDGE_OVER, BODY_R + RIDGE_OVER);
+            rrect(2 * END_X - 2 * inset, 2 * BODY_HW - 2 * inset, BODY_R - inset);
+        }
+    }
+}
 module lid() {
     difference() {
         union() {
             translate([0, 0, -(LID_T + LID_GAP)]) linear_extrude(LID_T) rrect(2 * MX, 2 * MY, 4);
+            translate([0, 0, -LID_GAP - 1]) linear_extrude(LID_GAP + 1) rrect(2 * END_X + 2 * RIDGE_OVER, 2 * BODY_HW + 2 * RIDGE_OVER, BODY_R + RIDGE_OVER);   // plug that fills the 0.3 mm foot gap over the cavity
+            lid_ridge();
             for (sx_ = [-1, 1], sy_ = [-1, 1]) translate([sx_ * (MX - 3), sy_ * (MY - 3), -LID_GAP - eps]) cylinder(d = 4, h = LID_GAP + eps);
         }
         // openings around each fin + tab + post
