@@ -5,8 +5,8 @@
 // the tail tucks under the short strap. All silicone except the buckle; no frame.
 //
 // Parts (set `part`, or use the Customizer):
-//   "buckle"  PETG x1, 100% infill. Print as exported (frame flat, peg up), brim, no supports;
-//             the four thin posts under the tongues are print aids: snap them off afterwards.
+//   "buckle"  PETG x1, 100% infill. Print as exported (frame flat, peg up), brim, with
+//             supports (build plate only): only the two tongues get one, 0.8 mm tall.
 //   "core"    PLA. Print as exported (back face down), no supports.
 //   "cup"     PLA. One long open-top mold: jacket pocket in the middle, strap troughs either
 //             side, a seat for the buckle at the short strap's end, M3 clamp + M4 jack holes.
@@ -279,7 +279,7 @@ module lid() {
 }
 
 // ---- exports ----------------------------------------------------------------------------------------------------
-if (part == "buckle")      translate([0, 0, BK_Z1]) rotate([180, 0, 0]) translate([-X_SHORT_END - 6, 0, 0]) buckle(print_ribs = true);   // frame flat on the bed, peg up, tongues on their ribs
+if (part == "buckle")      translate([0, 0, BK_Z1]) rotate([180, 0, 0]) translate([-X_SHORT_END - 6, 0, 0]) buckle();   // frame flat on the bed, peg up; slicer support under the two tongues
 else if (part == "core")   translate([0, 0, -Z0]) core_part();
 else if (part == "cup")    translate([0, 0, CUP_H]) rotate([180, 0, 0]) cup();
 else if (part == "lid")    translate([0, 0, LID_T]) lid();
