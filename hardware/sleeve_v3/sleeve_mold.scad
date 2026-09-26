@@ -46,11 +46,11 @@ squeeze = 0.3;          // Stick is this much bigger than the pocket, per side
 /* [Silicone] */
 wall = 2.8;             // long sides (2.6 + room for the back round beside the fins)
 end_t = 2.2;            // end walls (Stick end -> outside)
-lip_t = 1.6;            // over the Stick's face
-over_plate = 0.5;       // silicone between the Stick's back and the chassis plate
-under_plate = 1.0;      // silicone between the chassis plate and the wrist
+lip_t = 1.0;            // over the Stick's face (thin: this is what sets the height; it retains and seals, no more)
+over_plate = 0.4;       // silicone between the Stick's back and the chassis brackets
+under_plate = 0.8;      // silicone between the chassis and the wrist
 side_bump = 0.5;        // extra over the side buttons
-front_min = 1.6;        // silicone over the front button's top
+front_min = 1.0;        // silicone over the front button's top
 front_chamfer = 1.0;
 back_r = 0.8;           // round on the back (wrist-side) edge, formed by a fillet ridge on the LID (never an undercut in the cup)
 
@@ -85,7 +85,7 @@ BTN_XMINUS = [6.0, 11.0]; BTN_XPLUS = [19.0, 29.0]; BTN_Z = [3.6, 11.2];
 // ---- Pocket --------------------------------------------------------------------------
 CORE_L = STICK_L - 2 * squeeze; CORE_W = STICK_W - 2 * squeeze; CORE_T = STICK_T - squeeze; CORE_R = STICK_R - squeeze;
 HL = CORE_L / 2; HW = CORE_W / 2;
-back_t = under_plate + plate_t + over_plate;     // 2.7
+back_t = under_plate + plate_t + over_plate;     // 2.4
 Z0 = back_t; Z1 = back_t + CORE_T; TOP = Z1 + lip_t;
 function sx(y_on_stick) = y_on_stick - STICK_L / 2;
 function sy(x_on_stick) = STICK_W / 2 - x_on_stick;   // the Stick's x runs the other way (seen screen-up, USB-C down)
