@@ -200,9 +200,13 @@ module buckle(grow = 0) {
     for (s = [-1, 1]) translate([x0 - tongue_l - grow, s * (strap_w / 2 - 1.5 - tongue_w / 2) - tongue_w / 2 - grow, BK_Z0 + (strap_t - tongue_t) / 2 - grow])
         difference() { cube([tongue_l + 0.5 + 2 * grow, tongue_w + 2 * grow, tongue_t + 2 * grow]);  /* runs 0.5 into the plate */ if (grow == 0) for (h = [3, 7]) translate([h, tongue_w / 2, -1]) cylinder(d = 2.2, h = 5, $fn = 16); }
     // peg, pointing at the wrist, rounded tip
+    // peg: 45-degree tip, short head, 45-degree shoulder back to the neck (prints on its side without islands)
     translate([END_X + PEG_S, 0, 0]) {
-        translate([0, 0, peg_head_d / 2 - grow]) cylinder(d = peg_d + 2 * grow, h = BK_Z0 - peg_head_d / 2 + 0.5 + grow);   // neck, runs 0.5 into the crossbar
-        translate([0, 0, peg_head_d / 2]) sphere(d = peg_head_d + 2 * grow);                                                 // head, tip at the wrist plane
+        tip = (peg_head_d - 1.4) / 2; head = 0.6; sh = (peg_head_d - peg_d) / 2;
+        translate([0, 0, 0.2 - grow]) cylinder(d1 = 1.4 + 2 * grow, d2 = peg_head_d + 2 * grow, h = tip);
+        translate([0, 0, 0.2 + tip - eps]) cylinder(d = peg_head_d + 2 * grow, h = head + 2 * eps);
+        translate([0, 0, 0.2 + tip + head]) cylinder(d1 = peg_head_d + 2 * grow, d2 = peg_d + 2 * grow, h = sh);
+        translate([0, 0, 0.2 + tip + head + sh - eps]) cylinder(d = peg_d + 2 * grow, h = BK_Z0 + 0.5 - (0.2 + tip + head + sh) + grow);   // neck, 0.5 into the crossbar
     }
 }
 
