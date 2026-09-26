@@ -181,7 +181,7 @@ bk_r = 0.6;   // rounding on everything you touch: rails, crossbar, plate's oute
 module buckle_frame_raw(grow = 0, shrink = 0) {
     x0 = X_SHORT_END;
     // plate (the part outside the cavity face gets rounded; the inner face is kept flat by the intersection below)
-    translate([x0 - grow + shrink - 1, -(strap_w / 2 + grow - shrink), BK_Z0 - grow + shrink]) cube([bk_plate_t + 2 * grow - 2 * shrink + 1, strap_w + 2 * grow - 2 * shrink, strap_t + 2 * grow - 2 * shrink]);
+    translate([x0 - grow + shrink - 1, -(BK_HW + grow - shrink), BK_Z0 - grow + shrink]) cube([bk_plate_t + 2 * grow - 2 * shrink + 1, 2 * BK_HW + 2 * grow - 2 * shrink, strap_t + 2 * grow - 2 * shrink]);   // full frame width: closes the strap cavity and joins the rails
     for (s = [-1, 1]) translate([x0 - grow + shrink - 1, s * (BK_HW - bk_rail_w / 2) - bk_rail_w / 2 - grow + shrink, BK_Z0 - grow + shrink]) cube([bk_plate_t + bk_len + 2 * grow - 2 * shrink + 1, bk_rail_w + 2 * grow - 2 * shrink, strap_t + 2 * grow - 2 * shrink]);
     translate([x0 + bk_plate_t + bk_len - bk_bar_t - grow + shrink, -BK_HW - grow + shrink, BK_Z0 - grow + shrink]) cube([bk_bar_t + 2 * grow - 2 * shrink, 2 * BK_HW + 2 * grow - 2 * shrink, strap_t + 2 * grow - 2 * shrink]);
 }
