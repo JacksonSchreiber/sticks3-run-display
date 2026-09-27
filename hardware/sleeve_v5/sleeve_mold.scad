@@ -35,13 +35,13 @@
 part = "band"; // [anchor, frame, frame_salvage, core, cup, lid, band]
 
 /* [Fit] */
-squeeze = 0.3;
+squeeze = 0.15;          // 0.3 was too tight: the top lip tore going in
 wrist = 165;            // snug wrist circumference
 fit_ease = 5;           // middle hole = wrist + this
 hole_count = 9; hole_pitch = 5; hole_d = 3.4;
 
 /* [Jacket] */
-wall = 2.8; end_t = 2.2; lip_t = 0.8; back_t = 1.5; side_bump = 0.5; front_min = 0.8;
+wall = 2.8; end_t = 2.2; lip_t = 1.2; back_t = 1.5; side_bump = 0.5; front_min = 1.2;
 body_r = 2.0;           // plan corner radius (small, so the full-width strap root meets the side flush, no crevice)
 front_r = 2.5;          // round on the front perimeter
 back_r = 0.8;           // round on the wrist-side edge (lid ridge)
@@ -83,7 +83,7 @@ function sy(x_on_stick) = STICK_W / 2 - x_on_stick;
 BODY_HW = HW + wall; END_X = HL + end_t;
 win_margin = 1.5;       // window = the screen's active area plus this all round; the lips beyond it hold the Stick
 SCREEN = [[18.5, 39.1], [4.6, 19.4]];   // on the Stick: along (from the USB-C end), across
-WIN = [[sx(SCREEN[0][0] - win_margin), sx(SCREEN[0][1] + win_margin)], [-((SCREEN[1][1] - SCREEN[1][0]) / 2 + win_margin), (SCREEN[1][1] - SCREEN[1][0]) / 2 + win_margin]]; WIN_R = 3.0;
+WIN = [[sx(SCREEN[0][0] - win_margin), sx(SCREEN[0][1] + win_margin)], [-((SCREEN[1][1] - SCREEN[1][0]) / 2 + win_margin), (SCREEN[1][1] - SCREEN[1][0]) / 2 + win_margin]]; WIN_R = 4.0;
 FRONT_BUMP = FRONT_BTN[2] + front_min - lip_t;
 
 // ---- strap layout (s = distance from the jacket's end face along the strap) --------------------
