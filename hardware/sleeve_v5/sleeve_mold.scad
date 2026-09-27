@@ -42,7 +42,7 @@ hole_count = 7; hole_pitch = 5; hole_d = 3.0;
 
 /* [Jacket] */
 wall = 2.8; end_t = 2.2; lip_t = 0.8; back_t = 1.5; side_bump = 0.5; front_min = 0.8;
-body_r = 4.5;           // plan corner radius (the pocket's R3 corners sit 1.6 inside)
+body_r = 2.0;           // plan corner radius (small, so the full-width strap root meets the side flush, no crevice)
 front_r = 2.5;          // round on the front perimeter
 back_r = 0.8;           // round on the wrist-side edge (lid ridge)
 
@@ -50,6 +50,8 @@ back_r = 0.8;           // round on the wrist-side edge (lid ridge)
 strap_w = 22; strap_t = 2.8;
 root_len = 12;          // strap flares to the jacket's width over this length
 root_t = 5.0;           // strap thickness where it meets the jacket (gusset)
+flex_s0 = 14; flex_s1 = 22; flex_t = 2.2;   // flex zone just past the gusset: the strap thins here so it bends here, not at the jacket
+tail_r = 11;            // long strap's end is a full semicircle
 fillet_r = 3.0;         // fillet between the gusset top and the end wall
 short_len = 45;         // jacket end -> strap end (buckle plate)
 lift = 3.0;             // the short strap's end rises this much so the tail passes under it
@@ -74,14 +76,19 @@ Z0 = back_t; Z1 = back_t + CORE_T; TOP = Z1 + lip_t;
 function sx(y_on_stick) = y_on_stick - STICK_L / 2;
 function sy(x_on_stick) = STICK_W / 2 - x_on_stick;
 BODY_HW = HW + wall; END_X = HL + end_t;
-WIN = [[sx(14), sx(45.5)], [-9.5, 9.5]]; WIN_R = 3.0;
+win_margin = 1.5;       // window = the screen's active area plus this all round; the lips beyond it hold the Stick
+SCREEN = [[18.5, 39.1], [4.6, 19.4]];   // on the Stick: along (from the USB-C end), across
+WIN = [[sx(SCREEN[0][0] - win_margin), sx(SCREEN[0][1] + win_margin)], [-((SCREEN[1][1] - SCREEN[1][0]) / 2 + win_margin), (SCREEN[1][1] - SCREEN[1][0]) / 2 + win_margin]]; WIN_R = 3.0;
 FRONT_BUMP = FRONT_BTN[2] + front_min - lip_t;
 
 // ---- strap layout (s = distance from the jacket's end face along the strap) --------------------
 PEG_S = short_len + bk_plate_t + bk_len - bk_bar_t / 2;             // peg centre, from the jacket's +x end
 function smooth(u) = let(v = min(max(u, 0), 1)) v * v * (3 - 2 * v);
 function w_at(s) = strap_w + (2 * BODY_HW - strap_w) * (1 - smooth(s / root_len));
-function t_at(s) = strap_t + (root_t - strap_t) * (1 - smooth(s / root_len));
+function t_at(s) = let(g = strap_t + (root_t - strap_t) * (1 - smooth(s / root_len)),
+                       f = (s > flex_s0 && s < flex_s1) ? (strap_t - flex_t) * (1 - abs(s - (flex_s0 + flex_s1) / 2) / ((flex_s1 - flex_s0) / 2)) : 0)
+                   g - f * (s > root_len ? 1 : 0);
+function w_end(s, L) = (s > L - tail_r) ? 2 * sqrt(max(tail_r * tail_r - (s - (L - tail_r)) * (s - (L - tail_r)), 0.01)) : 1e9;
 function lift_at(s) = lift * smooth((s - (short_len - lift_len - ramp_len)) / ramp_len);   // short strap only
 mid_size = wrist + fit_ease;
 function hole_s(i) = (mid_size - 2 * END_X - PEG_S) + (i - (hole_count - 1) / 2) * hole_pitch;   // from the jacket's -x end
@@ -119,19 +126,20 @@ module front_bump(extra = 0) {
 }
 
 // ---- straps: chained cross-sections; z offset lifts the short strap's end ----------------------
-module xsec(x, w, t, zoff) { translate([x, 0, zoff]) rotate([90, 0, 90]) linear_extrude(eps) translate([0, t / 2]) rrect(w, t, min(1.2, t / 2 - eps)); }
+module xsec(x, w, t, zoff) { translate([x, 0, zoff]) rotate([90, 0, 90]) linear_extrude(eps) translate([0, t / 2]) rrect(max(w, 0.4), t, min(1.2, t / 2 - eps, max(w, 0.4) / 2 - eps)); }
 module strap(dir) {   // dir = +1 short, -1 long
     L = dir > 0 ? short_len : long_len;
-    n = 40;
+    n = 60; s_start = -body_r - 0.5;   // starts inside the jacket so the root fills the plan corners
     for (k = [0 : n - 1]) {
-        s0 = L * k / n; s1 = L * (k + 1) / n;
+        s0 = s_start + (L - s_start) * k / n; s1 = s_start + (L - s_start) * (k + 1) / n;
+        w0 = min(w_at(max(s0, 0)), dir < 0 ? w_end(s0, L) : 1e9); w1 = min(w_at(max(s1, 0)), dir < 0 ? w_end(s1, L) : 1e9);
         hull() {
-            xsec(dir * (END_X + s0), w_at(s0), t_at(s0), dir > 0 ? lift_at(s0) : 0);
-            xsec(dir * (END_X + s1), w_at(s1), t_at(s1), dir > 0 ? lift_at(s1) : 0);
+            xsec(dir * (END_X + s0), w0, t_at(max(s0, 0)), dir > 0 ? lift_at(s0) : 0);
+            xsec(dir * (END_X + s1), w1, t_at(max(s1, 0)), dir > 0 ? lift_at(s1) : 0);
         }
     }
     // gusset fillet between the strap's top and the jacket's end wall
-    translate([dir * END_X, 0, 0]) mirror([dir < 0 ? 1 : 0, 0, 0]) rotate([90, 0, 0]) linear_extrude(2 * BODY_HW - 6, center = true)
+    translate([dir * END_X, 0, 0]) mirror([dir < 0 ? 1 : 0, 0, 0]) rotate([90, 0, 0]) linear_extrude(2 * BODY_HW - 2 * body_r - 1, center = true)
         difference() { translate([-eps, root_t - eps]) square([fillet_r + eps, fillet_r + eps]); translate([fillet_r, root_t + fillet_r]) circle(r = fillet_r); }
 }
 // plan outline of the short strap from the ramp start to the end of the buckle plate
