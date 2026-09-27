@@ -49,10 +49,11 @@ back_r = 0.8;           // round on the wrist-side edge (lid ridge)
 /* [Straps] */
 strap_w = 22; strap_t = 2.8;
 root_len = 12;          // strap flares to the jacket's width over this length
-root_t = 5.0;           // strap thickness where it meets the jacket (gusset)
-flex_s0 = 14; flex_s1 = 22; flex_t = 2.2;   // flex zone just past the gusset: the strap thins here so it bends here, not at the jacket
+hinge_t = 2.0;          // strap thickness at the jacket: a thin, wide hinge so the band bends right at the sleeve
+hinge_len = 6;          // ... for this far, then blends up to strap_t by root_len
+root_t = hinge_t;
 tail_r = 11;            // long strap's end is a full semicircle
-fillet_r = 3.0;         // fillet between the gusset top and the end wall
+fillet_r = 2.0;         // fillet between the hinge top and the end wall (no inside corner)
 short_len = 45;         // jacket end -> strap end (buckle plate)
 lift = 3.0;             // the short strap's end rises this much so the tail passes under it
 lift_len = 12; ramp_len = 12;
@@ -85,9 +86,7 @@ FRONT_BUMP = FRONT_BTN[2] + front_min - lip_t;
 PEG_S = short_len + bk_plate_t + bk_len - bk_bar_t / 2;             // peg centre, from the jacket's +x end
 function smooth(u) = let(v = min(max(u, 0), 1)) v * v * (3 - 2 * v);
 function w_at(s) = strap_w + (2 * BODY_HW - strap_w) * (1 - smooth(s / root_len));
-function t_at(s) = let(g = strap_t + (root_t - strap_t) * (1 - smooth(s / root_len)),
-                       f = (s > flex_s0 && s < flex_s1) ? (strap_t - flex_t) * (1 - abs(s - (flex_s0 + flex_s1) / 2) / ((flex_s1 - flex_s0) / 2)) : 0)
-                   g - f * (s > root_len ? 1 : 0);
+function t_at(s) = hinge_t + (strap_t - hinge_t) * smooth((s - hinge_len) / (root_len - hinge_len));
 function w_end(s, L) = (s > L - tail_r) ? 2 * sqrt(max(tail_r * tail_r - (s - (L - tail_r)) * (s - (L - tail_r)), 0.01)) : 1e9;
 function lift_at(s) = lift * smooth((s - (short_len - lift_len - ramp_len)) / ramp_len);   // short strap only
 mid_size = wrist + fit_ease;
