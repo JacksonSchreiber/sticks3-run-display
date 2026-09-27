@@ -35,7 +35,7 @@
 part = "band"; // [anchor, frame, frame_salvage, core, cup, lid, band]
 
 /* [Fit] */
-squeeze = 0.15;          // 0.3 was too tight: the top lip tore going in
+squeeze = 0.0;           // pocket = Stick size; the silicone on every face grips it. 0.3 tore the top lip going in
 wrist = 165;            // snug wrist circumference
 fit_ease = 5;           // middle hole = wrist + this
 hole_count = 9; hole_pitch = 5; hole_d = 3.4;
