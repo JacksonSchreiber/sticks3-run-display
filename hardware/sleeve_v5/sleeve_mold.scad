@@ -38,7 +38,7 @@ part = "band"; // [buckle, core, cup, lid, band]
 squeeze = 0.3;
 wrist = 165;            // snug wrist circumference
 fit_ease = 5;           // middle hole = wrist + this
-hole_count = 7; hole_pitch = 5; hole_d = 3.4;
+hole_count = 9; hole_pitch = 5; hole_d = 3.4;
 
 /* [Jacket] */
 wall = 2.8; end_t = 2.2; lip_t = 0.8; back_t = 1.5; side_bump = 0.5; front_min = 0.8;
@@ -56,7 +56,7 @@ fillet_r = 3.0;         // fillet between the gusset top and the end wall
 short_len = 45;         // jacket end -> strap end (buckle plate)
 lift = 3.0;             // the short strap's end rises this much so the tail passes under it
 lift_len = 12; ramp_len = 12;
-tail = 25;              // long strap beyond the last hole
+tail = 40;              // long strap beyond the last hole
 
 /* [Buckle] */
 bk_plate_t = 2.0; bk_rail_w = 4.0; bk_len = 13; bk_bar_t = 4.0; bk_h = 3.6;   // frame section; bk_h > strap_t, the frame stands a little proud of the strap end
