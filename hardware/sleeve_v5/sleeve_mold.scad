@@ -195,8 +195,8 @@ BK_Z0 = lift; BK_Z1 = lift + bk_h;                    // frame height band (star
 BK_HW = strap_w / 2 + bk_rail_w;                      // rails outside the strap's width
 PIN_Z = BK_Z0 + strap_t / 2; PIN_X = X_SHORT_END + bk_plate_t / 2;   // (salvage frame)
 // plan outline of the frame: plate + rails + crossbar, with inside fillets at the rail roots
-module frame2d(g = 0) {
-    offset(r = bk_round) offset(r = -bk_round) offset(r = -bk_fillet) offset(r = bk_fillet) offset(delta = g) union() {
+module frame2d(g = 0) {   // fillet the inside corners, round the outside ones, then grow/shrink by g
+    offset(delta = g) offset(r = bk_round) offset(r = -bk_round) offset(r = -bk_fillet) offset(r = bk_fillet) union() {
         translate([X_SHORT_END, -BK_HW]) square([bk_plate_t, 2 * BK_HW]);
         for (s = [-1, 1]) translate([X_SHORT_END, s * (BK_HW - bk_rail_w / 2) - bk_rail_w / 2]) square([bk_plate_t + bk_len, bk_rail_w]);
         translate([X_SHORT_END + bk_plate_t + bk_len - bk_bar_t, -BK_HW]) square([bk_bar_t, 2 * BK_HW]);
