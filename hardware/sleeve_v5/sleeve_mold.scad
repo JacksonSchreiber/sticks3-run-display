@@ -60,9 +60,11 @@ lift_len = 12; ramp_len = 12;
 tail = 40;              // long strap beyond the last hole
 
 /* [Buckle] */
-bk_plate_t = 3.0;       // plate closing the strap's end
+bk_plate_t = 5.0;       // plate closing the strap's end: as thick as the crossbar
 bk_rail_w = 5.0; bk_len = 14; bk_bar_t = 5.0; bk_h = 4.5;   // rails, crossbar: 5 mm wide, 4.5 tall
 bk_fillet = 2.0;        // inside fillet where the rails meet the plate (the old break line)
+bk_round = 2.0;         // outside corner radius of the frame in plan
+peg_flare = 0.8;        // fillet at the peg's root into the crossbar
 bk_wall = 3.0; bk_top = 2.2; bk_slot_clr = 0.3; pin_d = 1.6;   // (salvage frame only)
 peg_d = 3.0; peg_bump = 0.9; PEG_TIP = -1.2; tongue_l = 16; tongue_w = 7; tongue_t = 1.6;   // peg neck 3.0 with a one-sided 0.9 bump: the 3.4 hole snaps over it
 FRAME_DEPTH = bk_plate_t + 0.5;              // how far the strap end goes into the U (plate against the stop)
@@ -194,13 +196,14 @@ BK_HW = strap_w / 2 + bk_rail_w;                      // rails outside the strap
 PIN_Z = BK_Z0 + strap_t / 2; PIN_X = X_SHORT_END + bk_plate_t / 2;   // (salvage frame)
 // plan outline of the frame: plate + rails + crossbar, with inside fillets at the rail roots
 module frame2d(g = 0) {
-    offset(r = -bk_fillet) offset(r = bk_fillet) offset(delta = g) union() {
+    offset(r = bk_round) offset(r = -bk_round) offset(r = -bk_fillet) offset(r = bk_fillet) offset(delta = g) union() {
         translate([X_SHORT_END, -BK_HW]) square([bk_plate_t, 2 * BK_HW]);
         for (s = [-1, 1]) translate([X_SHORT_END, s * (BK_HW - bk_rail_w / 2) - bk_rail_w / 2]) square([bk_plate_t + bk_len, bk_rail_w]);
         translate([X_SHORT_END + bk_plate_t + bk_len - bk_bar_t, -BK_HW]) square([bk_bar_t, 2 * BK_HW]);
     }
 }
-bk_r = 0.6;
+bk_r = 1.0;             // edge rounding on the frame (it is 5 wide x 4.5 tall)
+tg_r = 0.6;             // tongues fully rounded (1.6 thick), so they cannot cut the silicone
 module buckle(grow = 0) {
     x0 = X_SHORT_END;
     if (grow == 0) {
@@ -211,11 +214,20 @@ module buckle(grow = 0) {
     } else {
         translate([0, 0, BK_Z0 - grow]) linear_extrude(bk_h + 2 * grow) frame2d(grow);
     }
-    // tongues into the strap, buried mid-thickness, holed so the silicone keys through
+    // tongues into the strap, buried mid-thickness, every edge rounded, holes chamfered both sides
     for (s = [-1, 1]) translate([x0 - tongue_l - grow, s * (strap_w / 2 - 1.2 - tongue_w / 2) - tongue_w / 2 - grow, BK_Z0 + (strap_t - tongue_t) / 2 - grow])
-        difference() { cube([tongue_l + 1.0 + 2 * grow, tongue_w + 2 * grow, tongue_t + 2 * grow]); if (grow == 0) for (h = [3, 8, 13]) translate([h, tongue_w / 2, -1]) cylinder(d = 2.6, h = 10, $fn = 16); }
-    // peg on the crossbar's underside: 45-degree tip, one-sided bump
+        difference() {
+            if (grow == 0) minkowski() { translate([tg_r, tg_r, tg_r]) cube([tongue_l + 1.0 - 2 * tg_r, tongue_w - 2 * tg_r, tongue_t - 2 * tg_r]); sphere(r = tg_r, $fn = 16); }
+            else cube([tongue_l + 1.0 + 2 * grow, tongue_w + 2 * grow, tongue_t + 2 * grow]);
+            if (grow == 0) for (h = [3, 8, 13]) translate([h, tongue_w / 2, 0]) {
+                translate([0, 0, -1]) cylinder(d = 2.6, h = 10, $fn = 16);
+                translate([0, 0, -eps]) cylinder(d1 = 3.4, d2 = 2.6, h = 0.4, $fn = 16);
+                translate([0, 0, tongue_t - 0.4 + eps]) cylinder(d1 = 2.6, d2 = 3.4, h = 0.4, $fn = 16);
+            }
+        }
+    // peg on the crossbar's underside: 45-degree tip, one-sided bump, flared root
     translate([x0 + bk_plate_t + bk_len - bk_bar_t / 2, 0, 0]) {
+        translate([0, 0, BK_Z0 - peg_flare]) cylinder(d1 = peg_d + 2 * grow, d2 = peg_d + 2 * peg_flare + 2 * grow, h = peg_flare + 0.3);
         translate([0, 0, PEG_TIP - grow]) cylinder(d1 = 1.4 + 2 * grow, d2 = peg_d + 2 * grow, h = 0.5 + grow);
         translate([0, 0, PEG_TIP + 0.5 - eps]) cylinder(d = peg_d + 2 * grow, h = BK_Z0 + 0.5 - (PEG_TIP + 0.5) + eps);
         hull() {
