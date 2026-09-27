@@ -32,7 +32,7 @@
 //      the thin skins at the bottom of the seven holes if any remain. Cut the port slit.
 
 /* [Part] */
-part = "band"; // [buckle, core, cup, lid, band]
+part = "band"; // [anchor, frame, frame_salvage, core, cup, lid, band]
 
 /* [Fit] */
 squeeze = 0.3;
@@ -60,8 +60,12 @@ lift_len = 12; ramp_len = 12;
 tail = 40;              // long strap beyond the last hole
 
 /* [Buckle] */
-bk_plate_t = 2.0; bk_rail_w = 4.0; bk_len = 13; bk_bar_t = 4.0; bk_h = 3.6;   // frame section; bk_h > strap_t, the frame stands a little proud of the strap end
+bk_plate_t = 3.0;       // anchor plate (cast into the strap's end), carries the cross pin
+bk_rail_w = 4.0; bk_len = 13; bk_bar_t = 4.0;   // frame rails and crossbar
+bk_wall = 3.0; bk_top = 2.2; bk_slot_clr = 0.3; // frame: U-channel side walls and top over the strap end
+pin_d = 1.6;            // cross pin (a 22 mm spring bar, or 1.6 mm stainless wire)
 peg_d = 3.0; peg_bump = 0.9; PEG_TIP = -1.2; tongue_l = 10; tongue_w = 6; tongue_t = 1.4;   // peg neck 3.0 with a one-sided 0.9 bump: the 3.4 hole snaps over it
+FRAME_DEPTH = bk_plate_t + 0.5;              // how far the strap end goes into the U (plate against the stop)
 
 /* [Charging port] */
 port = true; port_w = 14.0; port_h = 7.5; port_from_face = 4.1; skin_t = 1.5; slit_len = 12.0;
@@ -179,53 +183,62 @@ module core_part() {
     }
 }
 
-// ---- buckle ---------------------------------------------------------------------------------------------
-// Sits at the short strap's raised end: a plate closes the strap end (its outer face shows),
-// two tongues anchor it in the strap, two rails carry a crossbar with the peg. The long strap
-// passes under the crossbar and under the raised strap end; the peg drops into a hole.
-BK_Z0 = lift; BK_Z1 = lift + bk_h;                    // frame height band (starts at the raised strap's wrist face)
-BK_HW = strap_w / 2 + bk_rail_w;                      // rails outside the strap's width
-bk_r = 0.6;   // rounding on everything you touch: rails, crossbar, plate's outer edges. Plate's inner face and tongues stay square (they seal / are buried)
-module buckle_frame_raw(grow = 0, shrink = 0) {
+// ---- buckle: anchor (cast in) + frame (fitted afterwards) -----------------------------------------
+// The anchor is a plate closing the strap's end with two holed tongues buried in the strap and a
+// 1.6 mm hole across the plate. The frame is a U-channel the strap end slides into, plate first,
+// up to a stop; a pin through the U's side walls and the plate locks it. Rails carry a crossbar
+// with the peg. Nothing of the frame is in the mold, so demolding cannot load it, and a cast
+// metal frame later fits the same anchor.
+BK_Z0 = lift; BK_Z1 = lift + strap_t;                 // the raised strap end's thickness band
+BK_HW = strap_w / 2 + bk_slot_clr + bk_wall;          // frame outer half-width
+PIN_Z = BK_Z0 + strap_t / 2;                          // pin through the strap's mid-thickness
+PIN_X = X_SHORT_END + bk_plate_t / 2;                 // through the middle of the anchor plate
+module anchor(grow = 0) {
     x0 = X_SHORT_END;
-    // plate (the part outside the cavity face gets rounded; the inner face is kept flat by the intersection below)
-    translate([x0 - grow + shrink - 1, -(BK_HW + grow - shrink), BK_Z0 - grow + shrink]) cube([bk_plate_t + 2 * grow - 2 * shrink + 1, 2 * BK_HW + 2 * grow - 2 * shrink, bk_h + 2 * grow - 2 * shrink]);   // full frame width: closes the strap cavity and joins the rails
-    for (s = [-1, 1]) translate([x0 - grow + shrink - 1, s * (BK_HW - bk_rail_w / 2) - bk_rail_w / 2 - grow + shrink, BK_Z0 - grow + shrink]) cube([bk_plate_t + bk_len + 2 * grow - 2 * shrink + 1, bk_rail_w + 2 * grow - 2 * shrink, bk_h + 2 * grow - 2 * shrink]);
-    translate([x0 + bk_plate_t + bk_len - bk_bar_t - grow + shrink, -BK_HW - grow + shrink, BK_Z0 - grow + shrink]) cube([bk_bar_t + 2 * grow - 2 * shrink, 2 * BK_HW + 2 * grow - 2 * shrink, bk_h + 2 * grow - 2 * shrink]);
-}
-module buckle(grow = 0, print_ribs = false) {
-    x0 = X_SHORT_END;
-    // sacrificial print ribs: stand each tongue on the bed when the buckle prints frame-flat,
-    // peg up. Snap them off before casting; the stubs are buried in the strap.
-    // two single-line posts per tongue (0.4 wide, 1.5 long), so they snap off with a fingernail
-    if (print_ribs) for (s = [-1, 1], xo = [1.0, tongue_l - 3.0]) translate([x0 - tongue_l + xo, s * (strap_w / 2 - 1.5 - tongue_w / 2) - 0.2, BK_Z0 + (strap_t + tongue_t) / 2 - eps])
-        cube([1.5, 0.4, BK_Z1 - (BK_Z0 + (strap_t + tongue_t) / 2) + eps]);
-    if (grow == 0) {
-        // rounded frame, cut flat at the plate's inner face (x = x0) so it seals the cavity end
-        intersection() {
-            minkowski() { buckle_frame_raw(0, bk_r); sphere(r = bk_r, $fn = 16); }
-            translate([x0, -50, -50]) cube([100, 100, 100]);
+    difference() {
+        union() {
+            translate([x0 - grow, -(strap_w / 2 + grow), BK_Z0 - grow]) cube([bk_plate_t + 2 * grow, strap_w + 2 * grow, strap_t + 2 * grow]);
+            for (s = [-1, 1]) translate([x0 - tongue_l - grow, s * (strap_w / 2 - 1.5 - tongue_w / 2) - tongue_w / 2 - grow, BK_Z0 + (strap_t - tongue_t) / 2 - grow])
+                cube([tongue_l + 0.5 + 2 * grow, tongue_w + 2 * grow, tongue_t + 2 * grow]);
         }
-    } else {
-        buckle_frame_raw(grow, 0);
+        if (grow == 0) {
+            for (s = [-1, 1]) for (h = [3, 7]) translate([x0 - tongue_l + h, s * (strap_w / 2 - 1.5 - tongue_w / 2), -1]) cylinder(d = 2.2, h = 10, $fn = 16);
+            translate([PIN_X, 0, PIN_Z]) rotate([90, 0, 0]) cylinder(d = pin_d + 0.1, h = 40, center = true, $fn = 20);
+        }
     }
-    // tongues into the strap, buried mid-thickness (square: they are buried, and the holes key the silicone)
-    for (s = [-1, 1]) translate([x0 - tongue_l - grow, s * (strap_w / 2 - 1.5 - tongue_w / 2) - tongue_w / 2 - grow, BK_Z0 + (strap_t - tongue_t) / 2 - grow])
-        difference() { cube([tongue_l + 0.5 + 2 * grow, tongue_w + 2 * grow, tongue_t + 2 * grow]);  /* runs 0.5 into the plate */ if (grow == 0) for (h = [3, 7]) translate([h, tongue_w / 2, -1]) cylinder(d = 2.2, h = 5, $fn = 16); }
-    // peg, pointing at the wrist, rounded tip
-    // peg: passes through the long strap (2.8) and 1.2 mm beyond its wrist face; a one-sided
-    // bump on the +y edge (0.9 proud, 45-degree ramps) is what the 3.0 hole snaps over.
-    // One-sided so it prints on its side (+y up) with no overhang or island.
-    translate([END_X + PEG_S, 0, 0]) {
-        translate([0, 0, PEG_TIP - grow]) cylinder(d1 = 1.4 + 2 * grow, d2 = peg_d + 2 * grow, h = 0.5 + grow);
-        translate([0, 0, PEG_TIP + 0.5 - eps]) cylinder(d = peg_d + 2 * grow, h = BK_Z0 + 0.5 - (PEG_TIP + 0.5) + eps);
+}
+FR_Z1 = BK_Z1 + bk_slot_clr + bk_top;                 // frame top
+FR_X0 = X_SHORT_END + bk_plate_t - FRAME_DEPTH;       // U mouth
+FR_X1 = X_SHORT_END + bk_plate_t + bk_slot_clr;       // stop face
+// salvage frame for the first cast, whose remnant plate is 28 x 3.6 x 2.0 and has no pin hole:
+// wider and taller U, pin 1.5 mm behind the plate through the tongues (drill 1.7 mm using the frame as the guide)
+SV_HW = 28 / 2 + bk_slot_clr + bk_wall; SV_Z1 = lift + 3.6 + bk_slot_clr + bk_top; SV_X1 = X_SHORT_END + 2.0 + bk_slot_clr; SV_X0 = X_SHORT_END - 4.0; SV_PIN_X = X_SHORT_END - 1.5;
+module frame_raw(shrink = 0, hw = BK_HW, z1 = FR_Z1, ztop = BK_Z1 + bk_slot_clr, xa = FR_X0, xb = FR_X1) {
+    // U side walls and top over the strap end, stop wall, rails, crossbar (all share the top plane)
+    for (s = [-1, 1]) translate([xa + shrink, s * (hw - bk_wall / 2) - bk_wall / 2 + shrink, BK_Z0 + shrink]) cube([xb + bk_wall + bk_len - xa - 2 * shrink, bk_wall - 2 * shrink, z1 - BK_Z0 - 2 * shrink]);
+    translate([xa + shrink, -hw + shrink, ztop + shrink]) cube([xb + bk_wall - xa - 2 * shrink, 2 * hw - 2 * shrink, z1 - ztop - 2 * shrink]);
+    translate([xb + shrink, -hw + shrink, BK_Z0 + shrink]) cube([bk_wall - 2 * shrink, 2 * hw - 2 * shrink, z1 - BK_Z0 - 2 * shrink]);   // stop
+    translate([xb + bk_wall + bk_len - bk_bar_t + shrink, -hw + shrink, BK_Z0 + shrink]) cube([bk_bar_t - 2 * shrink, 2 * hw - 2 * shrink, z1 - BK_Z0 - 2 * shrink]);   // crossbar
+}
+PEG_X = FR_X1 + bk_wall + bk_len - bk_bar_t / 2;
+bk_r = 0.6;
+module frame(hw = BK_HW, z1 = FR_Z1, ztop = BK_Z1 + bk_slot_clr, xa = FR_X0, xb = FR_X1, pin_x = PIN_X, pin_z = PIN_Z) {
+    difference() {
+        minkowski() { frame_raw(bk_r, hw, z1, ztop, xa, xb); sphere(r = bk_r, $fn = 16); }
+        translate([pin_x, 0, pin_z]) rotate([90, 0, 0]) cylinder(d = pin_d + 0.15, h = 40, center = true, $fn = 20);   // pin holes through the side walls
+    }
+    // peg: 45-degree tip, one-sided bump, neck into the crossbar
+    translate([xb + bk_wall + bk_len - bk_bar_t / 2, 0, 0]) {
+        translate([0, 0, PEG_TIP]) cylinder(d1 = 1.4, d2 = peg_d, h = 0.5);
+        translate([0, 0, PEG_TIP + 0.5 - eps]) cylinder(d = peg_d, h = BK_Z0 + 0.5 - (PEG_TIP + 0.5) + eps);
         hull() {
-            translate([0, 0, PEG_TIP + 0.5]) cylinder(d = peg_d + 2 * grow, h = eps);
-            translate([0, peg_bump, PEG_TIP + 0.5 + peg_bump]) cylinder(d = peg_d + 2 * grow, h = eps);
-            translate([0, 0, PEG_TIP + 0.5 + 2 * peg_bump]) cylinder(d = peg_d + 2 * grow, h = eps);
+            translate([0, 0, PEG_TIP + 0.5]) cylinder(d = peg_d, h = eps);
+            translate([0, peg_bump, PEG_TIP + 0.5 + peg_bump]) cylinder(d = peg_d, h = eps);
+            translate([0, 0, PEG_TIP + 0.5 + 2 * peg_bump]) cylinder(d = peg_d, h = eps);
         }
     }
 }
+module buckle(grow = 0) { anchor(grow); }   // what sits in the mold
 
 // ---- silicone preview ------------------------------------------------------------------------------------
 module band() {
@@ -257,16 +270,8 @@ module cup() {
         block(0, CUP_H);
         envelope();
         translate([0, 0, -1]) linear_extrude(1 + REBATE_D) footprint2d(RIDGE_OVER + 0.1);   // rebate for the lid ridge
-        buckle(0.2);                                                                     // seat for the buckle (plate seals the cavity end)
+        buckle(0.2);                                                                     // seat for the anchor plate: it closes the strap cavity, its outer face on the seat's wall
         translate([0, 0, -1]) linear_extrude(1 + lift + eps) lift_outline2d(0.1);       // room for the lid boss under the lifted strap end
-        // open pocket round the buckle frame, starting 0.2 outside the plate's outer face, so the seat
-        // keeps a wall the plate bears on when the pour pushes it outward (the rails pass through
-        // that wall in their own clearance slots)
-        translate([X_SHORT_END + bk_plate_t + 0.2 + seat_wall, -BK_HW - 2, -1]) cube([bk_len + 4, 2 * BK_HW + 4, 1 + BK_Z1 + 0.2]);
-        // nothing above the plate, and open-topped slots for the rails through the seat wall, so the
-        // buckle drops in and lifts out straight
-        translate([X_SHORT_END - 0.5, -(BK_HW + 0.2), -1]) cube([bk_plate_t + 0.7, 2 * (BK_HW + 0.2), 1 + lift + 0.2]);
-        for (s = [-1, 1]) translate([X_SHORT_END - 0.5, s * (BK_HW - bk_rail_w / 2) - bk_rail_w / 2 - 0.2, -1]) cube([bk_plate_t + 0.7 + seat_wall + 0.2, bk_rail_w + 0.4, 1 + BK_Z1 + 0.2]);
         for (p = SCREWS) translate([p[0], p[1], 0]) { translate([0, 0, TOP - 1]) cylinder(d = screw_d + 0.4, h = 20); translate([0, 0, CUP_H - screw_head_h]) cylinder(d = screw_head_d, h = screw_head_h + 1); }
         for (p = JACKS) translate([p[0], p[1], TOP - 1]) cylinder(d = jack_d, h = 20);
         // shallow recesses under the hole pins so the holes cast through cleanly
@@ -289,16 +294,18 @@ module lid() {
         }
         for (x = [-8, 8]) translate([x, 0, -LID_T - 1]) cylinder(d = 2.5, h = LID_T + 2);
         for (x = [-(END_X + 20), -(END_X + long_len - 12), END_X + 15]) translate([x, 0, -LID_T - 1]) cylinder(d = 2.0, h = LID_T + 2);
-        translate([X_SHORT_END + bk_plate_t + 0.3, -BK_HW - 2.5, -LID_T - 1]) cube([bk_len + 3.5, 2 * BK_HW + 5, LID_T + 2]);   // clear the buckle frame
     }
 }
 
 // ---- exports ----------------------------------------------------------------------------------------------------
-if (part == "buckle")      translate([0, 0, BK_HW]) rotate([90, 0, 0]) translate([-X_SHORT_END - 6, 0, 0]) buckle();   // on its side (peg layers run along the peg); slicer support under the two tongue edges
+if (part == "anchor")      translate([0, 0, X_SHORT_END + bk_plate_t]) rotate([0, 90, 0]) translate([0, 0, -BK_Z0 - strap_t / 2]) anchor();   // plate's outer face on the bed, tongues up
+else if (part == "frame")  translate([0, 0, FR_Z1]) rotate([180, 0, 0]) translate([-FR_X0, 0, 0]) frame();                 // top face on the bed, peg up
+else if (part == "frame_salvage") translate([0, 0, SV_Z1]) rotate([180, 0, 0]) translate([-SV_X0, 0, 0]) frame(SV_HW, SV_Z1, lift + 3.6 + bk_slot_clr, SV_X0, SV_X1, SV_PIN_X, lift + 1.8);
 else if (part == "core")   translate([0, 0, -Z0]) core_part();
 else if (part == "cup")    translate([0, 0, CUP_H]) rotate([180, 0, 0]) cup();
 else if (part == "lid")    translate([0, 0, LID_T]) lid();
-else if (part == "buckle_assy") buckle();
+else if (part == "buckle_assy") { anchor(); frame(); }
+else if (part == "check_frame") intersection() { frame(); union() { anchor(); band(); } }   // frame vs anchor/band: only the pin-hole region may touch
 else if (part == "check_core")   intersection() { core_part(); cup(); }
 else if (part == "check_lift")   intersection() { minkowski() { core_part(); translate([0, 0, -40]) cylinder(d = 0.02, h = 40); } cup(); }
 else if (part == "check_buckle") intersection() { buckle(); union() { cup(); core_part(); } }
