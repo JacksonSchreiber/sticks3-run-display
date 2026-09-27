@@ -5,8 +5,8 @@
 // the tail tucks under the short strap. All silicone except the buckle; no frame.
 //
 // Parts (set `part`, or use the Customizer):
-//   "buckle"  PETG x1, 100% infill. Print as exported (frame flat, peg up), brim, with
-//             supports (build plate only): only the two tongues get one, 0.8 mm tall.
+//   "buckle"  PETG x1, 100% infill, 250-255 C, fan <= 20%, slow. Print as exported (on its
+//             side, so the peg's layers run along it), brim, supports on for the two tongue edges.
 //   "core"    PLA. Print as exported (back face down), no supports.
 //   "cup"     PLA. One long open-top mold: jacket pocket in the middle, strap troughs either
 //             side, a seat for the buckle at the short strap's end, M3 clamp + M4 jack holes.
@@ -38,7 +38,7 @@ part = "band"; // [buckle, core, cup, lid, band]
 squeeze = 0.3;
 wrist = 165;            // snug wrist circumference
 fit_ease = 5;           // middle hole = wrist + this
-hole_count = 7; hole_pitch = 5; hole_d = 3.0;
+hole_count = 7; hole_pitch = 5; hole_d = 3.4;
 
 /* [Jacket] */
 wall = 2.8; end_t = 2.2; lip_t = 0.8; back_t = 1.5; side_bump = 0.5; front_min = 0.8;
@@ -59,8 +59,8 @@ lift_len = 12; ramp_len = 12;
 tail = 25;              // long strap beyond the last hole
 
 /* [Buckle] */
-bk_plate_t = 1.5; bk_rail_w = 3.0; bk_len = 12; bk_bar_t = 3.0; bk_clear = 3.1;
-peg_d = 2.4; peg_bump = 0.9; PEG_TIP = -1.2; tongue_l = 10; tongue_w = 6; tongue_t = 1.2;   // peg neck 2.4 with a one-sided 0.9 bump: the 3.0 hole snaps over it
+bk_plate_t = 2.0; bk_rail_w = 4.0; bk_len = 13; bk_bar_t = 4.0; bk_h = 3.6;   // frame section; bk_h > strap_t, the frame stands a little proud of the strap end
+peg_d = 3.0; peg_bump = 0.9; PEG_TIP = -1.2; tongue_l = 10; tongue_w = 6; tongue_t = 1.4;   // peg neck 3.0 with a one-sided 0.9 bump: the 3.4 hole snaps over it
 
 /* [Charging port] */
 port = true; port_w = 14.0; port_h = 7.5; port_from_face = 4.1; skin_t = 1.5; slit_len = 12.0;
@@ -184,15 +184,15 @@ module core_part() {
 // Sits at the short strap's raised end: a plate closes the strap end (its outer face shows),
 // two tongues anchor it in the strap, two rails carry a crossbar with the peg. The long strap
 // passes under the crossbar and under the raised strap end; the peg drops into a hole.
-BK_Z0 = lift; BK_Z1 = lift + strap_t;                 // the raised strap's thickness band
+BK_Z0 = lift; BK_Z1 = lift + bk_h;                    // frame height band (starts at the raised strap's wrist face)
 BK_HW = strap_w / 2 + bk_rail_w;                      // rails outside the strap's width
 bk_r = 0.6;   // rounding on everything you touch: rails, crossbar, plate's outer edges. Plate's inner face and tongues stay square (they seal / are buried)
 module buckle_frame_raw(grow = 0, shrink = 0) {
     x0 = X_SHORT_END;
     // plate (the part outside the cavity face gets rounded; the inner face is kept flat by the intersection below)
-    translate([x0 - grow + shrink - 1, -(BK_HW + grow - shrink), BK_Z0 - grow + shrink]) cube([bk_plate_t + 2 * grow - 2 * shrink + 1, 2 * BK_HW + 2 * grow - 2 * shrink, strap_t + 2 * grow - 2 * shrink]);   // full frame width: closes the strap cavity and joins the rails
-    for (s = [-1, 1]) translate([x0 - grow + shrink - 1, s * (BK_HW - bk_rail_w / 2) - bk_rail_w / 2 - grow + shrink, BK_Z0 - grow + shrink]) cube([bk_plate_t + bk_len + 2 * grow - 2 * shrink + 1, bk_rail_w + 2 * grow - 2 * shrink, strap_t + 2 * grow - 2 * shrink]);
-    translate([x0 + bk_plate_t + bk_len - bk_bar_t - grow + shrink, -BK_HW - grow + shrink, BK_Z0 - grow + shrink]) cube([bk_bar_t + 2 * grow - 2 * shrink, 2 * BK_HW + 2 * grow - 2 * shrink, strap_t + 2 * grow - 2 * shrink]);
+    translate([x0 - grow + shrink - 1, -(BK_HW + grow - shrink), BK_Z0 - grow + shrink]) cube([bk_plate_t + 2 * grow - 2 * shrink + 1, 2 * BK_HW + 2 * grow - 2 * shrink, bk_h + 2 * grow - 2 * shrink]);   // full frame width: closes the strap cavity and joins the rails
+    for (s = [-1, 1]) translate([x0 - grow + shrink - 1, s * (BK_HW - bk_rail_w / 2) - bk_rail_w / 2 - grow + shrink, BK_Z0 - grow + shrink]) cube([bk_plate_t + bk_len + 2 * grow - 2 * shrink + 1, bk_rail_w + 2 * grow - 2 * shrink, bk_h + 2 * grow - 2 * shrink]);
+    translate([x0 + bk_plate_t + bk_len - bk_bar_t - grow + shrink, -BK_HW - grow + shrink, BK_Z0 - grow + shrink]) cube([bk_bar_t + 2 * grow - 2 * shrink, 2 * BK_HW + 2 * grow - 2 * shrink, bk_h + 2 * grow - 2 * shrink]);
 }
 module buckle(grow = 0, print_ribs = false) {
     x0 = X_SHORT_END;
@@ -295,7 +295,7 @@ module lid() {
 }
 
 // ---- exports ----------------------------------------------------------------------------------------------------
-if (part == "buckle")      translate([0, 0, BK_Z1]) rotate([180, 0, 0]) translate([-X_SHORT_END - 6, 0, 0]) buckle();   // frame flat on the bed, peg up; slicer support under the two tongues
+if (part == "buckle")      translate([0, 0, BK_HW]) rotate([90, 0, 0]) translate([-X_SHORT_END - 6, 0, 0]) buckle();   // on its side (peg layers run along the peg); slicer support under the two tongue edges
 else if (part == "core")   translate([0, 0, -Z0]) core_part();
 else if (part == "cup")    translate([0, 0, CUP_H]) rotate([180, 0, 0]) cup();
 else if (part == "lid")    translate([0, 0, LID_T]) lid();
