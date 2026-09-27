@@ -292,7 +292,8 @@ module cup() {
         // open pocket for the frame: beyond a seat wall that exists only between the rails, plus the
         // regions beside the plate where the rails root. Nothing touches the rails, crossbar or peg.
         translate([X_SHORT_END + bk_plate_t + 0.2 + seat_wall, -BK_HW - 2, -1]) cube([bk_len + 4, 2 * BK_HW + 4, 1 + BK_Z1 + 0.2]);
-        for (s = [-1, 1]) translate([X_SHORT_END - 0.5, s > 0 ? strap_w / 2 + 0.1 - eps : -(BK_HW + 2), -1]) cube([bk_plate_t + 0.7 + seat_wall + 0.2, BK_HW + 2 - (strap_w / 2 + 0.1 - eps), 1 + BK_Z1 + 0.2]);
+        // (the seat wall spans only between the rail-root fillets, so the fillets are never under cup material)
+        for (s = [-1, 1]) translate([X_SHORT_END - 0.5, s > 0 ? strap_w / 2 - bk_fillet - 0.1 : -(BK_HW + 2), -1]) cube([bk_plate_t + 0.7 + seat_wall + 0.2, BK_HW + 2 - (strap_w / 2 - bk_fillet - 0.1), 1 + BK_Z1 + 0.2]);
         for (p = SCREWS) translate([p[0], p[1], 0]) { translate([0, 0, TOP - 1]) cylinder(d = screw_d + 0.4, h = 20); translate([0, 0, CUP_H - screw_head_h]) cylinder(d = screw_head_d, h = screw_head_h + 1); }
         for (p = JACKS) translate([p[0], p[1], TOP - 1]) cylinder(d = jack_d, h = 20);
         // shallow recesses under the hole pins so the holes cast through cleanly
