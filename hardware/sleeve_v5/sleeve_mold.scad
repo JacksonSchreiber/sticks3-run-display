@@ -230,10 +230,10 @@ module buckle(grow = 0) {
         translate([0, 0, BK_Z0 - peg_flare]) cylinder(d1 = peg_d + 2 * grow, d2 = peg_d + 2 * peg_flare + 2 * grow, h = peg_flare + 0.8);   // flare, buried in the bar's rounded underside
         translate([0, 0, PEG_TIP + peg_d / 2]) sphere(d = peg_d + 2 * grow);                                                             // hemispherical tip
         translate([0, 0, PEG_TIP + peg_d / 2 - eps]) cylinder(d = peg_d + 2 * grow, h = BK_Z0 + 0.5 - (PEG_TIP + peg_d / 2) + eps);
-        hull() {
-            translate([0, 0, PEG_TIP + 0.5]) cylinder(d = peg_d + 2 * grow, h = eps);
-            translate([0, peg_bump, PEG_TIP + 0.5 + peg_bump]) cylinder(d = peg_d + 2 * grow, h = eps);
-            translate([0, 0, PEG_TIP + 0.5 + 2 * peg_bump]) cylinder(d = peg_d + 2 * grow, h = eps);
+        hull() {   // one-sided bump, starting at the tip sphere's equator so there is no ridge
+            translate([0, 0, PEG_TIP + peg_d / 2]) cylinder(d = peg_d + 2 * grow, h = eps);
+            translate([0, peg_bump, PEG_TIP + peg_d / 2 + peg_bump]) cylinder(d = peg_d + 2 * grow, h = eps);
+            translate([0, 0, PEG_TIP + peg_d / 2 + 2 * peg_bump]) cylinder(d = peg_d + 2 * grow, h = eps);
         }
     }
 }
