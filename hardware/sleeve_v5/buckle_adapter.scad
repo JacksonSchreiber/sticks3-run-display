@@ -26,14 +26,14 @@ bar_len = 24.5; bar_d = 2.5; bar_tip_d = 0.8; seat_depth = 0.9;
 
 /* [Buckle] */
 wall = 2.0; top = 2.0;
-rail_w = 3.0; far_t = 3.2; fr_h = 4.5;
+rail_w = 3.0; far_t = 4.5; fr_h = 4.5;   // far bar 4.5 thick: it prints with its layers across it and carries the scoop
 bar_from_face = 4.0;
 tongue_len = 13.5;          // bar centre to tongue tip
 wrist_R = 35;               // frame curves to this radius
 keeper_back = 9.0; keeper_t = 3.0; keeper_gap = 3.3;
-r = 0.8;
+r = 1.0; lip = 0.8;   // cap rounding; snap lips behind the plate's ends
 /* [Tongue] */
-tongue_w = 3.0; tongue_t = 2.0; sleeve_wall = 1.5; tip_up = 1.5; scoop = 0.8;   // scoop: how deep the tongue's rest is cut into the far bar
+tongue_w = 3.0; tongue_t = 2.2; sleeve_wall = 1.5; tip_up = 1.5; scoop = 0.8;   // scoop: how deep the tongue's rest is cut into the far bar
 
 $fn = 48; eps = 0.01;
 PW = plate_w + 2 * clr; PT = plate_t + clr; PH = plate_h + clr; OW = PW + 2 * wall;
@@ -58,6 +58,11 @@ module cap_raw() {
     translate([0, -OW / 2, PH]) cube([X_FACE, OW, top]);
     translate([PT, -OW / 2, 0]) cube([wall, OW, PH + top]);
     for (s = [-1, 1]) translate([0, s * (OW / 2 - wall / 2) - wall / 2, 0]) cube([X_FACE, wall, PH + top]);
+    // snap lips behind the plate's ends (beyond the strap's width): the cap is captured in the pull direction
+    for (s = [-1, 1]) hull() {
+        translate([-lip, s > 0 ? strap_w / 2 + 0.6 : -(OW / 2), 0]) cube([lip + eps, OW / 2 - strap_w / 2 - 0.6, PH]);
+        translate([-lip - 0.8, s > 0 ? strap_w / 2 + 0.6 : -(OW / 2), 0]) cube([eps, OW / 2 - strap_w / 2 - 0.6, PH - 0.8]);   // 45-degree ramp so it snaps on
+    }
 }
 module keeper_raw() {
     for (s = [-1, 1]) translate([-keeper_back - keeper_t, s * (strap_w / 2 + 0.5 + keeper_t / 2) - keeper_t / 2, strap_top - plate_z0 + 0.5]) cube([keeper_back + keeper_t + eps, keeper_t, ZT - (strap_top - plate_z0 + 0.5)]);
@@ -70,7 +75,7 @@ module buckle() {
             for (s = [-1, 1]) rail(s);
             far_bar();
         }
-        translate([-1, -PW / 2, -1]) cube([PT + 1, PW, PH + 1]);                                                  // plate pocket
+        translate([0, -PW / 2, -1]) cube([PT, PW, PH + 1]);                                                        // plate pocket (the lips sit behind the plate's ends)
         translate([-50, -(strap_w / 2 + 0.5), -1]) cube([50 + PT, strap_w + 1, 1 + strap_top - plate_z0 + keeper_gap]);   // strap + keeper passage
         translate([-50, -50, -50]) cube([50 - keeper_back - keeper_t - r - eps, 100, 100]);                          // trim behind the keeper
         translate([-50, -50, -50]) cube([100, 100, 50 - r]);                                                        // nothing below the plate plane behind the face
