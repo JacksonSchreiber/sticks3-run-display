@@ -66,7 +66,7 @@ bk_fillet = 2.0;        // inside fillet where the rails meet the plate (the old
 bk_round = 2.0;         // outside corner radius of the frame in plan
 peg_flare = 0.8;        // fillet at the peg's root into the crossbar
 bk_wall = 3.0; bk_top = 2.2; bk_slot_clr = 0.3; pin_d = 1.6;   // (salvage frame only)
-peg_d = 3.0; peg_bump = 0.9; PEG_TIP = -1.2; tongue_l = 16; tongue_w = 7; tongue_t = 1.6;   // peg neck 3.0 with a one-sided 0.9 bump: the 3.4 hole snaps over it
+peg_d = 3.0; peg_bump = 0.9; PEG_TIP = -2.5; tongue_l = 16; tongue_w = 7; tongue_t = 1.6;   // peg reaches 2.5 mm past the strap's wrist face   // peg neck 3.0 with a one-sided 0.9 bump: the 3.4 hole snaps over it
 FRAME_DEPTH = bk_plate_t + 0.5;              // how far the strap end goes into the U (plate against the stop)
 
 /* [Charging port] */
@@ -89,7 +89,7 @@ WIN = [[sx(SCREEN[0][0] - win_margin), sx(SCREEN[0][1] + win_margin)], [-((SCREE
 FRONT_BUMP = FRONT_BTN[2] + front_min - lip_t;
 
 // ---- strap layout (s = distance from the jacket's end face along the strap) --------------------
-PEG_S = short_len + bk_plate_t + bk_len - bk_bar_t / 2;             // peg centre, from the jacket's +x end
+PEG_S = short_len + bk_plate_t / 2;                                 // peg centre, from the jacket's +x end: under the middle of the plate
 function smooth(u) = let(v = min(max(u, 0), 1)) v * v * (3 - 2 * v);
 function w_at(s) = strap_w + (2 * BODY_HW - strap_w) * (1 - smooth(s / root_len));
 function t_at(s) = hinge_t + (strap_t - hinge_t) * smooth((s - hinge_len) / (root_len - hinge_len));
@@ -225,15 +225,17 @@ module buckle(grow = 0) {
                 translate([0, 0, tongue_t - 0.4 + eps]) cylinder(d1 = 2.6, d2 = 3.4, h = 0.4, $fn = 16);
             }
         }
-    // peg on the crossbar's underside: 45-degree tip, one-sided bump, flared root
-    translate([x0 + bk_plate_t + bk_len - bk_bar_t / 2, 0, 0]) {
-        translate([0, 0, BK_Z0 - peg_flare]) cylinder(d1 = peg_d + 2 * grow, d2 = peg_d + 2 * peg_flare + 2 * grow, h = peg_flare + 0.8);   // flare, buried in the bar's rounded underside
-        translate([0, 0, PEG_TIP + peg_d / 2]) sphere(d = peg_d + 2 * grow);                                                             // hemispherical tip
-        translate([0, 0, PEG_TIP + peg_d / 2 - eps]) cylinder(d = peg_d + 2 * grow, h = BK_Z0 + 0.5 - (PEG_TIP + peg_d / 2) + eps);
-        hull() {   // one-sided bump, starting at the tip sphere's equator so there is no ridge
-            translate([0, 0, PEG_TIP + peg_d / 2]) cylinder(d = peg_d + 2 * grow, h = eps);
-            translate([0, peg_bump, PEG_TIP + peg_d / 2 + peg_bump]) cylinder(d = peg_d + 2 * grow, h = eps);
-            translate([0, 0, PEG_TIP + peg_d / 2 + 2 * peg_bump]) cylinder(d = peg_d + 2 * grow, h = eps);
+    // peg hanging from the underside of the plate, centred: the long strap runs under the plate and the
+    // short strap's tension clamps it there, so wrist curvature cannot lift it off. 45-degree tip, one-sided
+    // bump sitting just below the strap's wrist face, flared root into the plate.
+    translate([x0 + bk_plate_t / 2, 0, 0]) {
+        translate([0, 0, BK_Z0 - 1.2]) cylinder(d1 = peg_d + 2 * grow, d2 = peg_d + 2.4 + 2 * grow, h = 1.2 + 1.5);           // flare, buried in the plate
+        translate([0, 0, PEG_TIP - grow]) cylinder(d1 = 1.4 + 2 * grow, d2 = peg_d + 2 * grow, h = 0.8 + grow);                  // 45-degree tip
+        translate([0, 0, PEG_TIP + 0.8 - eps]) cylinder(d = peg_d + 2 * grow, h = BK_Z0 - (PEG_TIP + 0.8) + eps);
+        hull() {   // bump: peak 0.9 mm below the strap's wrist face
+            translate([0, 0, PEG_TIP + 0.8]) cylinder(d = peg_d + 2 * grow, h = eps);
+            translate([0, peg_bump, PEG_TIP + 0.8 + peg_bump]) cylinder(d = peg_d + 2 * grow, h = eps);
+            translate([0, 0, PEG_TIP + 0.8 + 2 * peg_bump]) cylinder(d = peg_d + 2 * grow, h = eps);
         }
     }
 }
@@ -328,6 +330,7 @@ module lid() {
         }
         for (x = [-8, 8]) translate([x, 0, -LID_T - 1]) cylinder(d = 2.5, h = LID_T + 2);
         for (x = [-(END_X + 20), -(END_X + long_len - 12), END_X + 15]) translate([x, 0, -LID_T - 1]) cylinder(d = 2.0, h = LID_T + 2);
+        translate([END_X + PEG_S, 0, PEG_TIP - 0.3]) cylinder(d = peg_d + 2 * peg_bump + 0.6, h = lift + 0.4 - (PEG_TIP - 0.3));   // pocket for the peg: through the whole boss and clamp step, 0.3 into the lid past the tip
         translate([X_SHORT_END + bk_plate_t + 0.3, -BK_HW - 2.5, -LID_T - 1]) cube([bk_len + 3.5, 2 * BK_HW + 5, LID_T + 2]);   // clear the frame
         for (s = [-1, 1]) translate([X_SHORT_END - 0.7, s > 0 ? strap_w / 2 + 0.3 : -(BK_HW + 2.5), -LID_T - 1]) cube([bk_plate_t + 1.0, BK_HW + 2.5 - (strap_w / 2 + 0.3), LID_T + 2]);   // clear the plate's outer parts
     }
