@@ -82,7 +82,7 @@ module buckle() {
         // spring bar seats, blind, in the rails' inner faces
         for (s = [-1, 1]) translate([X_BAR, s * (IW / 2 + seat_depth / 2 - eps), fr_h / 2 + drop(X_BAR)]) rotate([90, 0, 0]) cylinder(d = bar_tip_d + 0.25, h = seat_depth + 2 * eps, center = true, $fn = 16);
         // scooped, tapered rest for the tongue on the far bar's top
-        translate([X_FAR, 0, fr_h + drop(X_FAR) - scoop + 0.55 * (tongue_w + 3.0) / 2]) scale([1, 1, 0.55]) rotate([0, 90, 0]) cylinder(d = tongue_w + 3.0, h = far_t + 2, center = true);
+        translate([X_FAR, 0, fr_h + drop(X_FAR) - scoop + 0.5 * (tongue_w + 4.0) / 2]) scale([1, 1, 0.5]) rotate([0, 90, 0]) cylinder(d = tongue_w + 4.0, h = far_t + 2, center = true);
         // pin holes through the cap's side walls into the plate ends
         for (s = [-1, 1]) translate([PT / 2, s * (OW / 2 + 1), PH / 2]) rotate([90, 0, 0]) cylinder(d = 1.7, h = wall + 2.5, center = true, $fn = 20);
     }
@@ -95,7 +95,7 @@ module tongue() {
             translate([X_BAR, 0, zc]) rotate([90, 0, 0]) cylinder(d = sleeve_od, h = IW - 0.3, center = true);   // full-width sleeve: hides the bar, centres the tongue
             // arm: droops with the frame, rests on the far bar, tip turns up
             xs = [X_BAR, X_BAR + 4, X_FAR - 1.0, X_FAR + far_t / 2 + 0.3, X_FAR + far_t / 2 + 2.0];
-            zr = fr_h + drop(X_FAR) - scoop + tongue_t / 2 + 0.1;   // arm centre when resting in the scoop (0.1 clearance)
+            zr = fr_h + drop(X_FAR) - scoop + tongue_t / 2 + 0.2;   // arm centre when resting in the scoop (0.2 clearance)
             zs = [zc, zc - 0.05, zr, zr, zr + tip_up];
             ws = [tongue_w, tongue_w, tongue_w - 0.4, tongue_w - 0.6, tongue_w - 1.0];
             for (i = [0 : len(xs) - 2]) hull() {
