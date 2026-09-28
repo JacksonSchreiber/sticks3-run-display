@@ -1,70 +1,70 @@
-// End-link adapter: turns the cast-in PETG buckle plate on a v5 band into a lug for a normal
-// two-piece strap buckle (the Tropic's: 18 mm between its lugs, 21 mm spring bar, 0.7 mm tips).
+// Tang buckle for the v5 band: caps the cast-in PETG plate at the short strap's end and gives the
+// band a normal watch buckle sized for its 22 mm width. Pivot = one of your 22 mm spring bars,
+// tongue = the Tropic's, lifted off its buckle. A fixed keeper bridge behind the cap holds the tail.
 //
-// Prep the band: snip the frame's two rails and crossbar off flush with the plate's outer face
-// and file the stubs flat, leaving the bare plate at the strap's end.
-// Fit: slide the adapter over the plate (it grips the plate's top, ends and outer face; the
-// passage under the plate stays open). Glue with CA on the plate faces, and/or drill the two
-// side holes 1.6 mm on into the plate's ends and pin with 8 mm of 1.6 mm wire.
-// Then the Tropic buckle goes on the nose with its own spring bar, like on a strap loop.
+// Prep the band: snip the frame's rails and crossbar off flush with the plate's outer face, file
+// the stubs flat. Fit: slide the cap over the plate, CA glue, optionally pin through the side holes.
+// Then hook the tongue's loop over the spring bar, compress the bar into the two lug holes.
 //
-// Print: PETG, as exported (nose up), 100% infill, no supports, 250-255 C, low fan.
+// Wear: long strap comes round under the wrist, goes UNDER the far bar, UP through the frame
+// opening, the tongue goes out through a hole, and the tail runs over the pivot bar, under the
+// keeper bridge and along the top of the short strap. Like a watch.
+//
+// Print: PETG, as exported (on its side), 100% infill, 250-255 C, low fan, supports on.
 
 /* [Plate on the band (measure yours)] */
-plate_w = 32.0;     // across the strap (y)
-plate_t = 5.0;      // along the strap (x)
-plate_h = 4.5;      // tall (z)
-plate_z0 = 3.0;     // plate's underside above the wrist face
-clr = 0.15;
+plate_w = 32.0; plate_t = 5.0; plate_h = 4.5; plate_z0 = 3.0; clr = 0.15;
+
+/* [Band] */
+strap_w = 22.0; strap_t = 2.8; strap_top = 5.8;   // strap_top: top of the lifted strap end above the wrist face
+
+/* [Hardware] */
+tongue_len = 14.0;   // Tropic tongue, loop centre to tip: MEASURE
+bar_tip_d = 0.8; bar_hole_depth = 1.0;
 
 /* [Buckle] */
-lug_gap = 18.0;     // between the buckle's lugs
-bar_hole = 2.0;     // through the nose, for the spring bar's body
-nose_len = 6.0;     // nose beyond the adapter's face
-bar_from_face = 3.2;
-
-/* [Adapter] */
-wall = 2.0; top = 2.0; r = 0.8;
-pin_d = 1.6;
+wall = 2.0; top = 2.0;          // cap walls
+lug_t = 3.0; rail_w = 3.0; far_t = 3.0; fr_h = 4.5;   // frame section
+bar_from_face = 4.0;            // pivot bar centre beyond the cap's outer face
+keeper_back = 9.0; keeper_t = 3.0; keeper_gap = 3.3;
+r = 0.8;
 
 $fn = 40; eps = 0.01;
-PW = plate_w + 2 * clr; PT = plate_t + clr; PH = plate_h + clr;
-OW = PW + 2 * wall;                 // overall width
-module body_raw() {
-    // top wall over the plate
-    translate([0, -OW / 2, PH]) cube([PT + wall, OW, top]);
-    // outer face wall
-    translate([PT, -OW / 2, 0]) cube([wall, OW, PH + top]);
-    // side walls
-    for (s = [-1, 1]) translate([0, s * (OW / 2 - wall / 2) - wall / 2, 0]) cube([PT + wall, wall, PH + top]);
-    // nose
-    translate([PT + wall - eps, -(lug_gap - 0.4) / 2, 0]) cube([nose_len + eps, lug_gap - 0.4, PH]);
+PW = plate_w + 2 * clr; PT = plate_t + clr; PH = plate_h + clr; OW = PW + 2 * wall;
+IW = strap_w + 0.6;                       // frame inner width
+FW = IW + 2 * rail_w;                     // frame outer width
+X_FACE = PT + wall;                       // cap's outer face
+X_BAR = X_FACE + bar_from_face;           // pivot bar
+X_FAR = X_BAR + tongue_len - 1.5;         // far bar centre: the tongue tip rests 1.5 past it
+Z0 = 0; ZT = PH + top;                    // frame occupies z 0..PH (like the plate), cap top to ZT
+module cap_raw() {
+    translate([0, -OW / 2, PH]) cube([X_FACE, OW, top]);                                   // top wall
+    translate([PT, -OW / 2, 0]) cube([wall, OW, PH + top]);                                // outer face wall
+    for (s = [-1, 1]) translate([0, s * (OW / 2 - wall / 2) - wall / 2, 0]) cube([X_FACE, wall, PH + top]);   // side walls
 }
-module adapter() {
-    difference() {
-        minkowski() {
-            difference() { translate([r, 0, 0]) resize([0, 0, 0]) children(); }
-            sphere(r = r, $fn = 16);
-        }
-    }
+module frame_raw() {
+    for (s = [-1, 1]) translate([X_FACE - eps, s * (FW / 2 - rail_w / 2) - rail_w / 2, 0]) cube([X_FAR + far_t / 2 - X_FACE + eps, rail_w, fr_h]);   // lugs + rails
+    translate([X_FAR - far_t / 2, -FW / 2, 0]) cube([far_t, FW, fr_h]);                    // far bar
+}
+module keeper_raw() {
+    // arms back along the strap's edges from the cap's top wall, and a bridge over the strap
+    for (s = [-1, 1]) translate([-keeper_back - keeper_t, s * (strap_w / 2 + 0.5 + keeper_t / 2) - keeper_t / 2, strap_top - plate_z0 + 0.5]) cube([keeper_back + keeper_t + eps, keeper_t, ZT - (strap_top - plate_z0 + 0.5)]);
+    translate([-keeper_back - keeper_t, -(strap_w / 2 + 0.5 + keeper_t), strap_top - plate_z0 + keeper_gap]) cube([keeper_t, strap_w + 1 + 2 * keeper_t, ZT - (strap_top - plate_z0 + keeper_gap)]);
 }
 module part() {
     difference() {
-        // rounded outer shape
-        minkowski() {
-            intersection() { body_raw(); translate([r, -50, r]) cube([100, 100, 100]); }   // keep the plate-side face and underside flat
-            sphere(r = r, $fn = 16);
-        }
-        // the pocket the plate sits in (open toward -x and open below)
-        translate([-1, -PW / 2, -1]) cube([PT + 1, PW, PH + 1]);
-        // spring bar hole through the nose
-        translate([PT + wall + bar_from_face, 0, PH / 2]) rotate([90, 0, 0]) cylinder(d = bar_hole, h = 40, center = true, $fn = 24);
-        // pin holes through the side walls into the plate's ends (drill on into the plate)
-        for (s = [-1, 1]) translate([PT / 2, s * (OW / 2 + 1), PH / 2]) rotate([90, 0, 0]) cylinder(d = pin_d + 0.1, h = wall + 2.5, center = true, $fn = 20);
-        // trim below the wrist plane and behind the plate face
-        translate([-50, -50, -50]) cube([100, 100, 50]);
-        translate([-50, -50, -50]) cube([50 - eps, 100, 100]);
+        minkowski() { union() { cap_raw(); frame_raw(); keeper_raw(); } sphere(r = r, $fn = 16); }
+        translate([-1, -PW / 2, -1]) cube([PT + 1, PW, PH + 1]);                            // plate pocket (open toward the strap and below)
+        translate([-50, -50, -50]) cube([100, 100, 50 - r]);                                 // nothing below the frame's underside plane (keeps the tail passage)
+        translate([-50, -(strap_w / 2 + 0.5), -1]) cube([50 + PT, strap_w + 1, 1 + strap_top - plate_z0 + keeper_gap]);   // strap + keeper passage behind the cap
+        translate([X_FACE, -IW / 2, -1]) cube([X_FAR - far_t / 2 - X_FACE, IW, 60]);          // frame opening: full inner width, pivot bar free between the lugs
+        translate([-50, -50, -50]) cube([50 - keeper_back - keeper_t - r - eps, 100, 100]);  // trim
+        // spring bar seats: blind holes in the lugs' inner faces
+        for (s = [-1, 1]) translate([X_BAR, s * (IW / 2 + bar_hole_depth / 2 - eps), fr_h / 2]) rotate([90, 0, 0]) cylinder(d = bar_tip_d + 0.25, h = bar_hole_depth + 2 * eps, center = true, $fn = 16);
+        // pin holes through the cap's side walls into the plate ends
+        for (s = [-1, 1]) translate([PT / 2, s * (OW / 2 + 1), PH / 2]) rotate([90, 0, 0]) cylinder(d = 1.7, h = wall + 2.5, center = true, $fn = 20);
+        // round the far bar's top edge where the strap bends over it
     }
 }
-// export: nose up (outer face wall on the bed)
-rotate([0, -90, 0]) part();   // plate-side edges on the bed, nose at the top
+// export on its side (one rail on the bed); supports on
+translate([0, 0, OW / 2 + r]) rotate([90, 0, 0]) part();
