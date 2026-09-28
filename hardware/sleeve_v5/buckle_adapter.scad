@@ -84,5 +84,5 @@ module tongue() {
     }
 }
 part_sel = "buckle"; // [buckle, tongue]
-if (part_sel == "tongue") rotate([90, 0, 0]) tongue();                       // flat: ring axis vertical
+if (part_sel == "tongue") translate([0, 0, tongue_w / 2]) rotate([90, 0, 0]) tongue();   // flat: ring axis vertical
 else translate([0, 0, OW / 2 + r]) rotate([90, 0, 0]) part();              // buckle on its side; supports on
