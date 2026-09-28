@@ -1,6 +1,6 @@
 // Tang buckle for the v5 band: caps the cast-in PETG plate at the short strap's end and gives the
-// band a normal watch buckle sized for its 22 mm width. Pivot and tongue = the Tropic buckle's own
-// 21 mm spring bar and tongue. A fixed keeper bridge behind the cap holds the tail.
+// band a normal watch buckle sized for its 22 mm width. Pivot = the Tropic strap's
+// 22 mm spring bar (24.5 tip to tip, 2.5 body); tongue printed. A fixed keeper bridge behind the cap holds the tail.
 //
 // Prep the band: snip the frame's rails and crossbar off flush with the plate's outer face, file
 // the stubs flat. Fit: slide the cap over the plate, CA glue, optionally pin through the side holes.
@@ -19,10 +19,11 @@ plate_w = 32.0; plate_t = 5.0; plate_h = 4.5; plate_z0 = 3.0; clr = 0.15;
 strap_w = 22.0; strap_t = 2.8; strap_top = 5.8;   // strap_top: top of the lifted strap end above the wrist face
 
 /* [Hardware] */
-tongue_len = 14.0;   // Tropic tongue, loop centre to tip: MEASURE
-bar_tip_d = 0.7; bar_hole_depth = 0.9;   // the Tropic's own bar: 21 mm tip to tip, 1.4 body, 0.7 tips
-bar_len = 21.0;                             // tip to tip, extended
-LUG_IN = bar_len - 2 * (bar_hole_depth - 0.2);   // pivot lug inner faces: 19.6 apart, tips seat 0.7 deep
+tongue_len = 12.0;   // printed tongue, bar centre to tip (sets the far bar too)
+bar_tip_d = 0.8; bar_hole_depth = 0.9; bar_d = 2.5;   // the Tropic's STRAP spring bar: 24.5 tip to tip extended, 2.5 body, 0.8 tips
+bar_len = 24.5;
+LUG_IN = bar_len - 2 * (bar_hole_depth - 0.2);         // lug inner faces 23.1 apart: tips seat 0.7 deep when the bar is extended
+tongue_w = 3.0; tongue_t = 2.0; ring_wall = 1.6;        // printed tongue
 
 /* [Buckle] */
 wall = 2.0; top = 2.0;          // cap walls
@@ -33,11 +34,11 @@ r = 0.8;
 
 $fn = 40; eps = 0.01;
 PW = plate_w + 2 * clr; PT = plate_t + clr; PH = plate_h + clr; OW = PW + 2 * wall;
-IW = strap_w + 0.6;                       // frame inner width
+IW = LUG_IN;                              // frame inner width = lug spacing (23.1, clears the 22 strap)
 FW = IW + 2 * rail_w;                     // frame outer width
 X_FACE = PT + wall;                       // cap's outer face
 X_BAR = X_FACE + bar_from_face;           // pivot bar
-X_FAR = X_BAR + tongue_len - 1.5;         // far bar centre: the tongue tip rests 1.5 past it
+X_FAR = X_BAR + tongue_len - far_t / 2 - 0.5;   // far bar: the tongue tip reaches 0.5 past its outer face
 Z0 = 0; ZT = PH + top;                    // frame occupies z 0..PH (like the plate), cap top to ZT
 module cap_raw() {
     translate([0, -OW / 2, PH]) cube([X_FACE, OW, top]);                                   // top wall
@@ -46,7 +47,6 @@ module cap_raw() {
 }
 module frame_raw() {
     for (s = [-1, 1]) translate([X_FACE - eps, s * (FW / 2 - rail_w / 2) - rail_w / 2, 0]) cube([X_FAR + far_t / 2 - X_FACE + eps, rail_w, fr_h]);   // rails
-    for (s = [-1, 1]) translate([X_FACE - eps, s > 0 ? LUG_IN / 2 : -FW / 2, 0]) cube([X_BAR + 2.5 - X_FACE + eps, FW / 2 - LUG_IN / 2, fr_h]);        // pivot lugs, in to the bar
     translate([X_FAR - far_t / 2, -FW / 2, 0]) cube([far_t, FW, fr_h]);                    // far bar
 }
 module keeper_raw() {
@@ -60,8 +60,7 @@ module part() {
         translate([-1, -PW / 2, -1]) cube([PT + 1, PW, PH + 1]);                            // plate pocket (open toward the strap and below)
         translate([-50, -50, -50]) cube([100, 100, 50 - r]);                                 // nothing below the frame's underside plane (keeps the tail passage)
         translate([-50, -(strap_w / 2 + 0.5), -1]) cube([50 + PT, strap_w + 1, 1 + strap_top - plate_z0 + keeper_gap]);   // strap + keeper passage behind the cap
-        translate([X_FACE, -LUG_IN / 2, -1]) cube([X_FAR - far_t / 2 - X_FACE, LUG_IN, 60]);      // between the pivot lugs: bar free, tongue room
-        translate([X_BAR + 2.5, -IW / 2, -1]) cube([X_FAR - far_t / 2 - X_BAR - 2.5, IW, 60]);      // strap opening beyond the pivot: full 22.6 width
+        translate([X_FACE, -IW / 2, -1]) cube([X_FAR - far_t / 2 - X_FACE, IW, 60]);              // frame opening, full inner width; bar free between the lugs
         translate([-50, -50, -50]) cube([50 - keeper_back - keeper_t - r - eps, 100, 100]);  // trim
         // spring bar seats: blind holes in the lugs' inner faces
         for (s = [-1, 1]) translate([X_BAR, s * (LUG_IN / 2 + bar_hole_depth / 2 - eps), fr_h / 2]) rotate([90, 0, 0]) cylinder(d = bar_tip_d + 0.25, h = bar_hole_depth + 2 * eps, center = true, $fn = 16);
@@ -70,5 +69,20 @@ module part() {
         // round the far bar's top edge where the strap bends over it
     }
 }
-// export on its side (one rail on the bed); supports on
-translate([0, 0, OW / 2 + r]) rotate([90, 0, 0]) part();
+// printed tongue: ring on the bar, tapered arm to just past the far bar, rounded tip
+module tongue() {
+    ring_od = bar_d + 0.3 + 2 * ring_wall;
+    difference() {
+        union() {
+            rotate([90, 0, 0]) cylinder(d = ring_od, h = tongue_w, center = true);
+            hull() {
+                rotate([90, 0, 0]) cylinder(d = tongue_t, h = tongue_w, center = true);
+                translate([tongue_len - 1.0, 0, -0.3]) rotate([90, 0, 0]) cylinder(d = tongue_t - 0.4, h = tongue_w - 0.8, center = true);
+            }
+        }
+        rotate([90, 0, 0]) cylinder(d = bar_d + 0.3, h = 10, center = true);
+    }
+}
+part_sel = "buckle"; // [buckle, tongue]
+if (part_sel == "tongue") rotate([90, 0, 0]) tongue();                       // flat: ring axis vertical
+else translate([0, 0, OW / 2 + r]) rotate([90, 0, 0]) part();              // buckle on its side; supports on
