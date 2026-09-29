@@ -44,9 +44,9 @@ part = "band"; // [buckle, tongue, keeper_mold, core, cup, lid, band]
 
 /* [Fit] */
 squeeze = 0.0;           // pocket = Stick size; the silicone on every face grips it
-wrist = 165;            // snug wrist circumference
+wrist = 175;            // circumference at the middle hole minus fit_ease (v6: +10, the v5 holes sat too close to the jacket)
 fit_ease = 5;           // middle hole = wrist + this
-hole_count = 9; hole_pitch = 5; hole_d = 3.4;
+hole_count = 9; hole_pitch = 5; hole_x = 3.4; hole_y = 5.8;   // slots: rounded ends, wide enough for the 4.5 mm tongue
 
 /* [Jacket] */
 wall = 2.8; end_t = 2.2; lip_t = 1.4; back_t = 1.7; side_bump = 0.5; front_min = 1.4;   // v6: lip and back 0.2 thicker than v5
@@ -63,7 +63,7 @@ root_t = hinge_t;
 tail_r = 11;            // long strap's end is a full semicircle
 fillet_r = 2.0;         // fillet between the hinge top and the end wall
 short_len = 45;         // jacket end -> strap end (buckle plate)
-tail = 40;              // long strap beyond the last hole
+tail = 30;              // long strap beyond the last hole
 
 /* [Buckle] */
 bk_plate_t = 5.0;       // plate closing the strap's end (along the strap)
@@ -78,7 +78,7 @@ tongue_len = 13.5;      // bar centre -> tongue tip
 anc_l = 16; anc_w = 7; anc_t = 1.6;   // anchors buried in the strap
 
 /* [Tongue] */
-arm_w = 3.0; arm_t = 2.2; sleeve_wall = 1.3; bore_clr = 0.5; tip_up = 1.2; scoop = 0.8;   // bore 3.0 for the 2.5 bar; sleeve OD 5.6
+arm_w = 4.5; arm_t = 2.2; sleeve_wall = 1.3; bore_clr = 0.5; tip_up = 1.2; scoop = 0.8;   // bore 3.0 for the 2.5 bar; sleeve OD 5.6
 
 /* [Keeper] */
 kp_in_w = 22.2; kp_in_h = 5.6; kp_wall = 2.0; kp_w = 5.0; kp_r = 1.5;   // ring: strap + tail inside, 2 mm section, 5 mm wide
@@ -167,7 +167,8 @@ module strap(dir) {   // dir = +1 short, -1 long
     translate([dir * END_X, 0, 0]) mirror([dir < 0 ? 1 : 0, 0, 0]) rotate([90, 0, 0]) linear_extrude(2 * BODY_HW - 2 * body_r - 1, center = true)
         difference() { translate([-eps, root_t - eps]) square([fillet_r + eps, fillet_r + eps]); translate([fillet_r, root_t + fillet_r]) circle(r = fillet_r); }
 }
-module holes() { for (i = [0 : hole_count - 1]) translate([-(END_X + hole_s(i)), 0, -1]) cylinder(d = hole_d, h = strap_t + 2); }
+module slot(lx, ly, h) { hull() for (s = [-1, 1]) translate([0, s * (ly - lx) / 2, 0]) cylinder(d = lx, h = h); }   // stadium along y
+module holes() { for (i = [0 : hole_count - 1]) translate([-(END_X + hole_s(i)), 0, -1]) slot(hole_x, hole_y, strap_t + 2); }
 
 module envelope() { body(); side_bumps(); front_bump(); strap(1); strap(-1); }
 module outline2d() { projection() envelope(); }
@@ -232,7 +233,7 @@ module buckle(grow = 0) {
             // spring bar: 1.0 mm holes straight through both lugs
             translate([X_BAR, 0, BAR_Z]) rotate([90, 0, 0]) cylinder(d = bar_hole_d, h = 2 * BK_HW + 2, center = true, $fn = 24);
             // scooped, tapered rest for the tongue on the far bar's top
-            translate([X_FAR, 0, bk_h - scoop + 0.5 * (arm_w + 4.0) / 2]) scale([1, 1, 0.5]) rotate([0, 90, 0]) cylinder(d = arm_w + 4.0, h = bk_far_t + 2, center = true);
+            translate([X_FAR, 0, bk_h - scoop + 0.5 * (arm_w + 7.5) / 2]) scale([1, 1, 0.5]) rotate([0, 90, 0]) cylinder(d = arm_w + 7.5, h = bk_far_t + 2, center = true);   // broad shallow dish: the wide arm clears its sides
         }
         anchors();
     } else {
@@ -243,13 +244,13 @@ module buckle(grow = 0) {
 // tongue: full-width sleeve on the spring bar (hides it, centres the arm) + arm that rests in the scoop
 module tongue() {
     bore = bar_d + bore_clr; od = bore + 2 * sleeve_wall;
-    zc = BAR_Z; zr = bk_h - scoop + arm_t / 2 + 0.2;   // arm centre when resting in the scoop (0.2 clearance)
+    zc = BAR_Z; zr = bk_h - scoop + arm_t / 2 + 0.3;   // arm centre when resting in the scoop (0.3 clearance)
     difference() {
         union() {
             translate([X_BAR, 0, zc]) rotate([90, 0, 0]) cylinder(d = od, h = IW - 0.4, center = true, $fn = 96);
             xs = [X_BAR, X_BAR + 3.0, X_FAR - 3.5, X_FAR + bk_far_t / 2 + 0.3, X_FAR + bk_far_t / 2 + 2.0];
             zs = [zc, zc, zr, zr, zr + tip_up];
-            ws = [arm_w, arm_w, arm_w - 0.3, arm_w - 0.6, arm_w - 1.0];
+            ws = [arm_w, arm_w, arm_w - 0.3, arm_w - 0.6, arm_w - 1.0];   // 4.5 wide arm, 3.5 at the tip
             for (i = [0 : len(xs) - 2]) hull() {
                 translate([xs[i], 0, zs[i]]) rotate([90, 0, 0]) cylinder(d = arm_t, h = ws[i], center = true);
                 translate([xs[i + 1], 0, zs[i + 1]]) rotate([90, 0, 0]) cylinder(d = arm_t - (i == len(xs) - 2 ? 0.4 : 0), h = ws[i + 1], center = true);
@@ -309,7 +310,7 @@ module cup() {
         for (s = [-1, 1]) translate([X0, s > 0 ? IW / 2 - bk_fillet - 0.1 : -(BK_HW + 2), -1]) cube([bk_plate_t + 0.2 + seat_wall + 0.2, BK_HW + 2 - (IW / 2 - bk_fillet - 0.1), 1 + POCKET_Z]);
         for (p = SCREWS) translate([p[0], p[1], 0]) { translate([0, 0, TOP - 1]) cylinder(d = screw_d + 0.4, h = 20); translate([0, 0, CUP_H - screw_head_h]) cylinder(d = screw_head_d, h = screw_head_h + 1); }
         for (p = JACKS) translate([p[0], p[1], TOP - 1]) cylinder(d = jack_d, h = 20);
-        for (i = [0 : hole_count - 1]) translate([-(END_X + hole_s(i)), 0, strap_t - eps]) cylinder(d = hole_d + 0.6, h = 0.6);   // recesses under the pins
+        for (i = [0 : hole_count - 1]) translate([-(END_X + hole_s(i)), 0, strap_t - eps]) slot(hole_x + 0.6, hole_y + 0.6, 0.6);   // recesses under the pins
     }
 }
 module lid() {
@@ -318,7 +319,7 @@ module lid() {
             translate([0, 0, -LID_T]) linear_extrude(LID_T) offset(r = margin) outline2d();
             lid_ridge();
             translate([X0 - 0.5, -(strap_w / 2 - 0.2), -eps]) cube([bk_plate_t + 0.7, strap_w - 0.4, 0.2 + eps]);   // 0.2 clamp step: presses the plate onto its seat floor
-            for (i = [0 : hole_count - 1]) translate([-(END_X + hole_s(i)), 0, -eps]) cylinder(d = hole_d, h = strap_t + 0.5);   // pins
+            for (i = [0 : hole_count - 1]) translate([-(END_X + hole_s(i)), 0, -eps]) slot(hole_x, hole_y, strap_t + 0.5);   // pins
         }
         for (v = VENTS) translate([v[0], v[1], -LID_T - 1]) cylinder(d = v[2], h = LID_T + 2);
         translate([X_FACE + 0.3, -BK_HW - 2.5, -LID_T - 1]) cube([X_END - X_FACE + 3.5, 2 * BK_HW + 5, LID_T + 2]);   // window over the frame
