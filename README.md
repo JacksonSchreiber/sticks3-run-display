@@ -4,9 +4,9 @@ A wrist display that shows two numbers while running: **heart rate** from a Blue
 
 The point is to keep Strava recording on the phone, untouched, and still see live numbers without buying a running watch.
 
-![Band v5: one-piece silicone band with the sealed jacket and a PETG peg buckle, from the front and the wrist side; the single open-top mold; the buckle as printed](docs/images/sleeve-v5-preview.png)
+![Band v6: one-piece silicone band with the sealed jacket and a cast-in PETG tang buckle; the buckle close up; the single open-top mold; the parts as printed](docs/images/sleeve-v6-preview.png)
 
-*Band v5, the current design: a one-piece silicone band (grey) that flows out of a sealed jacket around the Stick, 16 mm tall, closed by a PETG peg buckle (orange) cast into the short strap. Top row from the front and from the wrist side; bottom left the single open-top mold with the core screwed down and the buckle seated; bottom right the buckle as printed. Rendered from `hardware/sleeve_v5/`.*
+*Band v6, the current design: a one-piece silicone band (green) that flows out of a sealed jacket around the Stick, 17 mm tall, closed by a classic tang buckle cast into the short strap: a rounded PETG frame on a buried plate, the Tropic strap's spring bar through its lugs, a printed tongue and a cast silicone keeper. Top row the band and the buckle; bottom left the single open-top mold with the core screwed down and the buckle plate in its slot; bottom right the buckle, tongue and keeper mold as printed. Rendered from `hardware/sleeve_v6/`.*
 
 The earlier one-piece silicone band (a pocket in a cast band, no strap hardware) is still in `hardware/band/`:
 
@@ -33,7 +33,8 @@ The Stick never talks to the strap. It receives two numbers and displays them.
 | `hardware/sleeve_v2/` | sealed silicone sleeve with cast-in lug staples for a standard 22 mm watch strap (source + STLs) |
 | `hardware/sleeve_v3/` | sealed sleeve with the lugs under the ends (buried PETG frame with fins), 52 mm long (source + STLs) |
 | `hardware/sleeve_v4/` | v3 with the frame flush in the back, 16 mm tall (source + STLs) |
-| `hardware/sleeve_v5/` | current: one-piece silicone band + sealed jacket with a PETG peg buckle, Fitbit-style (source + STLs) |
+| `hardware/sleeve_v5/` | one-piece silicone band + sealed jacket with a PETG peg buckle, Fitbit-style; cast twice (source + STLs) |
+| `hardware/sleeve_v6/` | current: v5 band with a cast-in tang buckle (Tropic spring bar, printed tongue, cast silicone keeper), 0.2 mm thicker face and back (source + STLs) |
 | `hardware/sleeve/` | earlier sleeve with a cast-in lug frame; superseded, kept for reference |
 | `firmware/` | StickS3 firmware — not started |
 | `app/` | Android companion app — not started |
@@ -43,7 +44,7 @@ The Stick never talks to the strap. It receives two numbers and displays them.
 ## Status
 
 - **Band:** printed, cast and worn; fits well.
-- **Sleeve:** v2 printed and cast, fits the Stick and the strap. v3 (lugs under the ends, 13 mm shorter) cast once: fit and strap work, but it sat 1 mm higher than the band and the first mold locked. v4 (frame flush with the back, 16 mm tall) is designed and verified. v5 drops the separate strap altogether: a one-piece band with the sealed jacket and a PETG peg buckle, designed and verified, not yet printed.
+- **Sleeve:** v2 printed and cast, fits the Stick and the strap. v3 (lugs under the ends, 13 mm shorter) cast once: fit and strap work, but it sat 1 mm higher than the band and the first mold locked. v4 (frame flush with the back, 16 mm tall) is designed and verified. v5 drops the separate strap altogether: a one-piece band with the sealed jacket and a PETG peg buckle, cast twice and worn; the peg closure was awkward to use. v6 keeps the band and swaps in a classic tang buckle cast into the short strap, designed and verified, not yet printed.
 - **Clip mount:** designed, not printed.
 - **Firmware and app:** working. Real chest-strap heart rate reaches the Stick over BLE while Strava records the same strap; GPS pace is implemented but the outdoor walk test and the Stick battery run-down are still to do.
 

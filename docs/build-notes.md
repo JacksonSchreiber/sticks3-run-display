@@ -89,6 +89,30 @@ One mold piece, one core, two staples:
 
 **Fitting the Stick:** USB-C end first, under the deep lip, then stretch the short lip over the top end. Spring bars (0.8 mm tips) through the lugs; open the holes with a 1.0 mm bit if a print closed them. To charge, push the cable straight into the slit at the USB-C end; the tunnel guides it onto the port. Set `port = false` in the .scad for a sleeve without the tunnel.
 
+## Band v6 (`hardware/sleeve_v6/`)
+
+![Band v6: the one-piece band with the tang buckle cast into the short strap; the buckle close up; the cup; the parts as printed](images/sleeve-v6-preview.png)
+
+v5's band with a **classic tang buckle** in place of the peg, and 0.2 mm more silicone over the face and the back (lip 1.4, back 1.7 mm; 17.2 mm tall). Everything else is v5: same jacket, hinge, window, port slit, nine holes, one open pour.
+
+**Buckle:** one PETG piece cast into the end of the short strap. A 5 x 4.5 mm plate closes the strap end, anchored by two 16 mm rounded tongues with three chamfered holes each, buried mid-thickness in the strap. From the plate grows a **rounded frame**: 3.2 x 4.5 mm rails and a 4.5 mm far bar, plan corners R3.5 outside and R2 inside, every edge rounded R1.5, so the section is nearly a wire and nothing is square. The lugs carry the **Tropic strap's 22 mm spring bar** (24.5 tip to tip, 2.5 body, 0.8 tips) in **1.0 mm holes straight through**, 22.6 mm apart, so the tips sit 0.95 mm deep and a pin pushes the bar out from outside. The far bar has a scooped, tapered rest for the tongue. No keeper on the buckle, no lips, no pins, nothing sticks out. The **tongue** is a second print: a full-width sleeve (3.0 mm bore for the 2.5 mm bar, 1.3 mm wall, 22.2 long) that hides the bar and centres the arm, and a 3.0 x 2.2 mm arm that rests in the scoop with 0.2 mm clearance and turns up 1.2 mm at the tip. Bar centre 2.6 mm above the wrist face, so the sleeve sits flush with the wrist. The **keeper is a cast silicone ring** (22.2 x 5.6 inside, 2 mm section, 5 mm wide) from its own two-cavity mold: it stretches over the buckle onto the short strap and the tail tucks through it, like any watch.
+
+**Wear:** long strap under the far bar, tongue out through a hole, tail over the sleeve and the plate, along the short strap and through the keeper. Sizes 150-190 mm in 5 mm steps.
+
+**Mold:** the plate sits in a slot flush with the strap end with a 1.5 mm wall in front of it between the rail-root fillets; the frame hangs in an open pocket touching nothing, so demolding never loads it. The lid's 0.2 mm step presses the plate onto its seat; the ridge that rounds the wrist edge stops short of the plate. Thirteen vents (six over the jacket, seven along the straps) instead of five.
+
+| File | What | Print |
+|---|---|---|
+| `stl/band_buckle.stl` | plate + anchors + tang frame, one piece | **PETG**, as exported (on its side: bar holes vertical, one rail on the bed, the other bridges 11 mm), 0.16 mm, **250-255 C, fan 10-20%, outer walls 30 mm/s**, Arachne walls with min wall width 50%, 100% solid, brim, supports on **build plate only** (they land under the two anchors and nowhere else) |
+| `stl/band_tongue.stl` | sleeve + arm | PETG, as exported (sleeve standing, so the bore is round), same settings, supports on build plate only (under the arm) |
+| `stl/keeper_mold.stl` | two ring cavities, 5 mm deep | PLA, as exported, no supports |
+| `stl/band_core.stl` | Stick shape + window pad + port pocket | PLA, as exported, 0.16 mm, no supports, 3 walls |
+| `stl/band_cup.stl` | one 230 x 43 mm open-top mold | PLA, **placed diagonally** on the bed, brim, no supports |
+| `stl/band_lid.stl` | wrist face: fillet ridge, clamp step over the plate, nine pins, thirteen vents | PLA, diagonally, no supports |
+| `stl/band_preview_not_for_printing.stl` | the finished part | don't print |
+
+**Casting:** release on the PLA only. Core on the floor, pad down, two M3 x 8 up through the cup. Buckle into its seat at the short end: plate dropped into its slot, anchors pointing back along the trough, frame hanging free in the pocket. **Mix 22 g A + 22 g B** with pigment. Syringe the lip layer, the front-button pocket and the strap end around the anchors, then pour along the whole length to just above the rim, tap. Lid on, one end first, press onto the rim; excess bleeds from the vents. Fill the keeper mold from the same mix with the syringe and scrape it flush. Cure 24 h or 6 h at 45 C. **Demolding:** cut the flash round the lid, lever it off. M3 screws out, card down the jacket's long sides, M4 screws into the jack holes until the core and band rise. Peel the straps out, slide the core out through the window, trim the vent nubs, punch the hole skins, cut the port slit. Pull the keeper rings out of their mold with a pick. **Assembly:** keeper over the buckle onto the short strap first. Sleeve onto the spring bar, compress the bar, tips into the two lug holes; the arm points at the far bar.
+
 ## Band v5 (`hardware/sleeve_v5/`)
 
 ![Band v5: the one-piece silicone band with the sealed jacket and peg buckle, from the front and from the wrist side; the single open-top cup; the buckle as printed](images/sleeve-v5-preview.png)
