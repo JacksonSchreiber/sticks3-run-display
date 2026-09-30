@@ -188,7 +188,7 @@ module port_core(t, half_w) {
     }
 }
 module tunnel_block() { hull() { port_core(skin_t, slit_len / 2 - 2.0); port_core(end_t, port_w / 2); } }
-SCREWS = [[-6, 0], [13, 0]]; JACKS = [[3.5, 0], [18.0, 0]];
+SCREWS = [[-4, 0], [12.5, 0]]; JACKS = [[2, -4.5], [7.5, 4.5]];   // all four inside the window pad (x -7..16.6, y +-8.9) with >= 1 mm margin, so no hole edge is under the lip
 screw_d = 3.0; screw_head_d = 6.5; screw_head_h = 3.0; jack_d = 3.3;
 module core_part() {
     difference() {
