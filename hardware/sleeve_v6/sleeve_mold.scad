@@ -84,7 +84,8 @@ arm_w = 4.5; arm_t = 2.2; sleeve_wall = 1.3; bore_clr = 0.5; tip_up = 1.2; scoop
 kp_in_w = 22.2; kp_in_h = 5.6; kp_wall = 2.0; kp_w = 5.0; kp_r = 1.5;   // ring: strap + tail inside, 2 mm section, 5 mm wide
 
 /* [Charging port] */
-port = true; port_w = 14.0; port_h = 7.5; port_from_face = 4.1; skin_t = 1.5; slit_len = 12.0;
+port = true; port_w = 14.0; port_h = 7.5; port_from_face = 4.1; skin_t = 1.5;
+fin_t = 0.5; fin_len = 10.0; fin_out = 1.0;   // v6: a 0.5 mm blade on the core casts the port slot through the skin (no slit to cut, rounded ends so it cannot spread)
 
 /* [Hidden] */
 $fn = 48; eps = 0.01;
@@ -187,12 +188,14 @@ module port_core(t, half_w) {
         translate([-(END_X - t), -50, -50]) cube([100, 100, 100]);
     }
 }
-module tunnel_block() { hull() { port_core(skin_t, slit_len / 2 - 2.0); port_core(end_t, port_w / 2); } }
+module tunnel_block() { hull() { port_core(skin_t, fin_len / 2 + 0.5); port_core(end_t, port_w / 2); } }
+// blade from inside the tunnel, through the skin, 1 mm into the cup's end wall: the slot it leaves is 10 x 0.5 with round ends
+module port_fin(g = 0) { translate([-(END_X - skin_t - 0.5), 0, PORT_Z]) rotate([0, -90, 0]) linear_extrude(skin_t + 0.5 + fin_out + g) rrect(fin_t + 2 * g, fin_len + 2 * g, fin_t / 2 + g - eps); }
 SCREWS = [[-4, 0], [12.5, 0]]; JACKS = [[2, -4.5], [7.5, 4.5]];   // all four inside the window pad (x -7..16.6, y +-8.9) with >= 1 mm margin, so no hole edge is under the lip
 screw_d = 3.0; screw_head_d = 6.5; screw_head_h = 3.0; jack_d = 3.3;
 module core_part() {
     difference() {
-        union() { core_full(); if (port) tunnel_block(); }
+        union() { core_full(); if (port) { tunnel_block(); port_fin(); } }
         for (p = SCREWS) translate([p[0], p[1], TOP - 8]) cylinder(d = screw_d - 0.4, h = 9);
     }
 }
@@ -272,7 +275,7 @@ module keeper_mold() {
 module band() {
     difference() {
         envelope();
-        core_full(); if (port) tunnel_block();
+        core_full(); if (port) { tunnel_block(); port_fin(); }
         translate([(WIN[0][0] + WIN[0][1]) / 2, 0, TOP - 1]) linear_extrude(3) rrect(WIN[0][1] - WIN[0][0], WIN[1][1] - WIN[1][0], WIN_R);
         buckle(); holes(); lid_ridge();
     }
@@ -303,6 +306,8 @@ module cup() {
         block(0, CUP_H);
         envelope();
         translate([0, 0, -1]) linear_extrude(1 + REBATE_D) footprint2d(RIDGE_OVER + 0.1);   // rebate for the lid ridge
+        // channel in the end wall for the port blade: open from the rim so the core drops in; the silicone tab it casts above the blade is cut off flush
+        if (port) translate([-(END_X + fin_out + 0.05), -(fin_len / 2 + 0.05), -1]) cube([fin_out + 0.05 + 0.5, fin_len + 0.1, 1 + PORT_Z + fin_t / 2 + 0.05]);
         intersection() { buckle(0.2); translate([X0, -50, -50]) cube([100, 100, 100]); }   // seat: plate slot flush with the strap's end, 0.2 in front; anchors are in the trough
         // open pocket for the frame beyond a seat wall that exists only between the rail-root fillets,
         // plus the regions beside the plate's wings where the rails root
