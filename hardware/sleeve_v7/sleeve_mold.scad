@@ -16,21 +16,22 @@
 //   "lid"         required: forms the wrist face, the fillet ridge, the hole pins, vents. Diagonally.
 //   "keeper_mold" two ring cavities for the strap keepers.
 //   "band"        preview of the finished silicone part (don't print).
-// You also need one 1.5 mm steel pin about 45 mm long (a 1.5 mm drill bit): it casts the bar hole.
+//   "pin"         three printed pins (two spares), 0.16 mm, as exported. One lies across the cup at the
+//                 short strap's end and casts the spring-bar hole; its handle fills a notch in the wall.
 //
 // Coordinates: x along the band (short strap toward +x, long strap toward -x), y across,
 // z from the wrist face (0) toward the front. The cup's rim is z = 0.
 //
 // Casting (open pour, window face down), Smooth-Sil 950, 100A : 10B by weight:
 //   1. Release on everything. Core on the cup floor, pad down, port blade into its channel, two
-//      M3x8 up through the cup. Push the 1.5 mm pin through the hole in one cup wall at the short
-//      strap's end, through the rib, and out through the other wall.
+//      M3x8 up through the cup. Lay the pin across the short strap's end: handle into the wide
+//      notch, rod into the rib's seat and the narrow notch in the far wall.
 //   2. Mix 44 g A + 4.4 g B (pigment into A first). Degas if you can. Syringe the lip layer, the
 //      front-button pocket and the thick strap end around the pin, then pour along the whole length
 //      to just above the rim. Tap.
 //   3. Lid on, one end first, press down onto the rim. Excess bleeds from the vents.
 //   4. Cure 18 h at room temperature, or about 6 h at 45 C. Fill the keeper mold from the same mix.
-//   5. Pull the pin out sideways FIRST. Lid off, M3 screws out, card down the jacket's long sides,
+//   5. Lid off, then pull the pin out sideways by its handle. M3 screws out, card down the jacket's long sides,
 //      M4 screws into the jack holes until the core and band rise. Peel the straps out, lift the
 //      top end of the core out of the window and slide it toward the top end (the port blade draws
 //      out of its slot). Trim the vent nubs and the port tab.
@@ -38,7 +39,7 @@
 //      the strap and the tongue's loop, tips into the buckle's lugs.
 
 /* [Part] */
-part = "band"; // [core, cup, lid, keeper_mold, band]
+part = "band"; // [core, cup, lid, pin, keeper_mold, band]
 
 /* [Fit] */
 squeeze = 0.0;          // pocket = Stick size; the silicone on every face grips it
@@ -76,8 +77,10 @@ tip_corner_r = 1.0;
 tail = 25;              // long strap beyond the last hole
 
 /* [Buckle end] */
-bar_pin_d = 1.5;        // the steel pin that casts the spring-bar hole
-bar_pin_hole = 1.7;     // its holes through the cup walls and the rib
+bar_pin_w = 1.5;        // printed square pin that casts the spring-bar hole (the bar is ~1.4 mm)
+pin_clr = 0.1;          // clearance of the pin and its handle in their notches
+handle_w = 4.0;         // the pin's handle fills a notch in one cup wall, flush with the rim
+handle_grip = 5.0;      // ... and sticks out this far to pull on
 tongue_slot_w = 2.0;    // slot through the strap end for the buckle's tongue
 tongue_slot_past = 2.5; // how far the slot runs past the bar
 
@@ -205,8 +208,32 @@ module tongue_slot2d(g = 0) {
     x0 = X_BAR - tongue_slot_past;
     offset(delta = g) hull() { translate([x0 + tongue_slot_w / 2, 0]) circle(d = tongue_slot_w, $fn = 24); translate([X_SE, -tongue_slot_w / 2]) square([1.0, tongue_slot_w]); }
 }
-module tongue_rib(g = 0) { translate([0, 0, -g]) linear_extrude(bk_end_t + 1.0 + g) tongue_slot2d(g); }   // rim to below the trough floor
-module bar_pin(d) { translate([X_BAR, 0, BAR_Z]) rotate([90, 0, 0]) cylinder(d = d, h = 80, center = true, $fn = 24); }
+module tongue_slot_solid() { translate([0, 0, -eps]) linear_extrude(bk_end_t + 1.0) tongue_slot2d(); }   // the whole slot (band preview)
+// The pin is printed and DROPS IN from the rim: it lies in a notch in each cup wall and in a seat in the
+// rib. The slot former is split at the pin: the cup's rib below it, a boss on the lid above it.
+PIN_Z0 = BAR_Z - bar_pin_w / 2; PIN_Z1 = BAR_Z + bar_pin_w / 2;   // 1.5 .. 3.0 below the rim
+HWB = w_short(S_BAR) / 2;                                         // cavity half width at the bar
+module pin_box(hw, y0, y1, z0, z1) { translate([X_BAR - hw, y0, z0]) cube([2 * hw, y1 - y0, z1 - z0]); }
+module rod() { pin_box(bar_pin_w / 2, -(HWB + margin + 0.5), HWB + 1, PIN_Z0, PIN_Z1); }   // 0.5 proud of the far wall, to push on
+module pin_part() {
+    intersection() { pin_box(handle_w / 2 - pin_clr, HWB - 1, 60, 0, PIN_Z1); cup_plain(); }   // handle = the piece of wall the notch removes (keeps the rim rebate)
+    pin_box(handle_w / 2 - pin_clr, HWB + margin - 1, HWB + margin + handle_grip, 0, PIN_Z1);   // grip outside the cup
+    rod();
+}
+module pin_notches() {   // cut from the cup: handle notch in the +y wall, rod notch in the -y wall, both open from the rim
+    pin_box(handle_w / 2, HWB - 1, 60, -1, PIN_Z1 + 0.05);
+    pin_box(bar_pin_w / 2 + pin_clr, -60, -(HWB - 1), -1, PIN_Z1 + 0.05);
+}
+module tongue_rib() {   // cup: the slot former below the pin, with a seat the pin drops into
+    difference() {
+        translate([0, 0, PIN_Z0]) linear_extrude(bk_end_t + 1.0 - PIN_Z0) tongue_slot2d();
+        pin_box(bar_pin_w / 2 + pin_clr, -5, 5, PIN_Z0 - 1, PIN_Z1 + 0.05);
+    }
+}
+module lid_bosses() {   // lid: the slot former above the pin, and the fill above the rod in the far wall's notch
+    intersection() { translate([0, 0, -eps]) linear_extrude(PIN_Z0 - 0.05 + eps) tongue_slot2d(-0.05); translate([0, -5, -1]) cube([X_SE, 10, 10]); }   // stops at the strap's end; the ridge covers the rebate beyond
+    intersection() { pin_box(bar_pin_w / 2 + pin_clr - 0.05, -60, -(HWB - 1), -eps, PIN_Z0 - 0.05); cup_plain(); }
+}
 
 // ---- outline + texture on the outer faces -----------------------------------------------------------------
 // The panel is the strap's plan inset by the edge radius plus the 0.7 mm outline; it is recessed panel_d,
@@ -280,7 +307,7 @@ module band() {
         envelope();
         core_full(); if (port) { tunnel_block(); port_fin(); }
         window_through();
-        holes(); lid_ridge(); panel(); texture(); tongue_rib(); bar_pin(bar_pin_d);
+        holes(); lid_ridge(); panel(); texture(); tongue_slot_solid(); rod();
     }
 }
 
@@ -295,8 +322,7 @@ VENTS = [[-8, 0, 2.5], [8, 0, 2.5], [-18, 8, 2.0], [-18, -8, 2.0], [18, 8, 2.0],
          [-(END_X + hole_s(hole_count - 1) + 9), 0, 2.0], [-(END_X + long_len - 4), 0, 2.0]];
 module footprint2d(o) { offset(r = o) outline2d(); }
 module block(z0, h) { translate([0, 0, z0]) linear_extrude(h) offset(r = margin) outline2d(); }
-module lid_ridge() { difference() { lid_ridge_full(); tongue_rib(0.2); } }   // gap where the tongue-slot rib reaches the rim
-module lid_ridge_full() {
+module lid_ridge() {
     steps = 6;
     for (i = [0 : steps - 1]) {
         h0 = back_r * i / steps; h1 = back_r * (i + 1) / steps;
@@ -319,7 +345,7 @@ module cup() {
     difference() {
         union() { cup_plain(); tongue_rib(); panel(); texture(); }   // rib for the tongue slot; panel plateau and knurl ridges on the trough floors
         for (i = [0 : hole_count - 1]) translate([-(END_X + hole_s(i)), 0, ZP - eps]) cylinder(d = hole_d + 0.3, h = panel_d + 0.8, $fn = 32);   // sockets for the hole pins' tips
-        bar_pin(bar_pin_hole);   // through both walls and the rib
+        pin_notches();
     }
 }
 module lid() {
@@ -328,6 +354,7 @@ module lid() {
             translate([0, 0, -LID_T]) linear_extrude(LID_T) offset(r = margin) outline2d();
             lid_ridge();
             holes();   // tapered pins
+            lid_bosses();
         }
         for (v = VENTS) translate([v[0], v[1], -LID_T - 1]) cylinder(d = v[2], h = LID_T + 2);
     }
@@ -340,5 +367,6 @@ else if (part == "lid")         translate([0, 0, LID_T]) lid();
 else if (part == "keeper_mold") keeper_mold();
 else if (part == "check_core")  intersection() { core_part(); cup(); }
 else if (part == "check_lid")   intersection() { lid(); union() { cup(); core_part(); } }
-else if (part == "check_pin")   intersection() { bar_pin(bar_pin_d); cup(); }
+else if (part == "pin")         for (i = [-1 : 1]) translate([i * 9, 0, PIN_Z1]) rotate([180, 0, 0]) translate([-X_BAR, 0, 0]) pin_part();   // three (two spares), rod on the bed
+else if (part == "check_pin")   intersection() { pin_part(); union() { cup(); lid(); } }
 else band();
