@@ -83,6 +83,12 @@ arm_w = 4.5; arm_t = 2.2; sleeve_wall = 1.3; bore_clr = 0.5; tip_up = 1.2; scoop
 /* [Keeper] */
 kp_in_w = 22.2; kp_in_h = 5.6; kp_wall = 2.0; kp_w = 5.0; kp_r = 1.5;   // ring: strap + tail inside, 2 mm section, 5 mm wide
 
+/* [Texture] */
+texture = true;         // diamond knurl on the straps' outer face (ridges on the cup's trough floor)
+tex_pitch = 2.2; tex_angle = 35; tex_depth = 0.4; tex_w = 0.8;   // groove spacing, angle to the strap, depth, width at the surface
+tex_border = 2.0;       // smooth margin along the strap edges and round tip
+tex_slot_margin = 1.5;  // smooth lane around the slot row (no groove ends at a slot, where a tear would start)
+
 /* [Charging port] */
 port = true; port_w = 14.0; port_h = 7.5; port_from_face = 4.1; skin_t = 1.5;
 fin_t = 0.5; fin_len = 10.0; fin_out = 1.0;   // v6: a 0.5 mm blade on the core casts the port slot through the skin (no slit to cut, rounded ends so it cannot spread)
@@ -170,6 +176,27 @@ module strap(dir) {   // dir = +1 short, -1 long
 }
 module slot(lx, ly, h) { hull() for (s = [-1, 1]) translate([0, s * (ly - lx) / 2, 0]) cylinder(d = lx, h = h); }   // stadium along y
 module holes() { for (i = [0 : hole_count - 1]) translate([-(END_X + hole_s(i)), 0, -1]) slot(hole_x, hole_y, strap_t + 2); }
+
+// ---- texture: two families of shallow grooves crossing at +-tex_angle, only where the strap is full thickness ----
+module slot2d(lx, ly) { hull() for (s = [-1, 1]) translate([0, s * (ly - lx) / 2]) circle(d = lx); }
+module hatch2d(w) { for (a = [tex_angle, -tex_angle]) rotate(a) for (k = [-48 : 48]) translate([0, k * tex_pitch]) square([440, w], center = true); }
+module tex_region2d() {
+    difference() {   // long strap: past the hinge, inset from the edges and the round tip, smooth lane along the slots
+        offset(delta = -tex_border) hull() {
+            translate([-(END_X + long_len - tail_r), 0]) circle(r = tail_r);
+            translate([-(END_X + root_len + 1), -strap_w / 2]) square([eps, strap_w]);
+        }
+        hull() for (i = [0, hole_count - 1]) translate([-(END_X + hole_s(i)), 0]) offset(delta = tex_slot_margin) slot2d(hole_x, hole_y);
+    }
+    // short strap: between the hinge and the buried anchors (never over the anchors: only 0.6 mm of silicone covers them)
+    translate([END_X + root_len + 3, -(strap_w / 2 - tex_border)]) square([short_len - anc_l - 1.5 - (root_len + 3), strap_w - 2 * tex_border]);
+}
+module texture() {   // the ridge volume: solid in the cup, empty in the band. Two steps so the groove is tapered, not square-cornered
+    if (texture) {
+        translate([0, 0, strap_t - tex_depth / 2]) linear_extrude(tex_depth / 2 + eps) intersection() { tex_region2d(); hatch2d(tex_w); }
+        translate([0, 0, strap_t - tex_depth]) linear_extrude(tex_depth / 2 + eps) intersection() { tex_region2d(); hatch2d(tex_w / 2); }
+    }
+}
 
 module envelope() { body(); side_bumps(); front_bump(); strap(1); strap(-1); }
 module outline2d() { projection() envelope(); }
@@ -306,7 +333,7 @@ module band() {
         envelope();
         core_full(); if (port) { tunnel_block(); port_fin(); }
         translate([(WIN[0][0] + WIN[0][1]) / 2, 0, TOP - 1]) linear_extrude(3) rrect(WIN[0][1] - WIN[0][0], WIN[1][1] - WIN[1][0], WIN_R);
-        buckle(); holes(); lid_ridge();
+        buckle(); holes(); lid_ridge(); texture();
     }
 }
 
@@ -330,7 +357,8 @@ module lid_ridge_full() {
         translate([0, 0, h0 - eps]) linear_extrude(h1 - h0 + 2 * eps) difference() { footprint2d(RIDGE_OVER); footprint2d(-inset); }
     }
 }
-module cup() {
+module cup() { cup_plain(); texture(); }   // texture ridges stand on the strap troughs' floor
+module cup_plain() {
     difference() {
         block(0, CUP_H);
         envelope();
