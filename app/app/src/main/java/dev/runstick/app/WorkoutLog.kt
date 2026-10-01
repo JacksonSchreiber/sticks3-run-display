@@ -40,6 +40,17 @@ data class WorkoutLog(
     /** No usable GPS distance: a treadmill, or a run with no fix at all. */
     val hasNoDistance: Boolean get() = totalDistanceM < NO_DISTANCE_M
 
+    /**
+     * Drops every sample after the last one with a heart rate, so an auto-stopped run ends
+     * at the last heartbeat rather than five idle minutes later. Gaps mid-run are kept;
+     * a log with no HR at all is returned unchanged.
+     */
+    fun trimmedToLastHr(): WorkoutLog {
+        val last = samples.indexOfLast { it.hrBpm != null }
+        if (last < 0 || last == samples.lastIndex) return this
+        return copy(samples = samples.subList(0, last + 1).toList())
+    }
+
     fun serialize(): String = buildString {
         append(headerLines(startEpochMs, simulated))
         samples.forEach { append(sampleLine(it)) }

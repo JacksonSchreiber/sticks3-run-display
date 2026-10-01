@@ -89,6 +89,71 @@ class WorkoutLogTest {
         assertEquals("12,,1609.3\n", WorkoutLog.sampleLine(WorkoutSample(12, null, 1609.344)))
     }
 
+    // --- trim (auto-stop) ---------------------------------------------------
+
+    @Test
+    fun `trim drops the tail after the last heartbeat but keeps mid-run gaps`() {
+        val l = WorkoutLog(
+            9L, false,
+            listOf(
+                WorkoutSample(0, 140, 0.0),
+                WorkoutSample(1, null, 3.0), // mid-run dropout stays
+                WorkoutSample(2, 150, 6.0),
+                WorkoutSample(3, null, 9.0),
+                WorkoutSample(4, null, 12.0),
+            ),
+        )
+        val t = l.trimmedToLastHr()
+        assertEquals(listOf(0, 1, 2), t.samples.map { it.tSec })
+        assertEquals(9L, t.startEpochMs)
+        assertEquals(2, t.durationSec)
+        assertEquals(6.0, t.totalDistanceM, 1e-9)
+        assertEquals(145, t.avgHr)
+        assertEquals(150, t.maxHr)
+    }
+
+    @Test
+    fun `trim is a no-op without any heart rate or when it already ends on one`() {
+        val noHr = WorkoutLog(0L, false, listOf(WorkoutSample(0, null, 0.0), WorkoutSample(1, null, 1.0)))
+        assertEquals(noHr, noHr.trimmedToLastHr())
+        val endsOnHr = WorkoutLog(0L, false, listOf(WorkoutSample(0, null, 0.0), WorkoutSample(1, 120, 1.0)))
+        assertEquals(endsOnHr, endsOnHr.trimmedToLastHr())
+        val empty = WorkoutLog(0L, false, emptyList())
+        assertEquals(empty, empty.trimmedToLastHr())
+    }
+
+    @Test
+    fun `auto-stop finish rewrites the file to end at the last heartbeat`() {
+        val store = WorkoutStore(tmp.newFolder("workouts"))
+        val file = store.fileFor(11L)
+        val rec = WorkoutRecorder(file, 11L, simulated = false)
+        for (t in 0..400) rec.add(WorkoutSample(t, if (t <= 100) 130 else null, t * 3.0))
+        assertEquals(100, rec.finish(trimToLastHr = true))
+        val back = store.latest()!!
+        assertEquals(101, back.samples.size)
+        assertEquals(100, back.durationSec)
+        assertEquals(300.0, back.totalDistanceM, 1e-9)
+        assertEquals(listOf(file.name), file.parentFile!!.list()!!.toList()) // no temp left
+    }
+
+    @Test
+    fun `manual finish keeps the tail`() {
+        val file = tmp.newFolder("w").resolve("workout_12.csv")
+        val rec = WorkoutRecorder(file, 12L, simulated = false)
+        for (t in 0..400) rec.add(WorkoutSample(t, if (t <= 100) 130 else null, t * 3.0))
+        assertEquals(400, rec.finish())
+        assertEquals(400, WorkoutLog.parse(file.readText())!!.durationSec)
+    }
+
+    @Test
+    fun `minimum length applies to the trimmed run`() {
+        val file = tmp.newFolder("w").resolve("workout_13.csv")
+        val rec = WorkoutRecorder(file, 13L, simulated = false)
+        for (t in 0..400) rec.add(WorkoutSample(t, if (t <= 59) 130 else null, 0.0))
+        assertNull(rec.finish(trimToLastHr = true))
+        assertFalse(file.exists())
+    }
+
     // --- store + recorder ---------------------------------------------------
 
     @Test
@@ -102,7 +167,7 @@ class WorkoutLogTest {
         assertEquals(5, WorkoutLog.parse(file.readText())!!.samples.size)
 
         for (t in 5..60) rec.add(WorkoutSample(t, 120, t.toDouble()))
-        assertTrue(rec.finish())
+        assertEquals(60, rec.finish())
         val back = store.latest()!!
         assertEquals(1_000L, back.startEpochMs)
         assertTrue(back.simulated)
@@ -128,7 +193,7 @@ class WorkoutLogTest {
         val file = store.fileFor(7L)
         val rec = WorkoutRecorder(file, 7L, simulated = false)
         for (t in 0..59) rec.add(WorkoutSample(t, null, 0.0))
-        assertFalse(rec.finish())
+        assertNull(rec.finish())
         assertFalse(file.exists())
         assertNull(store.latest())
     }

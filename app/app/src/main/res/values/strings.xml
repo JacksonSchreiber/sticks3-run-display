@@ -46,6 +46,10 @@
     <string name="battery_already_exempt">Already exempt from battery optimisation</string>
     <string name="open_app_settings">Open app settings</string>
 
+    <string name="auto_stopped_title">Run auto-stopped</string>
+    <string name="auto_stopped_saved">Run auto-stopped: no heart rate for %1$d min. Saved %2$s.</string>
+    <string name="auto_stopped_not_saved">Run auto-stopped: no heart rate for %1$d min. Under a minute of heart rate, so nothing was saved.</string>
+
     <!-- workouts and Strava -->
     <string name="last_workout">Last workout</string>
     <string name="no_workout">No workout recorded yet</string>

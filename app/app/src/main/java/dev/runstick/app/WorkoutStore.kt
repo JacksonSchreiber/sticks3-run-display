@@ -3,6 +3,9 @@ package dev.runstick.app
 import java.io.BufferedWriter
 import java.io.File
 import java.io.IOException
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 /**
  * The workouts folder: `workout_<startEpochMs>.csv`, newest [KEEP] kept. Plain java.io so
@@ -87,16 +90,50 @@ class WorkoutRecorder(
     }
 
     /**
-     * Flushes and closes. A run shorter than [minSec] is deleted; returns whether the file
-     * was kept.
+     * Flushes and closes. With [trimToLastHr] (auto-stop only) the file is rewritten to end
+     * at the last heartbeat. A run shorter than [minSec] after that is deleted.
+     * @return the saved run's duration in seconds, or null if it was discarded.
      */
-    fun finish(minSec: Int = MIN_SEC): Boolean {
+    fun finish(minSec: Int = MIN_SEC, trimToLastHr: Boolean = false): Int? {
         close()
-        if (durationSec < minSec) {
-            file.delete()
-            return false
+        var duration = durationSec
+        if (trimToLastHr) {
+            val log = try {
+                WorkoutLog.parse(file.readText())
+            } catch (e: IOException) {
+                null
+            }
+            val trimmed = log?.trimmedToLastHr()
+            if (trimmed != null && trimmed !== log) {
+                // On a failed rewrite the untrimmed file stays: too long beats lost.
+                if (rewrite(trimmed)) duration = trimmed.durationSec
+            }
         }
-        return true
+        if (duration < minSec) {
+            file.delete()
+            return null
+        }
+        return duration
+    }
+
+    /** Temp file + rename, so a crash mid-write can never leave half a workout. */
+    private fun rewrite(log: WorkoutLog): Boolean {
+        val tmp = File(file.parentFile, file.name + ".tmp")
+        return try {
+            tmp.writeText(log.serialize())
+            try {
+                Files.move(
+                    tmp.toPath(), file.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING,
+                )
+            } catch (e: AtomicMoveNotSupportedException) {
+                Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+            true
+        } catch (e: IOException) {
+            tmp.delete()
+            false
+        }
     }
 
     private fun close() {

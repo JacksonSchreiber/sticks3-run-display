@@ -32,6 +32,11 @@ class Prefs(context: Context) : StravaCredentials {
         get() = sp.getBoolean(KEY_SIMULATE, false)
         set(value) = sp.edit().putBoolean(KEY_SIMULATE, value).apply()
 
+    /** Why the last run ended itself; shown on screen until the next run starts. */
+    var autoStopNote: String?
+        get() = sp.getString(KEY_AUTO_STOP_NOTE, null)
+        set(value) = sp.edit().putString(KEY_AUTO_STOP_NOTE, value).apply()
+
     // --- Strava -------------------------------------------------------------
 
     override var clientId: String?
@@ -90,6 +95,7 @@ class Prefs(context: Context) : StravaCredentials {
         const val KEY_STICK_MAC = "stick_mac"
         const val KEY_STICK_NAME = "stick_name"
         const val KEY_SIMULATE = "simulate"
+        const val KEY_AUTO_STOP_NOTE = "auto_stop_note"
         const val KEY_STRAVA_CLIENT_ID = "strava_client_id"
         const val KEY_STRAVA_CLIENT_SECRET = "strava_client_secret"
         const val KEY_STRAVA_OAUTH_STATE = "strava_oauth_state"

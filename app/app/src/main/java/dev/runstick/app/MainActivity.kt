@@ -286,8 +286,10 @@ class MainActivity : AppCompatActivity() {
             else getString(R.string.stick_battery, it)
         } ?: getString(R.string.stick_battery_unknown)
 
-        binding.tvNote.text = ui.note ?: ""
-        binding.tvNote.visibility = if (ui.note == null) View.GONE else View.VISIBLE
+        // After an auto-stop the service leaves its reason in Prefs until the next run.
+        val note = ui.note ?: if (!ui.running) prefs.autoStopNote else null
+        binding.tvNote.text = note ?: ""
+        binding.tvNote.visibility = if (note == null) View.GONE else View.VISIBLE
 
         // The service closes the workout file before it publishes running=false.
         if (wasRunning && !ui.running) loadLastWorkout()

@@ -47,6 +47,10 @@ Strava's own recording didn't capture heart rate on treadmill runs, so the app r
 
 **Recording.** Every run (real or simulated) is written to `filesDir/workouts/workout_<startEpochMs>.csv`: one row per second with the same heart rate and distance the Stick is sent (HR blank when the strap has no fresh value). It is flushed every 5 s, so a crash loses a few seconds at most. Runs under 60 s are discarded; the newest 10 are kept. Recording needs no GPS fix — on a treadmill it just records HR with zero distance.
 
+**Auto-stop.** If the strap has sent heart rate at least once in a run and then nothing arrives for 5 minutes (strap taken off, Stop forgotten), the run stops itself through the normal Stop path and a notification plus an on-screen note say so. Runs that never saw a heart rate (no strap) never auto-stop, and shorter dropouts are ignored.
+
+**Trim.** An auto-stopped run is saved only up to its last heartbeat, so duration, distance and the uploaded TCX exclude the idle 5 minutes (the file is rewritten via a temp file + rename). A manual Stop saves the run untrimmed; the 60 s minimum applies after trimming.
+
 **Upload.** *Last workout* on the main screen shows the newest run; **Upload to Strava** asks for a name, a distance in miles and whether it was a treadmill (`trainer=1`), builds a TCX file (time, distance and HR per second, no GPS positions) and posts it to Strava's upload API, then polls until the activity exists. The result links to the activity, and the workout is marked uploaded; uploading it again asks first (Strava rejects duplicates anyway, and its message is shown as-is).
 
 **Treadmill distance.** GPS gives no distance indoors, so type the treadmill's distance at upload time. If the recorded distance is under 100 m (none, or just GPS drift), the typed distance is spread evenly over the run, i.e. a constant pace. If there is a real recorded distance, the typed value rescales it, keeping the pace variations. Leaving the box at its prefilled value uploads the recorded distance unchanged.

@@ -91,6 +91,7 @@ class RunService : Service() {
 
         private const val CHANNEL_ID = "run"
         private const val NOTIFICATION_ID = 1
+        private const val AUTO_STOP_NOTIFICATION_ID = 2
 
         /** Long enough for a three-hour run plus slack; the lock is released on stop anyway. */
         private const val WAKE_LOCK_TIMEOUT_MS = 4L * 60 * 60 * 1000
@@ -124,6 +125,7 @@ class RunService : Service() {
     private val simulator = Simulator()
     private val workouts by lazy { WorkoutStore(java.io.File(filesDir, "workouts")) }
     private var recorder: WorkoutRecorder? = null
+    private val autoStop = AutoStop()
 
     private var strap: StrapClient? = null
     private var stick: StickClient? = null
@@ -188,6 +190,9 @@ class RunService : Service() {
         simulator.start(now)
 
         startRecording()
+        autoStop.reset()
+        prefs.autoStopNote = null
+        getSystemService(NotificationManager::class.java)?.cancel(AUTO_STOP_NOTIFICATION_ID)
 
         connectStick()
         if (!simulate) {
@@ -198,7 +203,11 @@ class RunService : Service() {
         ticker = scope.launch { tickLoop() }
     }
 
-    private fun stopRun() {
+    /**
+     * The one teardown path, for the Stop button, the notification's Stop and auto-stop.
+     * @param auto heart rate vanished: trim the log to the last heartbeat and say so.
+     */
+    private fun stopRun(auto: Boolean = false) {
         if (!started) return
         started = false
 
@@ -216,8 +225,11 @@ class RunService : Service() {
         stickDevice = null
 
         tracker.stop(SystemClock.elapsedRealtime())
-        // Before running=false is published: the activity reloads "last workout" on it.
-        stopRecording()
+        // Before running=false is published: the activity reloads "last workout" on it,
+        // and shows the auto-stop note from Prefs.
+        val savedSec = stopRecording(trimToLastHr = auto)
+        val autoStopMessage = if (auto) autoStopMessage(savedSec) else null
+        autoStopMessage?.let { prefs.autoStopNote = it }
         wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = null
 
@@ -232,6 +244,7 @@ class RunService : Service() {
             note = null,
         )
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        autoStopMessage?.let { postAutoStopNotification(it) }
     }
 
     /**
@@ -263,11 +276,19 @@ class RunService : Service() {
         }
     }
 
-    private fun stopRecording() {
-        val r = recorder ?: return
+    /** @return the saved run's duration, or null if nothing was saved. */
+    private fun stopRecording(trimToLastHr: Boolean): Int? {
+        val r = recorder ?: return null
         recorder = null
-        r.finish()
+        val saved = r.finish(trimToLastHr = trimToLastHr)
         workouts.prune()
+        return saved
+    }
+
+    private fun autoStopMessage(savedSec: Int?): String {
+        val minutes = AutoStop.AUTO_STOP_SEC / 60
+        return if (savedSec == null) getString(R.string.auto_stopped_not_saved, minutes)
+        else getString(R.string.auto_stopped_saved, minutes, formatElapsed(savedSec))
     }
 
     // --- devices ------------------------------------------------------------
@@ -384,6 +405,15 @@ class RunService : Service() {
             )
         )
 
+        // Strap taken off and Stop forgotten (typical after a treadmill run). Simulate
+        // always has HR, so it can't trigger there anyway.
+        if (!simulate && autoStop.onTick(data.elapsedSec, data.hrBpm)) {
+            Log.i(TAG, "auto-stop: no heart rate for ${AutoStop.AUTO_STOP_SEC} s")
+            stopRun(auto = true)
+            stopSelf()
+            return // stopRun published running=false; don't overwrite it below
+        }
+
         val status = stick?.status
         val ui = UiState(
             running = true,
@@ -433,6 +463,28 @@ class RunService : Service() {
                 setShowBadge(false)
             }
         )
+    }
+
+    /** Ordinary dismissable notification: the run notification is gone by now. */
+    private fun postAutoStopNotification(message: String) {
+        val open = PendingIntent.getActivity(
+            this,
+            2,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_run)
+            .setContentTitle(getString(R.string.auto_stopped_title))
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .build()
+        // Silently dropped if notifications were refused; the note on screen still shows.
+        getSystemService(NotificationManager::class.java)
+            ?.notify(AUTO_STOP_NOTIFICATION_ID, notification)
     }
 
     private fun buildNotification(ui: UiState): android.app.Notification {
