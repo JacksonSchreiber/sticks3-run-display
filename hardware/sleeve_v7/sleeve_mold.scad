@@ -46,7 +46,7 @@ squeeze = 0.0;          // pocket = Stick size; the silicone on every face grips
 size_min = 175;         // wrist circumference on the hole nearest the jacket; each hole adds hole_pitch
 hole_count = 9; hole_pitch = 5;
 hole_d = 2.0;           // on the outer face (the Tropic tongue is 1.8 mm at its tip)
-pyr_w = 3.2; pyr_d = 0.5;   // on the wrist face each hole sits in a shallow diamond pyramid, Tropic style: diagonal, depth (hole_pitch - pyr_w = 1.8 mm of full-thickness strap between tips)
+pyr_w = 3.2; pyr_d = 0.9;   // on the wrist face each hole sits in a shallow diamond pyramid, Tropic style: diagonal, depth (hole_pitch - pyr_w = 1.8 mm of full-thickness strap between tips)
 pyr_r = 0.6;            // the diamond's corners are rounded this much, so the pyramid's inside creases are smooth curves, not sharp valleys
 hole_d_root = 2.2;      // the pin is this wide where it leaves the pyramid and tapers to hole_d (a straight 2 mm pin snaps)
 
