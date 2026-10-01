@@ -53,4 +53,5 @@ dependencies {
     implementation(libs.nordic.ble)
 
     testImplementation(libs.junit)
+    testImplementation(libs.org.json)
 }

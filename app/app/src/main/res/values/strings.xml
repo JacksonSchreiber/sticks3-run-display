@@ -45,4 +45,54 @@
     <string name="battery_exempt">Ignore battery optimisation</string>
     <string name="battery_already_exempt">Already exempt from battery optimisation</string>
     <string name="open_app_settings">Open app settings</string>
+
+    <!-- workouts and Strava -->
+    <string name="last_workout">Last workout</string>
+    <string name="no_workout">No workout recorded yet</string>
+    <string name="workout_summary">%1$s · %2$s · %3$s</string>
+    <string name="workout_avg_hr">avg %1$d bpm</string>
+    <string name="workout_no_hr">no HR</string>
+    <string name="workout_simulated">(simulated)</string>
+    <string name="workout_uploaded">Uploaded</string>
+    <string name="upload_to_strava">Upload to Strava</string>
+    <string name="open_in_strava">Open in Strava</string>
+
+    <string name="strava_not_connected">Strava: not connected</string>
+    <string name="strava_connected">Strava: connected</string>
+    <string name="strava_setup">Set up Strava</string>
+    <string name="strava_setup_title">Strava</string>
+    <string name="strava_setup_help">One time: on strava.com/settings/api create an app and set Authorization Callback Domain to <b>localhost</b>. Paste its Client ID and Client Secret here, tap Connect, and leave the upload permission ticked. They are stored only on this phone.</string>
+    <string name="strava_client_id">Client ID</string>
+    <string name="strava_client_secret">Client Secret</string>
+    <string name="strava_connect">Connect</string>
+    <string name="strava_disconnect">Disconnect</string>
+    <string name="strava_need_credentials">Enter both the Client ID and the Client Secret.</string>
+    <string name="strava_no_browser">No app can open the Strava authorisation page.</string>
+    <string name="strava_connecting">Connecting to Strava…</string>
+    <string name="strava_connected_ok">Strava connected.</string>
+    <string name="strava_connect_failed">Strava connection failed: %1$s</string>
+    <string name="strava_disconnected">Strava disconnected.</string>
+    <string name="strava_denied">Strava authorisation was cancelled.</string>
+    <string name="strava_missing_scope">Strava connected without upload permission. Connect again and leave the upload permission ticked.</string>
+    <string name="strava_auth_error">Strava authorisation failed: %1$s</string>
+
+    <string name="upload_title">Upload to Strava</string>
+    <string name="upload_name">Name</string>
+    <string name="upload_distance">Distance (miles)</string>
+    <string name="upload_treadmill">Treadmill (indoor)</string>
+    <string name="upload">Upload</string>
+    <string name="upload_need_distance">Enter a distance greater than 0 miles.</string>
+    <string name="upload_again_title">Already uploaded</string>
+    <string name="upload_again_message">This workout was already uploaded to Strava. Upload it again? Strava rejects it as a duplicate unless the first activity was deleted.</string>
+    <string name="upload_again">Upload again</string>
+    <string name="upload_sending">Uploading…</string>
+    <string name="upload_processing">Strava is processing…</string>
+    <string name="upload_done">Uploaded</string>
+
+    <string name="strava_err_not_connected">Strava is not connected. Tap Set up Strava.</string>
+    <string name="strava_err_reconnect">Strava access expired or was revoked. Tap Set up Strava and Connect again.</string>
+    <string name="strava_err_rate_limited">Strava rate limit reached. Try again in 15 minutes.</string>
+    <string name="strava_err_still_processing">Strava is still processing the upload. Check the Strava app in a minute.</string>
+    <string name="strava_err_http">Strava error %1$d: %2$s</string>
+    <string name="strava_err_network">Network error. Check the connection and try again.</string>
 </resources>

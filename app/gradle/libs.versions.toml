@@ -15,6 +15,8 @@ lifecycle = "2.8.7"
 coroutines = "1.8.1"
 nordicBle = "2.11.0"
 junit = "4.13.2"
+# Tests only: android.jar's org.json is a stub on the JVM, so unit tests need the real one.
+orgJson = "20240303"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -24,6 +26,7 @@ material = { module = "com.google.android.material:material", version.ref = "mat
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 nordic-ble = { module = "no.nordicsemi.android:ble", version.ref = "nordicBle" }
 junit = { module = "junit:junit", version.ref = "junit" }
+org-json = { module = "org.json:json", version.ref = "orgJson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

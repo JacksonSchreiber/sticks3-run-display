@@ -122,6 +122,8 @@ class RunService : Service() {
     private val pace = PaceEstimator()
     private val tracker = RunTracker()
     private val simulator = Simulator()
+    private val workouts by lazy { WorkoutStore(java.io.File(filesDir, "workouts")) }
+    private var recorder: WorkoutRecorder? = null
 
     private var strap: StrapClient? = null
     private var stick: StickClient? = null
@@ -185,6 +187,8 @@ class RunService : Service() {
         pace.reset()
         simulator.start(now)
 
+        startRecording()
+
         connectStick()
         if (!simulate) {
             connectStrap()
@@ -212,6 +216,8 @@ class RunService : Service() {
         stickDevice = null
 
         tracker.stop(SystemClock.elapsedRealtime())
+        // Before running=false is published: the activity reloads "last workout" on it.
+        stopRecording()
         wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = null
 
@@ -243,6 +249,26 @@ class RunService : Service() {
 
     private fun granted(permission: String) =
         ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
+    // --- recording ----------------------------------------------------------
+
+    private fun startRecording() {
+        val startMs = System.currentTimeMillis()
+        recorder = try {
+            WorkoutRecorder(workouts.fileFor(startMs), startMs, simulate)
+        } catch (e: java.io.IOException) {
+            // The run itself matters more than its log.
+            Log.e(TAG, "cannot create workout file", e)
+            null
+        }
+    }
+
+    private fun stopRecording() {
+        val r = recorder ?: return
+        recorder = null
+        r.finish()
+        workouts.prune()
+    }
 
     // --- devices ------------------------------------------------------------
 
@@ -347,6 +373,16 @@ class RunService : Service() {
         // "connected but no data" from "link lost" by the 5 s packet gap alone.
         stick?.writeData(PacketEncoder.encode(data))
         maybeReconnectStick(now)
+
+        // Same values the Stick just got, but distance unrounded. Works with no GPS fix
+        // at all (treadmill): HR still records and distance just stays 0.
+        recorder?.add(
+            WorkoutSample(
+                tSec = data.elapsedSec,
+                hrBpm = data.hrBpm,
+                distanceM = if (simulate) simulator.meters else tracker.distanceMeters(),
+            )
+        )
 
         val status = stick?.status
         val ui = UiState(
@@ -459,6 +495,8 @@ class RunService : Service() {
         private var startMs = 0L
         private var lastMs = 0L
         private var centiMiles = 0.0
+
+        val meters: Double get() = centiMiles / 100.0 * PaceEstimator.METERS_PER_MILE
 
         fun start(nowMs: Long) {
             startMs = nowMs

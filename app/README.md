@@ -1,6 +1,6 @@
 # Android companion app
 
-Bridges the chest strap and the phone's GPS to the StickS3, while Strava records the run normally.
+Bridges the chest strap and the phone's GPS to the StickS3, while Strava records the run normally. It also records each run itself and can upload it to Strava with heart rate — for treadmill runs, where Strava's own recording missed it (see *Strava upload*).
 
 Gradle project root is this folder; the single module is `app/`. Package / applicationId `dev.runstick.app`. Kotlin, plain Android Views, no Compose, no DI, no navigation library.
 
@@ -21,8 +21,14 @@ While Strava records on the same phone, this app reads the strap over the standa
 | `RunService.kt` | foreground service: owns both clients + GPS, ticks at 1 Hz, holds the `UiState` flow. |
 | `MainActivity.kt` | permissions, device pickers, start/stop, live readout, battery help. |
 | `DevicePicker.kt` | the "which device?" dialog (connected devices + filtered scan). |
-| `Prefs.kt` | strap MAC, stick MAC, simulate flag. |
-| `app/src/test/…` | JUnit4 tests for the four pure classes, including the protocol doc's golden vector. |
+| `WorkoutLog.kt` | one recorded run (start time, 1 Hz HR + distance samples), its line-based file format and summaries. Pure. |
+| `WorkoutStore.kt` | `filesDir/workouts/` (newest 10 kept) and the incremental `WorkoutRecorder`. java.io only. |
+| `TcxWriter.kt` | `WorkoutLog` -> TCX v2 (no GPS positions), with the distance override. Pure. |
+| `StravaApi.kt` | Strava URLs, form/multipart bodies, JSON parsing, upload dialog defaults. Pure. |
+| `StravaClient.kt` | token exchange/refresh, upload + poll over `HttpURLConnection`. |
+| `StravaJobs.kt` | process-wide scope + state for connect/upload, so rotation doesn't cancel them. |
+| `Prefs.kt` | strap MAC, stick MAC, simulate flag, Strava credentials and tokens, uploaded activity ids. |
+| `app/src/test/…` | JUnit4 tests for the pure classes, including the protocol doc's golden vector and TCX golden output. |
 
 ## Rules that are easy to break
 
@@ -34,6 +40,27 @@ While Strava records on the same phone, this app reads the strap over the standa
 ## Simulate mode
 
 A persisted switch on the main screen. Ignores the strap and GPS and sends synthetic data (HR wandering 120-170, pace 7:30-9:30, elapsed and distance ticking), so the Stick can be tested indoors. Location permission is not requested in this mode; Bluetooth still is, because it is still writing to a real Stick.
+
+## Strava upload
+
+Strava's own recording didn't capture heart rate on treadmill runs, so the app records every run itself and can upload it to Strava as a Run with heart rate and pace.
+
+**Recording.** Every run (real or simulated) is written to `filesDir/workouts/workout_<startEpochMs>.csv`: one row per second with the same heart rate and distance the Stick is sent (HR blank when the strap has no fresh value). It is flushed every 5 s, so a crash loses a few seconds at most. Runs under 60 s are discarded; the newest 10 are kept. Recording needs no GPS fix — on a treadmill it just records HR with zero distance.
+
+**Upload.** *Last workout* on the main screen shows the newest run; **Upload to Strava** asks for a name, a distance in miles and whether it was a treadmill (`trainer=1`), builds a TCX file (time, distance and HR per second, no GPS positions) and posts it to Strava's upload API, then polls until the activity exists. The result links to the activity, and the workout is marked uploaded; uploading it again asks first (Strava rejects duplicates anyway, and its message is shown as-is).
+
+**Treadmill distance.** GPS gives no distance indoors, so type the treadmill's distance at upload time. If the recorded distance is under 100 m (none, or just GPS drift), the typed distance is spread evenly over the run, i.e. a constant pace. If there is a real recorded distance, the typed value rescales it, keeping the pace variations. Leaving the box at its prefilled value uploads the recorded distance unchanged.
+
+**One-time setup.**
+
+1. On <https://www.strava.com/settings/api> create an API application (any name/website). Set **Authorization Callback Domain** to `localhost`.
+2. In the app tap **Set up Strava**, paste the **Client ID** and **Client Secret**, tap **Connect**.
+3. Strava (app or browser) asks for permission. Leave the **upload activities** permission ticked — without it the app cannot upload and tells you so.
+4. You come back to RunStick showing *Strava: connected*. Tokens refresh themselves; if Strava ever refuses the refresh, the app asks you to connect again.
+
+The redirect is `runstick://localhost/strava`, which is why the callback domain is `localhost`.
+
+**Credentials live only on the phone.** Client ID, secret and tokens are kept in the app's private SharedPreferences (`allowBackup` is false) and are never logged. Nothing about your Strava app is in this repo; if you fork it, create your own API application.
 
 ## Versions
 
