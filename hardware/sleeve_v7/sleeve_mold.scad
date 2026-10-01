@@ -23,7 +23,7 @@
 // z from the wrist face (0) toward the front. The cup's rim is z = 0.
 //
 // Casting (open pour, window face down), Smooth-Sil 950, 100A : 10B by weight:
-//   1. Release on everything. Core on the cup floor, pad down, port blade into its channel, two
+//   1. Release on everything. Core on the cup floor, pad down, port blade down its relief in the end wall, two
 //      M3x8 up through the cup. Lay the pin across the short strap's end: handle into the wide
 //      notch, rod into the rib's seat and the narrow notch in the far wall.
 //   2. Mix 44 g A + 4.4 g B (pigment into A first). Degas if you can. Syringe the lip layer, the
@@ -34,7 +34,7 @@
 //   5. Lid off, then pull the pin out sideways by its handle. M3 screws out, card down the jacket's long sides,
 //      M4 screws into the jack holes until the core and band rise. Peel the straps out, lift the
 //      top end of the core out of the window and slide it toward the top end (the port blade draws
-//      out of its slot). Trim the vent nubs and the port tab.
+//      out of its slot). Trim the vent nubs; wipe any film off the port slot's mouth.
 //   6. Keepers over the short strap's end. Buckle: tongue into the 2 mm slot, spring bar through
 //      the strap and the tongue's loop, tips into the buckle's lugs.
 
@@ -77,7 +77,8 @@ tip_corner_r = 1.0;
 tail = 25;              // long strap beyond the last hole
 
 /* [Buckle end] */
-bar_pin_w = 1.5;        // printed square pin that casts the spring-bar hole (the bar is ~1.4 mm)
+bar_pin_w = 1.5;        // diameter of the printed pin that casts the spring-bar hole (the bar is ~1.4 mm)
+rod_flat = 0.6;         // the rod is round with one small flat this far from its axis, so it prints lying on the bed
 pin_clr = 0.1;          // clearance of the pin and its handle in their notches
 handle_w = 4.0;         // the pin's handle fills a notch in one cup wall, flush with the rim
 handle_grip = 5.0;      // ... and sticks out this far to pull on
@@ -96,7 +97,8 @@ kp_in_w = 19.5; kp_in_h = 6.2; kp_wall = 2.0; kp_w = 5.0; kp_r = 1.5;
 
 /* [Charging port] */
 port = true; port_w = 14.0; port_h = 7.5; port_from_face = 4.1; skin_t = 1.5;
-fin_t = 0.5; fin_len = 10.0; fin_out = 1.0;   // 0.5 mm blade on the core casts the port slot through the skin
+fin_t = 0.5; fin_len = 10.0;   // 0.5 mm blade on the core casts the port slot through the skin
+pad_h = 0.5; pad_m = 1.8;      // raised border round the slot on the outside: this proud, this far beyond the slot, edges rounded
 
 /* [Hidden] */
 $fn = 48; eps = 0.01;
@@ -211,10 +213,13 @@ module tongue_slot2d(g = 0) {
 module tongue_slot_solid() { translate([0, 0, -eps]) linear_extrude(bk_end_t + 1.0) tongue_slot2d(); }   // the whole slot (band preview)
 // The pin is printed and DROPS IN from the rim: it lies in a notch in each cup wall and in a seat in the
 // rib. The slot former is split at the pin: the cup's rib below it, a boss on the lid above it.
-PIN_Z0 = BAR_Z - bar_pin_w / 2; PIN_Z1 = BAR_Z + bar_pin_w / 2;   // 1.5 .. 3.0 below the rim
+PIN_Z0 = BAR_Z - bar_pin_w / 2; PIN_Z1 = BAR_Z + rod_flat;        // 1.5 .. 2.85 below the rim (flat side toward the outer face)
 HWB = w_short(S_BAR) / 2;                                         // cavity half width at the bar
 module pin_box(hw, y0, y1, z0, z1) { translate([X_BAR - hw, y0, z0]) cube([2 * hw, y1 - y0, z1 - z0]); }
-module rod() { pin_box(bar_pin_w / 2, -(HWB + margin + 0.5), HWB + 1, PIN_Z0, PIN_Z1); }   // 0.5 proud of the far wall, to push on
+module rod_round(d, y0, y1) { translate([X_BAR, (y0 + y1) / 2, BAR_Z]) rotate([90, 0, 0]) cylinder(d = d, h = y1 - y0, center = true, $fn = 32); }
+module rod() { intersection() { rod_round(bar_pin_w, -(HWB + margin + 0.5), HWB + 1); pin_box(bar_pin_w, -100, 100, PIN_Z0 - 1, PIN_Z1); } }   // round, no corners for a tear to start from; 0.5 proud of the far wall, to push on
+// seat for the rod: straight-sided from the rim, round at the bottom to match it
+module rod_seat(y0, y1) { intersection() { union() { pin_box(bar_pin_w / 2 + pin_clr, y0, y1, -1, BAR_Z); rod_round(bar_pin_w + 2 * pin_clr, y0, y1); } pin_box(bar_pin_w, y0, y1, -1, PIN_Z1 + 0.05); } }
 module pin_part() {
     intersection() { pin_box(handle_w / 2 - pin_clr, HWB - 1, 60, 0, PIN_Z1); cup_plain(); }   // handle = the piece of wall the notch removes (keeps the rim rebate)
     pin_box(handle_w / 2 - pin_clr, HWB + margin - 1, HWB + margin + handle_grip, 0, PIN_Z1);   // grip outside the cup
@@ -222,12 +227,12 @@ module pin_part() {
 }
 module pin_notches() {   // cut from the cup: handle notch in the +y wall, rod notch in the -y wall, both open from the rim
     pin_box(handle_w / 2, HWB - 1, 60, -1, PIN_Z1 + 0.05);
-    pin_box(bar_pin_w / 2 + pin_clr, -60, -(HWB - 1), -1, PIN_Z1 + 0.05);
+    rod_seat(-60, -(HWB - 1));
 }
 module tongue_rib() {   // cup: the slot former below the pin, with a seat the pin drops into
     difference() {
         translate([0, 0, PIN_Z0]) linear_extrude(bk_end_t + 1.0 - PIN_Z0) tongue_slot2d();
-        pin_box(bar_pin_w / 2 + pin_clr, -5, 5, PIN_Z0 - 1, PIN_Z1 + 0.05);
+        rod_seat(-5, 5);
     }
 }
 module lid_bosses() {   // lid: the slot former above the pin, and the fill above the rod in the far wall's notch
@@ -258,7 +263,7 @@ module texture() {   // two steps, so the groove is tapered rather than square-c
     }
 }
 
-module envelope() { body(); side_bumps(); front_bump(); strap(1); strap(-1); }
+module envelope() { body(); side_bumps(); front_bump(); strap(1); strap(-1); if (port) port_pad(); }
 module outline2d() { projection() envelope(); }
 
 // ---- core ------------------------------------------------------------------------------------------
@@ -281,7 +286,19 @@ module port_core(t, half_w) {
     }
 }
 module tunnel_block() { hull() { port_core(skin_t, fin_len / 2 + 0.5); port_core(end_t, port_w / 2); } }
-module port_fin(g = 0) { translate([-(END_X - skin_t - 0.5), 0, PORT_Z]) rotate([0, -90, 0]) linear_extrude(skin_t + 0.5 + fin_out + g) rrect(fin_t + 2 * g, fin_len + 2 * g, fin_t / 2 + g - eps); }
+// blade from inside the tunnel, through the skin and the raised border, ending flush with the border's face (it touches the cup there)
+module port_fin() { translate([-(END_X - skin_t - 0.5), 0, PORT_Z]) rotate([0, -90, 0]) linear_extrude(skin_t + 0.5 + pad_h) rrect(fin_t, fin_len, fin_t / 2 - eps); }
+// Raised border round the slot. The blade reaches its face, and the core drops in from the rim, so the same 0.5 mm
+// relief has to run from the border to the rim: the border continues toward the strap as a raised strip. Nothing to cut off.
+module port_pad2d(i = 0) { offset(delta = -i) hull() { translate([PORT_Z, 0]) rrect(fin_t + 2 * pad_m, fin_len + 2 * pad_m, fin_t / 2 + pad_m - eps); translate([-2, -(fin_len / 2 + pad_m)]) square([1, fin_len + 2 * pad_m]); } }
+module port_pad() {
+    steps = 5;
+    intersection() {
+        for (k = [0 : steps - 1]) { h0 = pad_h * k / steps; h1 = pad_h * (k + 1) / steps;
+            translate([-(END_X - eps) - h0, 0, 0]) rotate([0, -90, 0]) linear_extrude(h1 - h0 + eps) port_pad2d(pad_h - sqrt(pad_h * pad_h - h0 * h0)); }
+        translate([-100, -50, 0]) cube([200, 100, 100]);
+    }
+}
 SCREWS = [[-4, 0], [12.5, 0]]; JACKS = [[2, -4.5], [7.5, 4.5]];   // all inside the window pad
 screw_d = 3.0; screw_head_d = 6.5; screw_head_h = 3.0; jack_d = 3.3;
 module core_part() {
@@ -335,8 +352,6 @@ module cup_plain() {
         block(0, CUP_H);
         envelope();
         translate([0, 0, -1]) linear_extrude(1 + REBATE_D) footprint2d(RIDGE_OVER + 0.1);   // rebate for the lid ridge
-        // channel in the end wall for the port blade: open from the rim so the core drops in; the tab it casts above the blade is cut off
-        if (port) translate([-(END_X + fin_out + 0.05), -(fin_len / 2 + 0.05), -1]) cube([fin_out + 0.05 + 0.5, fin_len + 0.1, 1 + PORT_Z + fin_t / 2 + 0.05]);
         for (p = SCREWS) translate([p[0], p[1], 0]) { translate([0, 0, TOP - 1]) cylinder(d = screw_d + 0.4, h = 20); translate([0, 0, CUP_H - screw_head_h]) cylinder(d = screw_head_d, h = screw_head_h + 1); }
         for (p = JACKS) translate([p[0], p[1], TOP - 1]) cylinder(d = jack_d, h = 20);
     }
