@@ -89,6 +89,35 @@ One mold piece, one core, two staples:
 
 **Fitting the Stick:** USB-C end first, under the deep lip, then stretch the short lip over the top end. Spring bars (0.8 mm tips) through the lugs; open the holes with a 1.0 mm bit if a print closed them. To charge, push the cable straight into the slit at the USB-C end; the tunnel guides it onto the port. Set `port = false` in the .scad for a sleeve without the tunnel.
 
+## Band v7 (`hardware/sleeve_v7/`)
+
+![Band v7: plan of the outer faces with the outline and knurl, a side section, the squared tip of the long strap and the buckle end of the short strap](images/sleeve-v7-preview.png)
+
+The v6 jacket with **Tropic-shaped straps and a real metal Tropic buckle**. Nothing printed stays in the band: no cast-in plate, no printed buckle or tongue (v6's printed lugs let the spring bar pop out). The buckle is 18 mm between its lugs and pivots on its own thin spring bar (21 mm tip to tip, about 1.4 mm body).
+
+| | Short strap (70 mm) | Long strap (117.6 mm) |
+|---|---|---|
+| Width | 29.6 at the jacket, 21.5 after a 15 mm flare, straight taper to 17.6 at the end | 29.6, 21.5 after the flare, one eased taper to 16.0 that ends 18 mm before the tip, then 16 to 12 over the last 18 mm |
+| Thickness | 2.0 hinge at the jacket, 3.0 strap, 4.5 at the buckle end (ramps over 12 mm) | 2.0 hinge, 3.0 strap |
+| End | quarter-round over the bar, 1.5 mm plan corners | squared off, 1 mm plan corners |
+
+- **Slow taper:** the long strap has to be 18 mm or narrower wherever it sits in the buckle, which starts 14 mm toward the jacket from the hole in use. A straight taper from 21.5 to 16 would still be 19.3 mm there, so the taper is one eased curve (exponent 3.09, computed from that constraint): 18.0 mm at 38.6 mm from the jacket, 16.0 to 16.9 at the holes.
+- **Holes:** nine, round, 5 mm pitch, sizes 175 to 215 mm (the tongue sits at the short strap's end). 2.0 mm on the outer face for the 1.8 mm tongue tip, widening to 3.0 mm on the wrist face: the lid's pins are tapered because a straight 2 mm PLA pin snaps on demolding. 25 mm of tail past the last hole.
+- **Buckle end:** the bar axis is 2.25 mm from the end and 2.25 mm above the wrist face, so 1.5 mm of silicone surrounds the hole on every side. The hole is cast by a **1.5 mm steel pin** (a drill bit) through 1.7 mm holes in both cup walls. A **2.0 mm slot through the full thickness**, from the end to 2.5 mm past the bar, lets the buckle's tongue sit on the bar and swing; it is cast by a rib on the cup's end wall that the pin also passes through. The extra thickness is on the outer face; the wrist face stays flat.
+- **Outline and texture:** a panel inset 1.3 mm from the strap edge is recessed 0.35 mm, leaving a clean 0.7 mm raised outline (the outer-face edge radius is 0.6). The v6 diamond knurl is cut into the panel and runs to its edge, with a smooth lane round the holes. The panel starts past the hinge and stops where the buckle end thickens. Thinnest silicone under a groove: 2.25 mm.
+- **Window edge:** the core's window pad now touches the cup floor only on a 0.6 mm rim round its edge (the middle is relieved 0.3 mm). The screws press a line, which seals far better than a printed face, and any film that still gets under is thinnest at the window's edge and parts there.
+- **Keepers:** two cast silicone rings, 19.5 x 6.2 mm inside, slipped over the short strap's end before the buckle goes on.
+
+| File | What | Print |
+|---|---|---|
+| `stl/band_core.stl` | Stick shape, window pad with pinch-off rim, port tunnel and blade | PLA, as exported, 0.16 mm, 3 walls, supports on build plate only (under the port blade) |
+| `stl/band_cup.stl` | one 252 x 43 mm open-top mold: panel plateaus and knurl ridges on the trough floors, tongue-slot rib, pin holes, hole-pin sockets | PLA, 0.2 mm, **diagonal** on the bed (fits a 191 mm square), brim, no supports. Check the 1.5 mm pin passes through both walls and the rib; ream with the pin if tight |
+| `stl/band_lid.stl` | wrist face: fillet ridge, nine tapered hole pins, seventeen vents | PLA, diagonal, no supports |
+| `stl/keeper_mold.stl` | two ring cavities | PLA, as exported |
+| `stl/band_preview_not_for_printing.stl` | the finished part (18.7 cm3) | don't print |
+
+**Casting (Smooth-Sil 950, 100A : 10B by weight):** release on everything. Core on the floor, pad down, port blade into its channel, two M3 x 8 up through the cup. Push the pin through one wall at the short strap's end, through the rib, and out the other wall. **Mix 44 g A + 4.4 g B**, pigment into A first (the band is about 23 g; the rest is the keepers, the cup and the stick). Degas if you can. Syringe the lip layer, the front-button pocket and the thick end round the pin, then pour along the whole length to just above the rim, tap. Lid on, one end first; excess bleeds from the vents. Fill the keeper mold from the same mix. Cure 18 h, or about 6 h at 45 C (not hotter: the molds are PLA). **Demolding:** pull the pin out sideways first. Lid off, M3 screws out, card down the jacket's long sides, M4 screws into the jack holes until the core and band rise. Peel the straps out, lift the top end of the core out of the window and slide it toward the top end. Trim the vent nubs and the port tab. **Buckle:** keepers on first; tongue into the slot, spring bar through the strap and the tongue's loop, tips into the buckle's lugs.
+
 ## Band v6 (`hardware/sleeve_v6/`)
 
 ![Band v6: the one-piece band with the tang buckle cast into the short strap; the buckle close up; the cup; the parts as printed](images/sleeve-v6-preview.png)
