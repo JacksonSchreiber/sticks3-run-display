@@ -94,6 +94,10 @@ class WorkoutRecorder(
      * at the last heartbeat. A run shorter than [minSec] after that is deleted.
      * @return the saved run's duration in seconds, or null if it was discarded.
      */
+    /** Distance of the run after a trim in [finish]; null when nothing was trimmed. */
+    var trimmedDistanceM: Double? = null
+        private set
+
     fun finish(minSec: Int = MIN_SEC, trimToLastHr: Boolean = false): Int? {
         close()
         var duration = durationSec
@@ -106,7 +110,10 @@ class WorkoutRecorder(
             val trimmed = log?.trimmedToLastHr()
             if (trimmed != null && trimmed !== log) {
                 // On a failed rewrite the untrimmed file stays: too long beats lost.
-                if (rewrite(trimmed)) duration = trimmed.durationSec
+                if (rewrite(trimmed)) {
+                    duration = trimmed.durationSec
+                    trimmedDistanceM = trimmed.totalDistanceM
+                }
             }
         }
         if (duration < minSec) {

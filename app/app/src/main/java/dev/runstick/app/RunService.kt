@@ -227,14 +227,23 @@ class RunService : Service() {
         tracker.stop(SystemClock.elapsedRealtime())
         // Before running=false is published: the activity reloads "last workout" on it,
         // and shows the auto-stop note from Prefs.
+        val finishing = recorder
         val savedSec = stopRecording(trimToLastHr = auto)
+        val trimmedM = if (auto) finishing?.trimmedDistanceM else null
         val autoStopMessage = if (auto) autoStopMessage(savedSec) else null
         autoStopMessage?.let { prefs.autoStopNote = it }
         wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = null
 
         // Keep the finished run's elapsed/distance on screen; only the live values go away.
-        _state.value = _state.value.copy(
+        // After an auto-stop show the trimmed run (to the last heartbeat), the same numbers
+        // as "Last workout" and the upload, not the minutes spent waiting for the timeout.
+        val shown = _state.value
+        _state.value = shown.copy(
+            elapsedSec = if (auto && savedSec != null) savedSec else shown.elapsedSec,
+            distanceCentiMiles = trimmedM
+                ?.let { (it / PaceEstimator.METERS_PER_MILE * 100.0).toInt().coerceIn(0, 0xFFFF) }
+                ?: shown.distanceCentiMiles,
             running = false,
             hrBpm = null,
             paceSecPerMile = null,
