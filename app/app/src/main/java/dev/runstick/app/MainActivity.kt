@@ -310,7 +310,36 @@ class MainActivity : AppCompatActivity() {
     private fun renderWorkout() {
         val log = lastLog
         binding.tvWorkout.text = if (log == null) getString(R.string.no_workout) else summary(log)
+
+        // A run that auto-stop cut back to the last heartbeat says so in both places it is
+        // shown, and a tap explains why, so a shorter time than expected is never a mystery.
+        val recordedSec = log?.let { prefs.trimmedFromSec(it.startEpochMs) }
+        val explain = if (log != null && recordedSec != null) {
+            View.OnClickListener { showTrimmedInfo(recordedSec, log.durationSec) }
+        } else null
+        binding.tvWorkout.setOnClickListener(explain)
+        binding.tvWorkout.isClickable = explain != null
+        binding.tvTrimmed.setOnClickListener(explain)
+        // Under the big time only while that finished, trimmed run is what it is showing.
+        val ui = RunService.state.value
+        val onScreen = explain != null && !ui.running && ui.elapsedSec > 0 && ui.elapsedSec == log?.durationSec
+        binding.tvTrimmed.visibility = if (onScreen) View.VISIBLE else View.GONE
         binding.btnUpload.isEnabled = log != null && !RunService.isRunning && !StravaJobs.isBusy
+    }
+
+    private fun showTrimmedInfo(recordedSec: Int, keptSec: Int) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.trimmed_title)
+            .setMessage(
+                getString(
+                    R.string.trimmed_message,
+                    AutoStop.AUTO_STOP_SEC / 60,
+                    formatElapsed(recordedSec),
+                    formatElapsed(keptSec),
+                )
+            )
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun summary(log: WorkoutLog): String {
@@ -322,6 +351,7 @@ class MainActivity : AppCompatActivity() {
         parts += log.avgHr?.let { getString(R.string.workout_avg_hr, it) } ?: getString(R.string.workout_no_hr)
         var text = parts.joinToString(" · ")
         if (log.simulated) text += " " + getString(R.string.workout_simulated)
+        if (prefs.trimmedFromSec(log.startEpochMs) != null) text += " · " + getString(R.string.workout_trimmed)
         if (prefs.uploadedActivityId(log.startEpochMs) != null) {
             text += " · " + getString(R.string.workout_uploaded)
         }

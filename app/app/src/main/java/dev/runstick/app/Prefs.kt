@@ -85,6 +85,19 @@ class Prefs(context: Context) : StravaCredentials {
         return if (sp.contains(key)) sp.getLong(key, 0L) else null
     }
 
+    /**
+     * Seconds recorded before an auto-stop trimmed the workout, keyed by its start time;
+     * null for a run that was not trimmed. Lets the screen say "trimmed" and explain why.
+     */
+    fun trimmedFromSec(startEpochMs: Long): Int? {
+        val key = KEY_TRIMMED_PREFIX + startEpochMs
+        return if (sp.contains(key)) sp.getInt(key, 0) else null
+    }
+
+    fun setTrimmed(startEpochMs: Long, recordedSec: Int) {
+        sp.edit().putInt(KEY_TRIMMED_PREFIX + startEpochMs, recordedSec).apply()
+    }
+
     fun setUploaded(startEpochMs: Long, activityId: Long) {
         sp.edit().putLong(KEY_UPLOADED_PREFIX + startEpochMs, activityId).apply()
     }
@@ -96,6 +109,7 @@ class Prefs(context: Context) : StravaCredentials {
         const val KEY_STICK_NAME = "stick_name"
         const val KEY_SIMULATE = "simulate"
         const val KEY_AUTO_STOP_NOTE = "auto_stop_note"
+        const val KEY_TRIMMED_PREFIX = "trimmed_from_"
         const val KEY_STRAVA_CLIENT_ID = "strava_client_id"
         const val KEY_STRAVA_CLIENT_SECRET = "strava_client_secret"
         const val KEY_STRAVA_OAUTH_STATE = "strava_oauth_state"

@@ -58,6 +58,10 @@
     <string name="workout_no_hr">no HR</string>
     <string name="workout_simulated">(simulated)</string>
     <string name="workout_uploaded">Uploaded</string>
+    <string name="workout_trimmed">trimmed (tap for why)</string>
+    <string name="trimmed_label">Trimmed \u00b7 tap for why</string>
+    <string name="trimmed_title">Why this run was trimmed</string>
+    <string name="trimmed_message">The run stopped itself because no heart rate arrived for %1$d minutes. That usually means the strap came off and Stop was not pressed.\n\nRecorded: %2$s\nKept: %3$s\n\nEverything after the last heartbeat was removed, so the time, distance and Strava upload all end at the last heartbeat. Press Stop yourself to keep the full recording.</string>
     <string name="upload_to_strava">Upload to Strava</string>
     <string name="open_in_strava">Open in Strava</string>
 

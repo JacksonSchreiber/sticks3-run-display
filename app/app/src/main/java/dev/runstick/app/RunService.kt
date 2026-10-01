@@ -125,6 +125,7 @@ class RunService : Service() {
     private val simulator = Simulator()
     private val workouts by lazy { WorkoutStore(java.io.File(filesDir, "workouts")) }
     private var recorder: WorkoutRecorder? = null
+    private var recordingStartMs = 0L
     private val autoStop = AutoStop()
 
     private var strap: StrapClient? = null
@@ -228,7 +229,12 @@ class RunService : Service() {
         // Before running=false is published: the activity reloads "last workout" on it,
         // and shows the auto-stop note from Prefs.
         val finishing = recorder
+        val recordedSec = finishing?.durationSec
         val savedSec = stopRecording(trimToLastHr = auto)
+        // Remember that (and by how much) this workout was cut, so the screen can say so.
+        if (auto && savedSec != null && recordedSec != null && savedSec < recordedSec) {
+            prefs.setTrimmed(recordingStartMs, recordedSec)
+        }
         val trimmedM = if (auto) finishing?.trimmedDistanceM else null
         val autoStopMessage = if (auto) autoStopMessage(savedSec) else null
         autoStopMessage?.let { prefs.autoStopNote = it }
@@ -276,6 +282,7 @@ class RunService : Service() {
 
     private fun startRecording() {
         val startMs = System.currentTimeMillis()
+        recordingStartMs = startMs
         recorder = try {
             WorkoutRecorder(workouts.fileFor(startMs), startMs, simulate)
         } catch (e: java.io.IOException) {
