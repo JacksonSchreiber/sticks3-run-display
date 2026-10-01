@@ -40,7 +40,7 @@
 //   6. Sleeve on the spring bar, compress the bar into the two lug holes. Keeper over the buckle.
 
 /* [Part] */
-part = "band"; // [buckle, tongue, keeper_mold, core, cup, lid, band]
+part = "band"; // [buckle, tongue, fixed_tongue, keeper_mold, core, cup, lid, band]
 
 /* [Fit] */
 squeeze = 0.0;           // pocket = Stick size; the silicone on every face grips it
@@ -202,12 +202,10 @@ module core_part() {
 
 // ---- buckle: plate + anchors (cast in) + tang frame, one piece --------------------------------------
 // Plan outline of plate + rails + far bar: a rounded ring (outer corners bk_round, window corners bk_fillet), grown by g.
+module window2d() { WL = X_FAR - bk_far_t / 2 - X_FACE; translate([X_FACE + WL / 2, 0]) rrect(WL, IW, bk_fillet); }
 module frame2d(g = 0) {
-    L = X_END - X0; WL = X_FAR - bk_far_t / 2 - X_FACE;
-    offset(delta = g) difference() {
-        translate([X0 + L / 2, 0]) rrect(L, 2 * BK_HW, bk_round);
-        translate([X_FACE + WL / 2, 0]) rrect(WL, IW, bk_fillet);
-    }
+    L = X_END - X0;
+    offset(delta = g) difference() { translate([X0 + L / 2, 0]) rrect(L, 2 * BK_HW, bk_round); window2d(); }
 }
 anc_r = 0.6;   // anchors fully rounded (1.6 thick), so they cannot cut the silicone
 module anchors(grow = 0) {
@@ -260,6 +258,37 @@ module tongue() {
             }
         }
         translate([X_BAR, 0, zc]) rotate([90, 0, 0]) cylinder(d = bore, h = 40, center = true, $fn = 96);
+    }
+}
+// Temporary FIXED tongue (no spring bar): a block that drops into the frame's window against the plate,
+// a saddle that sits on the plate's top and on the rail tops, and a short hooked tongue that stops
+// ft_gap short of the far bar. Locked by one ~0.9 mm wire (a paperclip) through lug - block - lug.
+// The wire takes the strap pull; the saddle and the block's back face stop it rotating.
+ft_gap = 2.5; ft_tip_up = 1.8; ft_pin_d = 1.2; ft_top_t = 1.6; ft_wing_hw = 13.6; ft_block_l = 5.6;
+module fixed_tongue() {
+    xb1 = X_FACE + ft_block_l; x_tip = X_FAR - bk_far_t / 2 - ft_gap; zt = bk_h + 0.05;
+    module block2d(i) { offset(r = 1.0) offset(delta = -1.0) intersection() { offset(delta = -i) window2d(); translate([X_FACE, -50]) square([ft_block_l - (i - 0.2), 100]); } }
+    difference() {
+        union() {
+            hull() {   // block: 0.2 clear of the plate face and the rails, chamfered toward the wrist
+                translate([0, 0, 0.3]) linear_extrude(eps) block2d(1.0);
+                translate([0, 0, 1.1]) linear_extrude(zt + 0.5 - 1.1) block2d(0.2);
+            }
+            // saddle: over the plate's top, with two arms lying on the rail tops
+            translate([0, 0, zt]) linear_extrude(ft_top_t) offset(r = 0.8) offset(delta = -0.8) union() {
+                translate([X0 + 1.2, -ft_wing_hw]) square([xb1 - X0 - 1.2, 2 * ft_wing_hw]);
+                for (s = [-1, 1]) translate([xb1 - 1, s > 0 ? IW / 2 + 0.3 : -ft_wing_hw]) square([X_FACE + 9.5 - xb1 + 1, ft_wing_hw - IW / 2 - 0.3]);
+            }
+            // hooked tongue
+            xs = [X_BAR + 0.5, xb1 + 0.6, x_tip - 1.3, x_tip - 1.0];
+            zs = [3.2, 3.9, 4.3, 4.3 + ft_tip_up];
+            ds = [2.6, 2.6, 2.6, 2.0]; ws = [arm_w, arm_w, arm_w - 0.2, arm_w - 0.7];
+            for (i = [0 : 2]) hull() {
+                translate([xs[i], 0, zs[i]]) rotate([90, 0, 0]) cylinder(d = ds[i], h = ws[i], center = true);
+                translate([xs[i + 1], 0, zs[i + 1]]) rotate([90, 0, 0]) cylinder(d = ds[i + 1], h = ws[i + 1], center = true);
+            }
+        }
+        translate([X_BAR, 0, BAR_Z]) rotate([90, 0, 0]) cylinder(d = ft_pin_d, h = 60, center = true, $fn = 24);   // wire
     }
 }
 // keeper mold: two ring cavities, open top
@@ -336,6 +365,9 @@ module lid() {
 if (part == "buckle")      translate([0, 0, BK_HW]) rotate([90, 0, 0]) translate([-X0 - 6, 0, 0]) buckle();          // on its side: bar holes vertical
 else if (part == "tongue") translate([0, 0, (IW - 0.4) / 2]) rotate([90, 0, 0]) translate([-X_BAR, 0, -BAR_Z]) tongue();   // sleeve standing
 else if (part == "keeper_mold") keeper_mold();
+else if (part == "fixed_tongue") translate([0, 0, ft_wing_hw]) rotate([90, 0, 0]) translate([-X_FACE, 0, 0]) fixed_tongue();   // standing: wire hole vertical
+else if (part == "check_fixed") intersection() { fixed_tongue(); buckle(); }
+else if (part == "fixed_assy") { buckle(); fixed_tongue(); }
 else if (part == "core")   translate([0, 0, -Z0]) core_part();
 else if (part == "cup")    translate([0, 0, CUP_H]) rotate([180, 0, 0]) cup();
 else if (part == "lid")    translate([0, 0, LID_T]) lid();
