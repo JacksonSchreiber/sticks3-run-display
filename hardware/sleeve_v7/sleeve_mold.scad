@@ -46,8 +46,9 @@ squeeze = 0.0;          // pocket = Stick size; the silicone on every face grips
 size_min = 175;         // wrist circumference on the hole nearest the jacket; each hole adds hole_pitch
 hole_count = 9; hole_pitch = 5;
 hole_d = 2.0;           // on the outer face (the Tropic tongue is 1.8 mm at its tip)
-pyr_w = 3.8; pyr_d = 0.5;   // on the wrist face each hole sits in a shallow diamond pyramid, Tropic style: diagonal, depth (1.2 mm of full-thickness strap between tips)
-hole_d_root = 2.4;      // the pin is this wide where it leaves the pyramid and tapers to hole_d (a straight 2 mm pin snaps)
+pyr_w = 3.2; pyr_d = 0.5;   // on the wrist face each hole sits in a shallow diamond pyramid, Tropic style: diagonal, depth (hole_pitch - pyr_w = 1.8 mm of full-thickness strap between tips)
+pyr_r = 0.6;            // the diamond's corners are rounded this much, so the pyramid's inside creases are smooth curves, not sharp valleys
+hole_d_root = 2.2;      // the pin is this wide where it leaves the pyramid and tapers to hole_d (a straight 2 mm pin snaps)
 
 /* [Jacket] */
 wall = 2.8; end_t = 2.2; lip_t = 1.4; back_t = 1.7; side_bump = 0.5; front_min = 1.4;
@@ -199,11 +200,20 @@ module strap_plan2d(dir, sa, sb) {
 }
 
 // ---- holes: round, hole_d on the outer face; on the wrist face each sits in a shallow diamond pyramid ------------
+// The pyramid is smooth inside: its diamond outline has rounded corners (no sharp valleys between faces), and
+// the faces curve over into the hole instead of meeting it at an edge, and the rim rolls over from the wrist
+// face instead of starting at an edge. Each level is a blend between the rounded diamond at the wrist face and
+// the pin's round root: fast at the rim (the surface leaves the face tangentially), easing out at the bottom.
+pyr_rim = 0.7;          // 1 = crisp rim, 0.5 = fully rounded (quarter ellipse); in between keeps some flat face
+function pyr_blend(u) = pow(1 - (1 - u) * (1 - u), pyr_rim);
+module pyr_level(u) {
+    l = pyr_blend(u);
+    translate([0, 0, pyr_d * u]) linear_extrude(eps) rotate(45)
+        offset(r = (1 - l) * pyr_r + l * hole_d_root / 2, $fn = 32) square(max((1 - l) * (pyr_w - 2 * pyr_r) / sqrt(2), 0.002), center = true);
+}
 module hole_pin() {
-    hull() {   // shallow pyramid: diamond on the wrist face (one diagonal along the strap), blending to the pin's root
-        linear_extrude(eps) rotate(45) square(pyr_w / sqrt(2), center = true);
-        translate([0, 0, pyr_d]) cylinder(d = hole_d_root, h = eps, $fn = 32);
-    }
+    n = 12;   // levels crowd toward the rim, where the surface turns fastest
+    for (k = [0 : n - 1]) hull() { pyr_level(pow(k / n, 2)); pyr_level(pow((k + 1) / n, 2)); }
     translate([0, 0, pyr_d]) cylinder(d1 = hole_d_root, d2 = hole_d, h = ZP - pyr_d + eps, $fn = 32);
     translate([0, 0, ZP]) cylinder(d = hole_d, h = panel_d + 0.6, $fn = 32);
 }
