@@ -102,7 +102,10 @@ The v6 jacket with **Tropic-shaped straps and a real metal Tropic buckle**. Noth
 | End | quarter-round over the bar, 1.5 mm plan corners | squared off, 1 mm plan corners |
 
 - **Slow taper:** the long strap has to be 18 mm or narrower wherever it sits in the buckle, which starts 14 mm toward the jacket from the hole in use. A straight taper from 21.5 to 16 would still be 19.3 mm there, so the taper is one eased curve (exponent 3.09, computed from that constraint): 18.0 mm at 38.6 mm from the jacket, 16.0 to 16.9 at the holes.
-- **Holes:** nine, round, 5 mm pitch, sizes 175 to 215 mm (the tongue sits at the short strap's end). 2.0 mm on the outer face for the 1.8 mm tongue tip, widening to 3.0 mm on the wrist face: the lid's pins are tapered because a straight 2 mm PLA pin snaps on demolding. 25 mm of tail past the last hole.
+- **Holes:** nine, round, 5 mm pitch, sizes 175 to 215 mm (the tongue sits at the short strap's end). 2.0 mm on the outer face for the 1.8 mm tongue tip. On the wrist face each hole sits at the bottom of a **shallow diamond pyramid**, Tropic style: 4.8 mm across its diagonals (one diagonal along the strap), 0.9 mm deep, only at the nine holes. The lid's pins stand on those pyramids and taper from 2.6 to 2.0 mm, which is also what keeps them from snapping on demolding. 25 mm of tail past the last hole.
+
+![Wrist side of the long strap with the diamond pyramids, and a section along the hole row](images/sleeve-v7-holes.png)
+
 - **Buckle end:** the bar axis is 2.25 mm from the end and 2.25 mm above the wrist face, so 1.5 mm of silicone surrounds the hole on every side. The hole is cast by a **printed pin that drops in from the rim** (a 1.5 mm round rod with one small flat so it prints lying down; the hole has no corners for a tear to start from): its handle fills a 4 mm notch in one cup wall, flush with the rim, and sticks out 5 mm to pull on; the rod lies in a round-bottomed seat in the rib and in a matching notch in the far wall. A **2.0 mm slot through the full thickness**, from the end to 2.5 mm past the bar, lets the buckle's tongue sit on the bar and swing. Its former is split at the pin: a rib on the cup below it and a boss on the lid above it, so nothing has to be threaded through a hole. A second small boss on the lid fills the far wall's notch above the rod.
 
 ![Section across the short strap at the spring bar, and a plan at the pin's height](images/sleeve-v7-pin.png) The extra thickness is on the outer face; the wrist face stays flat.
@@ -119,7 +122,7 @@ The v6 jacket with **Tropic-shaped straps and a real metal Tropic buckle**. Noth
 | `stl/band_core.stl` | Stick shape, window pad with pinch-off rim, port tunnel and blade | PLA, as exported, 0.16 mm, 3 walls, supports on build plate only (under the port blade) |
 | `stl/band_cup.stl` | one 252 x 43 mm open-top mold: panel plateaus and knurl ridges on the trough floors, lower tongue-slot rib with the pin's seat, two pin notches, hole-pin sockets | PLA, 0.2 mm, **diagonal** on the bed (fits a 191 mm square), brim, no supports |
 | `stl/band_pin_x3.stl` | three pins (two spares): handle + 1.5 mm round rod, 35 mm long | PLA, 0.16 mm, as exported (rod on the bed), no supports. Check one drops into its notches before pouring |
-| `stl/band_lid.stl` | wrist face: fillet ridge, nine tapered hole pins, the two bosses that close over the pin, seventeen vents | PLA, diagonal, no supports |
+| `stl/band_lid.stl` | wrist face: fillet ridge, nine hole pins on diamond pyramids, the two bosses that close over the pin, seventeen vents | PLA, diagonal, no supports |
 | `stl/keeper_mold.stl` | two ring cavities | PLA, as exported |
 | `stl/band_preview_not_for_printing.stl` | the finished part (18.7 cm3) | don't print |
 
