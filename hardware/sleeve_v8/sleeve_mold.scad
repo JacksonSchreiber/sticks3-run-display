@@ -98,9 +98,10 @@ tongue_slot_past = 2.5; // how far the slot runs past the bar
 /* [Outline and texture] */
 rim_w = 0.7;            // raised outline round each strap's outer face
 panel_d = 0.35;         // the panel inside it is recessed this much
-texture = false;        // diamond knurl in the panel (OFF: it trapped air on the cup floor; needs a brushed print coat if used)
-tex_pitch = 2.2; tex_angle = 35; tex_depth = 0.4; tex_w = 0.8;
-tex_hole_margin = 1.5;  // smooth margin round every hole
+texture = true;         // diamond knurl in the panel
+tex_pitch = 2.4; tex_angle = 35; tex_depth = 0.55; tex_w = 0.9;   // v8: deeper and a touch larger
+node_gap = 0;           // > 0 cuts the cup's ridges at every crossing so the cells vent into each other (tried at 1.8: diamonds this small turn into dashes). 0 = closed diamonds; brush a print coat into them before pouring
+tex_hole_margin = 0.5;  // smooth collar round every hole (groove ends stay off the hole edge)
 breather_d = 0.6;       // breather holes through the cup floor at the dead-end pockets (button recess, window lips)
 
 /* [Keeper] */
@@ -285,7 +286,10 @@ module panel2d() {
     offset(delta = -(edge_r + rim_w)) strap_plan2d(-1, S_PANEL0, long_len);
     offset(delta = -(edge_r + rim_w)) strap_plan2d(1, S_PANEL0, S_BAR - end_ramp);
 }
-module hatch2d(w) { for (a = [tex_angle, -tex_angle]) rotate(a) for (k = [-48 : 48]) translate([0, k * tex_pitch]) square([440, w], center = true); }
+module hatch_lines2d(w) { for (a = [tex_angle, -tex_angle]) rotate(a) for (k = [-48 : 48]) translate([0, k * tex_pitch]) square([440, w], center = true); }
+// crossings of the two families: x = i p / (2 sin a), y = j p / (2 cos a) with i + j even
+module hatch_nodes2d(d) { for (i = [-80 : 80], j = [-12 : 12]) if ((i + j) % 2 == 0) translate([i * tex_pitch / (2 * sin(tex_angle)), j * tex_pitch / (2 * cos(tex_angle))]) circle(d = d, $fn = 16); }
+module hatch2d(w) { if (node_gap > 0) difference() { hatch_lines2d(w); hatch_nodes2d(node_gap); } else hatch_lines2d(w); }
 module tex_region2d() {
     difference() {
         panel2d();
