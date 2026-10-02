@@ -4,9 +4,9 @@ A wrist display that shows two numbers while running: **heart rate** from a Blue
 
 The point is to keep Strava recording on the phone, untouched, and still see live numbers without buying a running watch.
 
-![Band v8: plan of the outer faces with the Tropic perforation and raised outline, a side section, the long strap's tip and the buckle end](docs/images/sleeve-v8-preview.png)
+![Band v8: outer faces tiled with Tropic diamond pits, the holes at their centres, with close ups and sections](docs/images/sleeve-v8-tropic.png)
 
-*Band v8, the current design: a one-piece silicone band that flows out of a sealed jacket around the Stick, with Tropic-shaped, Tropic-perforated straps. The long strap tapers to a squared 12 mm tip; the short strap ends in a 4.5 mm thick tab with a cast hole for the spring bar of a real metal Tropic buckle and a slot for its tongue. Drawn from the mesh in `hardware/sleeve_v8/`.*
+*Band v8, the current design: a one-piece silicone band that flows out of a sealed jacket around the Stick, with Tropic-shaped straps: diamond pits tile the outer faces and the holes sit at their centres. The long strap tapers to a squared 12 mm tip; the short strap ends in a 4.5 mm thick tab with a cast hole for the spring bar of a real metal Tropic buckle and a slot for its tongue. Drawn from the mesh in `hardware/sleeve_v8/`.*
 
 The earlier one-piece silicone band (a pocket in a cast band, no strap hardware) is still in `hardware/band/`:
 

@@ -51,9 +51,10 @@ part = "band"; // [core, cup, lid, pin, keeper_mold, band]
 squeeze = 0.0;          // pocket = Stick size; the silicone on every face grips it
 size_min = 175;         // wrist circumference on the hole nearest the jacket; each hole adds hole_pitch
 hole_pitch = 5;         // centre column pitch along the strap (tongue holes)
-side_edge = 3.0;        // side columns sit this far in from the strap's edge, staggered half a pitch
+side_y = 4.0;           // side columns this far off centre (fixed, like the Tropic), staggered half a pitch; they stop where the strap gets too narrow
+side_min_edge = 2.5;    // ... i.e. where less than this is left between a side hole and the strap's edge
 hole_d = 2.0;           // on the outer face (the Tropic tongue is 1.8 mm at its tip)
-pyr_w = 3.2; pyr_d = 0.9;   // on the wrist face each hole sits in a shallow diamond pyramid, Tropic style: diagonal, depth (hole_pitch - pyr_w = 1.8 mm of full-thickness strap between tips)
+pyr_w = 3.0; pyr_d = 0.3;   // on the wrist face each hole sits in a shallow diamond pyramid, Tropic style: diagonal, depth (hole_pitch - pyr_w = 1.8 mm of full-thickness strap between tips)
 pyr_r = 0.6;            // the diamond's corners are rounded this much, so the pyramid's inside creases are smooth curves, not sharp valleys
 hole_d_root = 2.2;      // the pin is this wide where it leaves the pyramid and tapers to hole_d (a straight 2 mm pin snaps)
 
@@ -99,11 +100,14 @@ tongue_slot_past = 2.5; // how far the slot runs past the bar
 rim_w = 0.7;            // raised outline round each strap's outer face
 panel_d = 0.35;         // the panel inside it is recessed this much
 texture = true;         // diamond knurl in the panel
-tex_mode = "ridge";     // [ridge, dimple] ridge: grooves in the silicone, raised diamonds (closed cells on the cup floor: brush a print coat). dimple: diamonds sunk into the silicone as shallow pyramids with a raised lattice between (the cup has bumps with connected channels: self-venting)
+tex_mode = "tropic";    // [tropic, ridge, dimple] tropic: big diamond pits tiling the outer face, one hole at the centre of every pit in the three columns (self-venting in the cup). ridge: grooves in the silicone, raised diamonds (closed cells on the cup floor: brush a print coat). dimple: diamonds sunk into the silicone as shallow pyramids with a raised lattice between (the cup has bumps with connected channels: self-venting)
 tex_channel = 0.6;      // dimple mode: width of the raised lattice between dimples, at the surface
+tr_ridge = 0.7;         // tropic mode: width of the raised lattice between pits, at the surface
+tr_depth = 0.6;         // tropic mode: pit depth
+tr_run = 1.2;           // tropic mode: how far the pit's faces run inward over that depth (slope about 27 deg)
 tex_pitch = 2.4; tex_angle = 35; tex_depth = 0.55; tex_w = 0.9;   // v8: deeper and a touch larger
 node_gap = 0;           // > 0 cuts the cup's ridges at every crossing so the cells vent into each other (tried at 1.8: diamonds this small turn into dashes). 0 = closed diamonds; brush a print coat into them before pouring
-tex_hole_margin = 0.5;  // smooth collar round every hole (groove ends stay off the hole edge)
+tex_hole_margin = 0.5;  // ridge/dimple modes: smooth collar round every hole (tropic mode: the hole sits in the pit's floor, no collar)
 breather_d = 0.6;       // breather holes through the cup floor at the dead-end pockets (button recess, window lips)
 
 /* [Keeper] */
@@ -165,12 +169,12 @@ function t_short(s) = let(c = min(max(s, 0), short_len))
 function w_of(dir, s) = dir > 0 ? w_short(s) : w_long(s);
 function t_of(dir, s) = dir > 0 ? t_short(s) : t_long(s);
 S_START = -body_r - 0.5;                  // the strap starts inside the jacket so the root fills the plan corners
-function side_y(dir, s) = w_of(dir, s) / 2 - side_edge;
+function side_ok(dir, s) = w_of(dir, s) / 2 - side_y - hole_d / 2 >= side_min_edge;
 HOLES = concat(
     [for (s = LONG_ROWS) [-(END_X + s), 0]],
-    [for (s = LONG_ROWS) if (s + hole_pitch / 2 <= LONG_END) for (sg = [-1, 1]) [-(END_X + s + hole_pitch / 2), sg * side_y(-1, s + hole_pitch / 2)]],
+    [for (s = LONG_ROWS) if (s + hole_pitch / 2 <= LONG_END && side_ok(-1, s + hole_pitch / 2)) for (sg = [-1, 1]) [-(END_X + s + hole_pitch / 2), sg * side_y]],
     [for (s = SHORT_ROWS) [END_X + s, 0]],
-    [for (s = SHORT_ROWS) if (s + hole_pitch / 2 <= SHORT_END) for (sg = [-1, 1]) [END_X + s + hole_pitch / 2, sg * side_y(1, s + hole_pitch / 2)]]);
+    [for (s = SHORT_ROWS) if (s + hole_pitch / 2 <= SHORT_END && side_ok(1, s + hole_pitch / 2)) for (sg = [-1, 1]) [END_X + s + hole_pitch / 2, sg * side_y]]);
 function s_list(L, r, n) = concat([for (k = [0 : n]) S_START + (L - r - S_START) * k / n], [for (a = [10 : 10 : 90]) L - r + r * sin(a)]);
 echo(str("v8: jacket ", 2 * END_X, " x ", 2 * BODY_HW, " x ", TOP, " (+", FRONT_BUMP, "); short strap ", short_len, ", long strap ", long_len,
          ", overall ", 2 * END_X + short_len + long_len, " mm; ", len(HOLES), " holes; sizes (centre column) ", 2 * END_X + short_len + LONG_ROWS[0], "-", 2 * END_X + short_len + LONG_ROWS[len(LONG_ROWS) - 1], " step ", hole_pitch,
@@ -284,10 +288,8 @@ module lid_bosses() {   // lid: the slot former above the pin, and the fill abov
 // The panel is the strap's plan inset by the edge radius plus the 0.7 mm outline; it is recessed panel_d,
 // and the diamond grooves are cut into it. In the cup the panel is a plateau and the grooves are ridges.
 S_PANEL0 = root_len + 1;                 // past the hinge
-module panel2d() {
-    offset(delta = -(edge_r + rim_w)) strap_plan2d(-1, S_PANEL0, long_len);
-    offset(delta = -(edge_r + rim_w)) strap_plan2d(1, S_PANEL0, S_BAR - end_ramp);
-}
+module panel_side2d(dir) { offset(delta = -(edge_r + rim_w)) strap_plan2d(dir, S_PANEL0, dir > 0 ? S_BAR - end_ramp : long_len); }
+module panel2d() { panel_side2d(-1); panel_side2d(1); }
 module hatch_lines2d(w) { for (a = [tex_angle, -tex_angle]) rotate(a) for (k = [-48 : 48]) translate([0, k * tex_pitch]) square([440, w], center = true); }
 // crossings of the two families: x = i p / (2 sin a), y = j p / (2 cos a) with i + j even
 module hatch_nodes2d(d) { for (i = [-80 : 80], j = [-12 : 12]) if ((i + j) % 2 == 0) translate([i * tex_pitch / (2 * sin(tex_angle)), j * tex_pitch / (2 * cos(tex_angle))]) circle(d = d, $fn = 16); }
@@ -306,8 +308,21 @@ module dimples() {
     for (i = [-80 : 80], j = [-12 : 12]) if ((i + j) % 2 != 0) translate([i * dx / 2, j * dy / 2, 0])
         hull() { linear_extrude(eps) cell2d(tex_channel / 2 + tex_depth * 1.1); translate([0, 0, tex_depth]) linear_extrude(eps) cell2d(tex_channel / 2); }   // small top toward the wrist, wide base on the plateau; faces about 42 deg
 }
+// tropic mode: diamond cells 2*hole_pitch/2 long and 2*side_y wide, centred on the hole lattice (centre column and side columns),
+// each a shallow inverted pyramid in the silicone = a flat-topped bump in the cup, with connected channels between
+module tr_cell2d(i) { offset(delta = -i) polygon([[hole_pitch / 2, 0], [0, side_y], [-hole_pitch / 2, 0], [0, -side_y]]); }
+module tr_cells(dir) {
+    x0 = dir * (END_X + S_H0);
+    for (i = [-70 : 70], j = [-4 : 4]) if ((i + j) % 2 == 0) translate([x0 + i * hole_pitch / 2, j * side_y, 0])
+        hull() { linear_extrude(eps) tr_cell2d(tr_ridge / 2 + tr_run); translate([0, 0, tr_depth]) linear_extrude(eps) tr_cell2d(tr_ridge / 2); }   // small flat toward the wrist, full cell at the plateau
+}
 module texture() {   // the ridge/bump volume: solid in the cup, empty in the band
-    if (texture && tex_mode == "dimple") {
+    if (texture && tex_mode == "tropic") {
+        for (dir = [-1, 1]) intersection() {
+            translate([0, 0, ZP - tr_depth - eps]) linear_extrude(tr_depth + 2 * eps) offset(delta = -tr_ridge / 2) panel_side2d(dir);   // half a ridge stays at the panel's edge
+            translate([0, 0, ZP - tr_depth]) tr_cells(dir);
+        }
+    } else if (texture && tex_mode == "dimple") {
         intersection() { translate([0, 0, ZP - tex_depth - eps]) linear_extrude(tex_depth + 2 * eps) tex_region2d(); translate([0, 0, ZP - tex_depth]) dimples(); }
     } else if (texture) {
         translate([0, 0, ZP - tex_depth / 2]) linear_extrude(tex_depth / 2 + eps) intersection() { tex_region2d(); hatch2d(tex_w); }
@@ -394,9 +409,9 @@ VENTS = concat(
     [[END_X + 8, 0, 1.5], [END_X + S_BAR - 2, 5, 1.5], [END_X + S_BAR - 2, -5, 1.5], [-(END_X + 8), 0, 1.5], [-(END_X + long_len - 2.5), 0, 1.5]]);
 // breather holes through the cup floor (4 mm) wherever the cavity has a dead end pointing at the floor:
 // the front-button recess (the deepest point of the whole mold) and the window lips round the core's pad
-BREATHERS = [[sx((FRONT_BTN[1][0] + FRONT_BTN[1][1]) / 2), (sy(FRONT_BTN[0][0]) + sy(FRONT_BTN[0][1])) / 2],
-             [-19, 6], [-19, -6], [21, 6], [21, -6], [5, 12], [5, -12]];
-module breathers() { for (b = BREATHERS) translate([b[0], b[1], TOP - 2]) cylinder(d = breather_d, h = CUP_H + 1, $fn = 12); }
+BREATHERS = [[sx((FRONT_BTN[1][0] + FRONT_BTN[1][1]) / 2), (sy(FRONT_BTN[0][0]) + sy(FRONT_BTN[0][1])) / 2, 0.8],
+             [-19, 6, breather_d], [-19, -6, breather_d], [-22, 0, breather_d], [21, 6, breather_d], [21, -6, breather_d], [5, 12, breather_d], [5, -12, breather_d]];
+module breathers() { for (b = BREATHERS) translate([b[0], b[1], TOP - 2]) cylinder(d = b[2], h = CUP_H + 1, $fn = 12); }
 module footprint2d(o) { offset(r = o) outline2d(); }
 module block(z0, h) { translate([0, 0, z0]) linear_extrude(h) offset(r = margin) outline2d(); }
 module lid_ridge() {
@@ -419,7 +434,7 @@ module cup_plain() {
 module cup() {
     difference() {
         union() { cup_plain(); tongue_rib(); panel(); texture(); }   // rib for the tongue slot; panel plateau and knurl ridges on the trough floors
-        for (h = HOLES) translate([h[0], h[1], ZP - eps]) cylinder(d = hole_d + 0.3, h = panel_d + 0.8, $fn = 32);   // sockets for the hole pins' tips
+        for (h = HOLES) translate([h[0], h[1], ZP - tr_depth - 1]) cylinder(d = hole_d + 0.3, h = 1 + tr_depth + panel_d + 0.8, $fn = 32);   // sockets for the hole pins: through the texture bumps and the plateau into the floor
         breathers();
         pin_notches();
     }
