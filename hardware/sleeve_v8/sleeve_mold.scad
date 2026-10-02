@@ -409,8 +409,14 @@ VENTS = concat(
     [[END_X + 8, 0, 1.5], [END_X + S_BAR - 2, 5, 1.5], [END_X + S_BAR - 2, -5, 1.5], [-(END_X + 8), 0, 1.5], [-(END_X + long_len - 2.5), 0, 1.5]]);
 // breather holes through the cup floor (4 mm) wherever the cavity has a dead end pointing at the floor:
 // the front-button recess (the deepest point of the whole mold) and the window lips round the core's pad
-BREATHERS = [[sx((FRONT_BTN[1][0] + FRONT_BTN[1][1]) / 2), (sy(FRONT_BTN[0][0]) + sy(FRONT_BTN[0][1])) / 2, 0.8],
-             [-19, 6, breather_d], [-19, -6, breather_d], [-22, 0, breather_d], [21, 6, breather_d], [21, -6, breather_d], [5, 12, breather_d], [5, -12, breather_d]];
+// Under the core, silicone flows in from the gaps round its sides and pushes the air toward the window pad, whose rim
+// is sealed: the air ends up in a ring against the pad's edge. So the lip breathers sit 1.2 mm outside that edge.
+PAD_GAP = 1.2;
+BREATHERS = concat(
+    [[sx((FRONT_BTN[1][0] + FRONT_BTN[1][1]) / 2), (sy(FRONT_BTN[0][0]) + sy(FRONT_BTN[0][1])) / 2, 0.8]],   // button recess: the deepest point of the mold
+    [for (y = [-5.5, 0, 5.5]) [WIN[0][0] - PAD_GAP, y, breather_d]],      // USB-side edge of the pad (under the 17 mm lip)
+    [for (y = [-5.5, 0, 5.5]) [WIN[0][1] + PAD_GAP, y, breather_d]],      // top-side edge (under the 7 mm lip)
+    [for (x = [0, 10], sg = [-1, 1]) [x, sg * (WIN[1][1] + PAD_GAP), breather_d]]);   // long sides
 module breathers() { for (b = BREATHERS) translate([b[0], b[1], TOP - 2]) cylinder(d = b[2], h = CUP_H + 1, $fn = 12); }
 module footprint2d(o) { offset(r = o) outline2d(); }
 module block(z0, h) { translate([0, 0, z0]) linear_extrude(h) offset(r = margin) outline2d(); }

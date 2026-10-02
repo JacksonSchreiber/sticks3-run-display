@@ -99,7 +99,7 @@ v7 cast twice in 950 and both casts had craters: a 1 cm paper-thin spot on a str
 - **Tropic diamonds on the outer faces** (`tex_mode = "tropic"`): the whole panel is tiled with diamond pits, 5 mm along by 8 mm across, each a shallow inverted pyramid 0.6 mm deep with faces at about 27 degrees and a small flat floor, separated by a 0.7 mm raised lattice. The pits sit on the hole lattice, so every hole in the three columns is at the centre of its pit, and the outer columns of pits have no holes, exactly like the Tropic. Partial pits run out to the 0.7 mm raised outline. In the cup the pits are flat-topped bumps and the lattice is a network of channels that is connected everywhere (checked: one piece, never narrower than 0.6 mm), so air on the strap floors always has a way to the edge; brush anyway. The v7 knurl is still there as `tex_mode = "ridge"`, and a small-diamond version as `"dimple"`.
 
 ![Outer faces: Tropic diamonds with the holes at their centres, close ups and sections](images/sleeve-v8-tropic.png)
-- **Breather holes** through the cup floor: 0.8 mm at the front-button recess (the deepest point of the mold, where the bare patch was) and 0.6 mm at seven points round the window lips, so every dead-end pocket has an exit. A bead of silicone weeps out of each under the cup; stand it on parchment and trim the beads.
+- **Breather holes** through the cup floor: 0.8 mm at the front-button recess (the deepest point of the mold, where the bare patch was) and 0.6 mm at ten points **1.2 mm outside the window pad's edge**. Under the core the silicone flows in from the gaps round its sides and pushes the air inward until it piles up against the pad's sealed rim, so that ring is where the exits have to be. After the lid goes on, pour the leftover mix over the lid so every vent is covered: it feeds back whatever weeps out of the breathers, and the wrist face stays solid. A bead of silicone weeps out of each under the cup; stand it on parchment and trim the beads.
 - **Twice the lid vents:** ten over the jacket, one every 10 mm along each strap between the hole columns, plus the thick end and the tip.
 
 ![Wrist side of the long strap with the perforation, and a section along the centre column](images/sleeve-v8-holes.png)
@@ -109,7 +109,7 @@ The holes do not vent the strap floors: the cup is 19 mm thick under the straps,
 | File | What | Print |
 |---|---|---|
 | `stl/band_core.stl` | as v7 | PLA, 0.16 mm, supports on build plate only (under the port blade) |
-| `stl/band_cup.stl` | v7 cup with the Tropic diamond bumps, 76 pin sockets and 8 breather holes | PLA, 0.2 mm, diagonal, brim; clear any breather hole that printed shut with a needle |
+| `stl/band_cup.stl` | v7 cup with the Tropic diamond bumps, 76 pin sockets and 11 breather holes | PLA, 0.2 mm, diagonal, brim; clear any breather hole that printed shut with a needle |
 | `stl/band_lid.stl` | wrist face: fillet ridge, 76 chamfered hole pins, the two bosses over the pin, 37 vents | PLA, 0.2 mm, diagonal; set a minimum layer time of 8 s so the pins cool |
 | `stl/band_pin_x3.stl`, `stl/keeper_mold.stl` | as v7 | PLA |
 | `stl/band_preview_not_for_printing.stl` | the finished part | don't print |
