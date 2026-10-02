@@ -99,6 +99,8 @@ tongue_slot_past = 2.5; // how far the slot runs past the bar
 rim_w = 0.7;            // raised outline round each strap's outer face
 panel_d = 0.35;         // the panel inside it is recessed this much
 texture = true;         // diamond knurl in the panel
+tex_mode = "ridge";     // [ridge, dimple] ridge: grooves in the silicone, raised diamonds (closed cells on the cup floor: brush a print coat). dimple: diamonds sunk into the silicone as shallow pyramids with a raised lattice between (the cup has bumps with connected channels: self-venting)
+tex_channel = 0.6;      // dimple mode: width of the raised lattice between dimples, at the surface
 tex_pitch = 2.4; tex_angle = 35; tex_depth = 0.55; tex_w = 0.9;   // v8: deeper and a touch larger
 node_gap = 0;           // > 0 cuts the cup's ridges at every crossing so the cells vent into each other (tried at 1.8: diamonds this small turn into dashes). 0 = closed diamonds; brush a print coat into them before pouring
 tex_hole_margin = 0.5;  // smooth collar round every hole (groove ends stay off the hole edge)
@@ -297,8 +299,17 @@ module tex_region2d() {
     }
 }
 module panel() { translate([0, 0, ZP]) linear_extrude(panel_d + eps) panel2d(); }
-module texture() {   // two steps, so the groove is tapered rather than square-cornered
-    if (texture) {
+// dimple mode: one shallow pyramid (frustum) per lattice cell, standing on the cup's plateau; the channels between them connect everywhere
+module cell2d(i) { dx = tex_pitch / sin(tex_angle); dy = tex_pitch / cos(tex_angle); offset(delta = -i) polygon([[dx / 2, 0], [0, dy / 2], [-dx / 2, 0], [0, -dy / 2]]); }
+module dimples() {
+    dx = tex_pitch / sin(tex_angle); dy = tex_pitch / cos(tex_angle);
+    for (i = [-80 : 80], j = [-12 : 12]) if ((i + j) % 2 != 0) translate([i * dx / 2, j * dy / 2, 0])
+        hull() { linear_extrude(eps) cell2d(tex_channel / 2 + tex_depth * 1.1); translate([0, 0, tex_depth]) linear_extrude(eps) cell2d(tex_channel / 2); }   // small top toward the wrist, wide base on the plateau; faces about 42 deg
+}
+module texture() {   // the ridge/bump volume: solid in the cup, empty in the band
+    if (texture && tex_mode == "dimple") {
+        intersection() { translate([0, 0, ZP - tex_depth - eps]) linear_extrude(tex_depth + 2 * eps) tex_region2d(); translate([0, 0, ZP - tex_depth]) dimples(); }
+    } else if (texture) {
         translate([0, 0, ZP - tex_depth / 2]) linear_extrude(tex_depth / 2 + eps) intersection() { tex_region2d(); hatch2d(tex_w); }
         translate([0, 0, ZP - tex_depth]) linear_extrude(tex_depth / 2 + eps) intersection() { tex_region2d(); hatch2d(tex_w / 2); }
     }
