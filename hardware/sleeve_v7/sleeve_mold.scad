@@ -84,6 +84,7 @@ rod_flat = 0.6;         // the rod is round with one small flat this far from it
 pin_clr = 0.1;          // clearance of the pin and its handle in their notches
 handle_w = 4.0;         // the pin's handle fills a notch in one cup wall, flush with the rim
 handle_grip = 5.0;      // ... and sticks out this far to pull on
+grip_shoulder = 2.0;    // the grip is this much wider than the notch on each side
 tongue_slot_w = 2.0;    // slot through the strap end for the buckle's tongue
 tongue_slot_past = 2.5; // how far the slot runs past the bar
 
@@ -237,7 +238,8 @@ module rod() { intersection() { rod_round(bar_pin_w, -(HWB + margin + 0.5), HWB 
 module rod_seat(y0, y1) { intersection() { union() { pin_box(bar_pin_w / 2 + pin_clr, y0, y1, -1, BAR_Z); rod_round(bar_pin_w + 2 * pin_clr, y0, y1); } pin_box(bar_pin_w, y0, y1, -1, PIN_Z1 + 0.05); } }
 module pin_part() {
     intersection() { pin_box(handle_w / 2 - pin_clr, HWB - 1, 60, 0, PIN_Z1); cup_plain(); }   // handle = the piece of wall the notch removes (keeps the rim rebate)
-    pin_box(handle_w / 2 - pin_clr, HWB + margin - 1, HWB + margin + handle_grip, 0, PIN_Z1);   // grip outside the cup
+    pin_box(handle_w / 2 - pin_clr, HWB + margin - 1, HWB + margin + 0.2, 0, PIN_Z1);   // neck through the wall
+    pin_box(handle_w / 2 + grip_shoulder, HWB + margin + 0.2, HWB + margin + 0.2 + handle_grip, 0, PIN_Z1);   // grip, wider than the notch: its shoulder stops against the cup's outer wall, which sets how far in the pin goes
     rod();
 }
 module pin_notches() {   // cut from the cup: handle notch in the +y wall, rod notch in the -y wall, both open from the rim
@@ -397,6 +399,6 @@ else if (part == "lid")         translate([0, 0, LID_T]) lid();
 else if (part == "keeper_mold") keeper_mold();
 else if (part == "check_core")  intersection() { core_part(); cup(); }
 else if (part == "check_lid")   intersection() { lid(); union() { cup(); core_part(); } }
-else if (part == "pin")         for (i = [-1 : 1]) translate([i * 9, 0, PIN_Z1]) rotate([180, 0, 0]) translate([-X_BAR, 0, 0]) pin_part();   // three (two spares), rod on the bed
+else if (part == "pin")         for (i = [-1 : 1]) translate([i * 12, 0, PIN_Z1]) rotate([180, 0, 0]) translate([-X_BAR, 0, 0]) pin_part();   // three (two spares), rod on the bed
 else if (part == "check_pin")   intersection() { pin_part(); union() { cup(); lid(); } }
 else band();
