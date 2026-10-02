@@ -89,6 +89,31 @@ One mold piece, one core, two staples:
 
 **Fitting the Stick:** USB-C end first, under the deep lip, then stretch the short lip over the top end. Spring bars (0.8 mm tips) through the lugs; open the holes with a 1.0 mm bit if a print closed them. To charge, push the cable straight into the slit at the USB-C end; the tunnel guides it onto the port. Set `port = false` in the .scad for a sleeve without the tunnel.
 
+## Band v8 (`hardware/sleeve_v8/`)
+
+![Band v8: plan of the outer faces with the Tropic perforation, a side section, the long strap's tip and the buckle end](images/sleeve-v8-preview.png)
+
+v7 cast twice in 950 and both casts had craters: a 1 cm paper-thin spot on a strap, a 1 cm bare patch over the front button, and pinholes across the wrist face. The big ones are air that was never displaced (the button recess is a dead-end pocket pointing at the cup floor, and the knurl was 280 small ones); the pinholes are mixing bubbles that rose and were stopped by the lid. v8 is v7 with:
+
+- **Tropic perforation on both straps:** a centre column of 2 mm holes at 5 mm pitch plus two side columns staggered half a pitch, 3 mm in from the edges so they taper with the strap, from just past the flare to 5 mm from the tip (long) and to the thick end (short). 80 holes. Every hole sits in the smooth 3.2 mm diamond on the wrist face. The tongue uses the centre column, so sizes run 140 to 235 in 5 mm steps.
+- **Knurl off.** The outer faces keep the 0.7 mm raised outline and the recessed panel, now smooth. (`texture = true` brings it back, but only with a brushed print coat.)
+- **Breather holes** (0.6 mm) through the cup floor at the front-button recess and at six points round the window lips, so every dead-end pocket has an exit. A bead of silicone weeps out of each under the cup; stand it on parchment and trim the beads.
+- **Twice the lid vents:** ten over the jacket, one every 10 mm along each strap between the hole columns, plus the thick end and the tip.
+
+![Wrist side of the long strap with the perforation, and a section along the centre column](images/sleeve-v8-holes.png)
+
+The holes do not vent the strap floors: the cup is 19 mm thick under the straps, so the pin sockets cannot reach outside. What stops strap craters is the smooth floor plus the pour procedure below.
+
+| File | What | Print |
+|---|---|---|
+| `stl/band_core.stl` | as v7 | PLA, 0.16 mm, supports on build plate only (under the port blade) |
+| `stl/band_cup.stl` | v7 cup with smooth strap floors, 80 pin sockets and 7 breather holes | PLA, 0.2 mm, diagonal, brim; clear any breather hole that printed shut with a needle |
+| `stl/band_lid.stl` | wrist face: fillet ridge, 80 hole pins on diamonds, the two bosses over the pin, 37 vents | PLA, 0.2 mm, diagonal; set a minimum layer time of 8 s so the pins cool |
+| `stl/band_pin_x3.stl`, `stl/keeper_mold.stl` | as v7 | PLA |
+| `stl/band_preview_not_for_printing.stl` | the finished part | don't print |
+
+**Casting, revised (Smooth-Sil 950, 100A : 10B):** release on everything. Core on the floor, pad down, blade down its relief, two M3 x 8. Pin across the short strap's end, shoulder against the wall. **Mix 45.5 g A + 4.5 g B**, pigment into A first; vacuum degas if you have a chamber. **Brush a thin coat of the mix over every surface the silicone will touch on the floor side** with a cheap flat brush: the whole cup floor, the button recess, both strap troughs and the panel steps, the thick end round the pin, and up to the core's pad edge. This is the step that stops the craters. Then pour the rest in a thin stream from height **at one end only**, so the front advances along the cup and pushes the air ahead of it, until it stands just above the rim. Tap the cup on the bench for a minute. **Leave it 10 to 15 minutes** so bubbles rise and pop at the open surface. Then the lid, one end first, pressed down onto the rim. Cure 18 h, or 6 h at 45 C. Demold as v7: lid, pin, screws, jacks; stretch the USB wall off the blade before lifting the core. Trim the vent nubs and the breather beads.
+
 ## Band v7 (`hardware/sleeve_v7/`)
 
 ![Band v7: plan of the outer faces with the outline and knurl, a side section, the squared tip of the long strap and the buckle end of the short strap](images/sleeve-v7-preview.png)
