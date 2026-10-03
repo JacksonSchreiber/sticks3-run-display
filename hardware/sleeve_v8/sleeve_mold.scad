@@ -136,8 +136,9 @@ kp_in_w = 19.5; kp_in_h = 6.2; kp_wall = 2.0; kp_w = 5.0; kp_r = 1.5;
 port = true; port_w = 14.0; port_h = 7.5; port_from_face = 4.1; skin_t = 1.5;
 fin_t = 0.5; fin_len = 10.0;   // 0.5 mm blade on the core casts the port slot through the skin
 pad_h = 0.5; pad_m = 1.8;      // raised border round the slot on the outside: this proud, this far beyond the slot, edges rounded
-strip_hw = 5.6;                // the core's blade reaches the border's face, so the cup needs a channel from it up to the top: the
-                               // band carries it as a raised strip down to the strap. Half-width: the blade's 5 + the 0.2 edge round + 0.4
+strip_hw = fin_len / 2 + pad_m; // the core's blade reaches the border's face, so the cup needs a channel from it up to the top: the band
+                               // carries it as a raised strip down to the strap. It must be as wide as the border: the band leaves the cup
+                               // straight toward its top, so the border slides out down this channel (a narrower strip traps it)
 kh_f = 2.0; kh_flare = 2.0;    // the border, strip and a flare into the strap root read as one keyhole: fillet radius, flare per side
 
 /* [Hidden] */
@@ -480,10 +481,15 @@ module keyhole_rib_cut2d() {
     }
 }
 // ribs on the strip's face, carrying the end wall's rib lines across it (on the cup: grooves in the channel floor, which the blade slides over)
+// They run down the strip's full length: on the cup their grooves then open into the strap root's cavity, so the ribs slide out
+// toward the top. Only whole ribs that fit on the strip's flat face are kept (the lines lean, so a cut along y leaves wedges).
 module strip_ribs() {
-    z0 = max(ft_z_lo, KH_ZG); z1 = PORT_Z - fin_t / 2 - pad_m - ft_keep;
+    z0 = -saddle_d; z1 = PORT_Z - fin_t / 2 - pad_m - ft_keep;
+    xm = -(END_X + pad_h + ft_h / 2); lim = strip_hw - 0.25;
+    bw = ft_w / cos(ft_angle) / 2 + (ft_h / 2 + 0.1) * tan(ft_angle);
     if (port && z1 > z0) intersection() {
-        translate([0, 0, z0]) linear_extrude(z1 - z0) translate([ft_shift, 0]) for (a = [ft_angle, -ft_angle]) rotate(a) for (k = [-30 : 30]) translate([0, k * ft_pitch]) square([140, ft_w], center = true);
+        translate([0, 0, z0]) linear_extrude(z1 - z0) translate([ft_shift, 0]) for (a = [ft_angle, -ft_angle], k = [-30 : 30])
+            if (abs((k * ft_pitch + sin(a) * (xm - ft_shift)) / cos(a)) + bw <= lim) rotate(a) translate([0, k * ft_pitch]) square([140, ft_w], center = true);
         translate([-(END_X + pad_h - 0.1), 0, 0]) rotate([0, -90, 0]) linear_extrude(0.1 + ft_h) offset(delta = -0.25) intersection() { port_pad2d(); translate([-50, -strip_hw]) square([100, 2 * strip_hw]); }
     }
 }
