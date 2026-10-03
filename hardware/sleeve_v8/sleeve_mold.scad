@@ -113,6 +113,7 @@ breather_d = 0.6;       // breather holes through the cup floor at the dead-end 
 /* [Sleeve texture] */
 front_tex = true;       // raised diamond lattice on the sleeve's front face round the window: ridges on the silicone = grooves in the cup floor, a connected channel network from the window pad's edge out to the walls (self-venting, like the straps). Adds nothing but material: the lips stay 1.4 mm.
 ft_w = 0.6; ft_h = 0.4; ft_pitch = 2.0; ft_angle = 35;   // ridge width, height, line spacing, angle
+front_mode = "lattice"; // [lattice, ribs] lattice: diamonds like the straps. ribs: straight ribs across the sleeve, grille style (every channel runs to a side wall)
 ft_keep = 0.6;          // flat margin round the window pad (its rim must seat on bare floor) and the button bump
 
 /* [Keeper] */
@@ -342,7 +343,8 @@ module front_lattice2d() {
     y0 = min(sy(FRONT_BTN[0][0]), sy(FRONT_BTN[0][1])) - 1.5; y1 = max(sy(FRONT_BTN[0][0]), sy(FRONT_BTN[0][1])) + 1.5;
     difference() {
         intersection() {
-            for (a = [ft_angle, -ft_angle]) rotate(a) for (k = [-30 : 30]) translate([0, k * ft_pitch]) square([140, ft_w], center = true);
+            if (front_mode == "ribs") for (k = [-20 : 20]) translate([k * ft_pitch, 0]) square([ft_w, 60], center = true);
+            else for (a = [ft_angle, -ft_angle]) rotate(a) for (k = [-30 : 30]) translate([0, k * ft_pitch]) square([140, ft_w], center = true);
             difference() {   // 0.8 inside the plan (the last 0.8 mm of the perimeter round is nearly vertical anyway) and off the four plan corners
                 rrect(2 * END_X - 1.6, 2 * BODY_HW - 1.6, body_r);
                 for (sx_ = [-1, 1], sy_ = [-1, 1]) translate([sx_ * (END_X - 2), sy_ * (BODY_HW - 2)]) circle(r = 3.5);
