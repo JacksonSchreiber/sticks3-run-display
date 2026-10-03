@@ -136,6 +136,9 @@ kp_in_w = 19.5; kp_in_h = 6.2; kp_wall = 2.0; kp_w = 5.0; kp_r = 1.5;
 port = true; port_w = 14.0; port_h = 7.5; port_from_face = 4.1; skin_t = 1.5;
 fin_t = 0.5; fin_len = 10.0;   // 0.5 mm blade on the core casts the port slot through the skin
 pad_h = 0.5; pad_m = 1.8;      // raised border round the slot on the outside: this proud, this far beyond the slot, edges rounded
+strip_hw = 5.6;                // the core's blade reaches the border's face, so the cup needs a channel from it up to the top: the
+                               // band carries it as a raised strip down to the strap. Half-width: the blade's 5 + the 0.2 edge round + 0.4
+kh_f = 2.0; kh_flare = 2.0;    // the border, strip and a flare into the strap root read as one keyhole: fillet radius, flare per side
 
 /* [Hidden] */
 $fn = 48; eps = 0.01;
@@ -415,8 +418,9 @@ module front_lattice() {
             minkowski() { body(); sphere(r = ft_h, $fn = 16); }
         }
         side_bumps(ft_keep);                                                     // keep off the side-button pads
-        if (port) translate([-(END_X + 5), -(fin_len / 2 + pad_m + ft_keep), -1]) cube([5 + 0.5, fin_len + 2 * (pad_m + ft_keep), PORT_Z + fin_t / 2 + pad_m + ft_keep + 1]);   // and off the port border + strip
+        if (port) translate([-(END_X - 1), 0, 0]) rotate([0, -90, 0]) linear_extrude(3) keyhole_rib_cut2d();   // and whole ribs near the keyhole
     }
+    if (front_tex) strip_ribs();
 }
 module envelope() { body(); side_bumps(); front_bump(); strap(1); strap(-1); if (port) port_pad(); }   // flat: for the plan outline
 // the saddle: under the sleeve's plan, from the curved wrist face up to the old flat back (built from the same profile as the straps)
@@ -454,7 +458,35 @@ module tunnel_block() { hull() { port_core(skin_t, fin_len / 2 + 0.5); port_core
 module port_fin() { translate([-(END_X - skin_t - 0.5), 0, PORT_Z]) rotate([0, -90, 0]) linear_extrude(skin_t + 0.5 + pad_h) rrect(fin_t, fin_len, fin_t / 2 - eps); }
 // Raised border round the slot. The blade reaches its face, and the core drops in from the rim, so the same 0.5 mm
 // relief has to run from the border to the rim: the border continues toward the strap as a raised strip. Nothing to cut off.
-module port_pad2d(i = 0) { offset(delta = -i) hull() { translate([PORT_Z, 0]) rrect(fin_t + 2 * pad_m, fin_len + 2 * pad_m, fin_t / 2 + pad_m - eps); translate([-2 - saddle_d, -(fin_len / 2 + pad_m)]) square([1, fin_len + 2 * pad_m]); } }
+// in the end wall's plane: first coordinate = z, second = y (port_pad turns it onto the wall)
+KH_ZG = sad_z(END_X) + root_t + fillet_r;    // top of the strap root's fillet at the end wall
+module port_pad2d(i = 0) {
+    offset(delta = -i) offset(r = -kh_f) offset(r = kh_f) union() {   // closing: fillets in every inside corner
+        translate([PORT_Z, 0]) rrect(fin_t + 2 * pad_m, fin_len + 2 * pad_m, fin_t / 2 + pad_m - eps);                       // border round the slot
+        translate([-2 - saddle_d, -strip_hw]) square([PORT_Z + 2 + saddle_d, 2 * strip_hw]);                                 // the blade's channel
+        translate([-2 - saddle_d, -(strip_hw + kh_flare)]) square([KH_ZG - 0.7 + 2 + saddle_d, 2 * (strip_hw + kh_flare)]);   // flare, its corners buried in the root fillet
+    }
+}
+// The end wall's ribs lean 35 deg away from the wall, so trimming them along y at the keyhole's edge would leave wedges standing
+// free of the wall. Instead every rib that would come within ft_keep of the keyhole is removed whole, across just the height
+// where it would, with clean horizontal ends.
+function rib_ys(xw) = concat([for (m = [-12 : 12]) (m * ft_pitch + sin(ft_angle) * (xw - ft_shift)) / cos(ft_angle)],
+                             [for (m = [-12 : 12]) (m * ft_pitch - sin(ft_angle) * (xw - ft_shift)) / cos(ft_angle)]);
+module keyhole_rib_cut2d() {
+    bw = ft_w / cos(ft_angle) / 2 + ft_h * tan(ft_angle) + 0.05;   // half the band of y a rib sweeps through its height
+    for (y = rib_ys(-END_X)) if (abs(y) < 12) intersection() {
+        hull() for (d = [-1, 1]) translate([0, d * 2 * bw]) intersection() { offset(delta = ft_keep) port_pad2d(); translate([-50, y - bw]) square([100, 2 * bw]); }
+        translate([-50, y - bw]) square([100, 2 * bw]);
+    }
+}
+// ribs on the strip's face, carrying the end wall's rib lines across it (on the cup: grooves in the channel floor, which the blade slides over)
+module strip_ribs() {
+    z0 = max(ft_z_lo, KH_ZG); z1 = PORT_Z - fin_t / 2 - pad_m - ft_keep;
+    if (port && z1 > z0) intersection() {
+        translate([0, 0, z0]) linear_extrude(z1 - z0) translate([ft_shift, 0]) for (a = [ft_angle, -ft_angle]) rotate(a) for (k = [-30 : 30]) translate([0, k * ft_pitch]) square([140, ft_w], center = true);
+        translate([-(END_X + pad_h - 0.1), 0, 0]) rotate([0, -90, 0]) linear_extrude(0.1 + ft_h) offset(delta = -0.25) intersection() { port_pad2d(); translate([-50, -strip_hw]) square([100, 2 * strip_hw]); }
+    }
+}
 module port_pad() {
     steps = 5;
     intersection() {
