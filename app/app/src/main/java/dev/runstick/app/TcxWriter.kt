@@ -19,7 +19,16 @@ object TcxWriter {
     private val TIME: DateTimeFormatter =
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).withZone(ZoneOffset.UTC)
 
-    fun build(log: WorkoutLog, distanceOverrideM: Double?): String {
+    /**
+     * @param distanceOverrideM typed distance, or null for the recorded one.
+     * @param timeOverrideSec typed time, or null for the recorded one. The whole timeline
+     *        is rescaled to it first ([WorkoutLog.rescaledTo]); distances, HR summaries
+     *        and the lap time are then all computed from that one rescaled list.
+     */
+    fun build(log: WorkoutLog, distanceOverrideM: Double?, timeOverrideSec: Int? = null): String =
+        render(if (timeOverrideSec != null) log.rescaledTo(timeOverrideSec) else log, distanceOverrideM)
+
+    private fun render(log: WorkoutLog, distanceOverrideM: Double?): String {
         val dist = distances(log, distanceOverrideM)
         val total = distanceOverrideM ?: log.totalDistanceM
         val start = time(log.startEpochMs)

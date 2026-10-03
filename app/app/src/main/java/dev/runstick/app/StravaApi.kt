@@ -131,14 +131,17 @@ object StravaApi {
         description: String,
         trainer: Boolean,
         startEpochMs: Long,
+        uploadEpochSec: Long,
     ): List<Pair<String, String>> = buildList {
         add("data_type" to "tcx")
         add("sport_type" to "Run")
         add("name" to name)
         add("description" to description)
         if (trainer) add("trainer" to "1")
-        // Lets Strava (and us) recognise a second upload of the same run.
-        add("external_id" to "runstick-$startEpochMs")
+        // Unique per attempt, so a re-upload can never clash with the id of an activity
+        // already deleted on Strava. (Strava's duplicate check looks at the activity
+        // data itself, not at this.)
+        add("external_id" to "runstick-$startEpochMs-$uploadEpochSec")
     }
 
     fun tcxFilePart(startEpochMs: Long, tcx: String) =
@@ -214,38 +217,4 @@ object StravaApi {
             .replace("&amp;", "&")
             .replace(Regex("\\s+"), " ")
             .trim()
-}
-
-/** What the upload dialog starts with. */
-object UploadDefaults {
-    fun name(log: WorkoutLog): String = when {
-        log.simulated -> "RunStick test (simulated)"
-        log.hasNoDistance -> "Treadmill run"
-        else -> "Run"
-    }
-
-    fun treadmill(log: WorkoutLog): Boolean = log.hasNoDistance
-
-    /** Recorded miles as shown in the distance box (2 dp, Locale.US). */
-    fun miles(log: WorkoutLog): String =
-        String.format(java.util.Locale.US, "%.2f", log.totalDistanceM / PaceEstimator.METERS_PER_MILE)
-
-    /**
-     * The distance override in metres from what the user typed, or null to keep the
-     * recorded distance (box left at its prefill: no point rescaling by rounding error).
-     * Accepts a comma decimal separator. Returns NaN for unusable input.
-     */
-    fun overrideMeters(log: WorkoutLog, typed: String): Double? {
-        val text = typed.trim().replace(',', '.')
-        if (text == miles(log) && !log.hasNoDistance) return null
-        val mi = text.toDoubleOrNull()
-        if (mi == null || mi.isNaN() || mi.isInfinite() || mi <= 0.0) return Double.NaN
-        return mi * PaceEstimator.METERS_PER_MILE
-    }
-
-    fun description(log: WorkoutLog, distanceTyped: Boolean): String = buildString {
-        append("Recorded with RunStick.")
-        if (log.avgHr != null) append(" Avg HR ${log.avgHr} bpm, max ${log.maxHr} bpm.")
-        if (distanceTyped) append(" Distance entered by hand.")
-    }
 }

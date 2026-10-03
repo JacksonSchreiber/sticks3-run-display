@@ -59,6 +59,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".WorkoutsActivity"
+            android:exported="false"
+            android:label="@string/all_workouts" />
+
         <service
             android:name=".RunService"
             android:exported="false"

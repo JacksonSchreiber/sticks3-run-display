@@ -168,4 +168,68 @@ class TcxWriterTest {
         assertTrue(xml.contains("<Id>2025-10-01T12:00:00Z</Id>"))
         assertTrue(xml.contains("<Time>2025-10-01T12:01:01Z</Time>"))
     }
+
+    // --- time override (typed treadmill time) -------------------------------
+
+    private fun times(xml: String) =
+        Regex("<Time>([^<]+)</Time>").findAll(xml).map { java.time.Instant.parse(it.groupValues[1]) }.toList()
+
+    private fun trackDistances(xml: String) =
+        Regex("<Trackpoint>\\s*<Time>[^<]+</Time>\\s*<DistanceMeters>([^<]+)</DistanceMeters>")
+            .findAll(xml).map { it.groupValues[1].toDouble() }.toList()
+
+    private fun trackHr(xml: String) =
+        Regex("<HeartRateBpm><Value>(\\d+)</Value></HeartRateBpm>").findAll(xml).map { it.groupValues[1].toInt() }.toList()
+
+    @Test
+    fun `typed time stretches the treadmill run onto it`() {
+        // 30:00 recorded, the treadmill said 31:45 and 3.10 mi.
+        val samples = (0..1800).map { WorkoutSample(it, 120 + it % 50, 0.0) }
+        val log = WorkoutLog(start, false, samples)
+        val miles = 3.10 * PaceEstimator.METERS_PER_MILE
+        val xml = TcxWriter.build(log, miles, timeOverrideSec = 1905)
+
+        val secs = times(xml).map { it.epochSecond - start / 1000 }
+        assertTrue("strictly increasing", secs.zipWithNext().all { (a, b) -> b > a })
+        assertEquals(0L, secs.first())
+        assertEquals(1905L, secs.last())
+        assertTrue(xml.contains("<TotalTimeSeconds>1905</TotalTimeSeconds>"))
+
+        val d = trackDistances(xml)
+        assertEquals(String.format(java.util.Locale.US, "%.1f", miles).toDouble(), d.last(), 1e-9)
+        assertTrue(d.zipWithNext().all { (a, b) -> b >= a })
+        // 3.10 mi = 4988.97 m, on the lap as well as the last trackpoint.
+        assertEquals(4989.0, d.last(), 1e-9)
+        assertTrue(xml.contains("<DistanceMeters>4989.0</DistanceMeters>\n        <Calories>"))
+
+        // Stretching keeps every sample, so the HR trace is identical, in order.
+        assertEquals(samples.map { it.hrBpm }, trackHr(xml))
+    }
+
+    @Test
+    fun `typed shorter time squeezes without breaking the track`() {
+        val samples = (0..1800).map { WorkoutSample(it, 120 + it % 50, it * 2.5) }
+        val log = WorkoutLog(start, false, samples)
+        val xml = TcxWriter.build(log, null, timeOverrideSec = 1500)
+        val secs = times(xml).map { it.epochSecond - start / 1000 }
+        assertTrue(secs.zipWithNext().all { (a, b) -> b > a })
+        assertEquals(1500L, secs.last())
+        assertTrue(xml.contains("<TotalTimeSeconds>1500</TotalTimeSeconds>"))
+        // Distance rides along with the samples; the last one survives, so the total holds.
+        assertEquals(4500.0, trackDistances(xml).last(), 1e-9)
+        // HR values are an in-order subsequence of the recording.
+        val hr = trackHr(xml)
+        var i = 0
+        for (v in hr) {
+            while (i < samples.size && samples[i].hrBpm != v) i++
+            assertTrue("hr $v out of order", i < samples.size)
+            i++
+        }
+    }
+
+    @Test
+    fun `time override equal to the recording changes nothing`() {
+        val log = WorkoutLog(start, false, listOf(WorkoutSample(0, 100, 0.0), WorkoutSample(90, 110, 300.0)))
+        assertEquals(TcxWriter.build(log, null), TcxWriter.build(log, null, timeOverrideSec = 90))
+    }
 }

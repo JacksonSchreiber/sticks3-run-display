@@ -86,16 +86,31 @@
 
     <string name="upload_title">Upload to Strava</string>
     <string name="upload_name">Name</string>
-    <string name="upload_distance">Distance (miles)</string>
+    <string name="upload_distance">Distance (mi)</string>
+    <string name="upload_time">Time (mm:ss or h:mm:ss)</string>
+    <string name="upload_pace">Pace (min/mi)</string>
+    <string name="upload_time_stretched">Heart-rate trace is stretched to fit.</string>
+    <string name="upload_need_time">Enter a time like 30:00 or 1:05:30.</string>
+    <string name="upload_need_pace">Enter a pace like 8:30.</string>
+    <string name="upload_busy">An upload is in progress.</string>
     <string name="upload_treadmill">Treadmill (indoor)</string>
     <string name="upload">Upload</string>
     <string name="upload_need_distance">Enter a distance greater than 0 miles.</string>
     <string name="upload_again_title">Already uploaded</string>
-    <string name="upload_again_message">This workout was already uploaded to Strava. Upload it again? Strava rejects it as a duplicate unless the first activity was deleted.</string>
+    <string name="upload_again_message">This workout is already on Strava. While that activity still exists, Strava will most likely reject a new upload as a duplicate. Open it on Strava and delete it there first, then upload again.</string>
+    <string name="upload_open_old">Open old activity</string>
     <string name="upload_again">Upload again</string>
     <string name="upload_sending">Uploading…</string>
     <string name="upload_processing">Strava is processing…</string>
     <string name="upload_done">Uploaded</string>
+
+    <string name="all_workouts">All workouts</string>
+    <string name="workout_delete">Delete</string>
+    <string name="workout_delete_title">Delete workout</string>
+    <string name="workout_delete_message">Delete this workout from the phone? It stays on Strava if it was uploaded.</string>
+    <string name="workout_delete_failed">Could not delete the workout file.</string>
+    <string name="workout_unreadable">This workout file could not be read.</string>
+    <string name="workouts_need_strava">Strava is not connected. Use Set up Strava on the main screen first.</string>
 
     <string name="strava_err_not_connected">Strava is not connected. Tap Set up Strava.</string>
     <string name="strava_err_reconnect">Strava access expired or was revoked. Tap Set up Strava and Connect again.</string>

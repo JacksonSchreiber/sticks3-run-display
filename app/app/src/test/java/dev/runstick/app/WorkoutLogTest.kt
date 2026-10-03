@@ -154,6 +154,55 @@ class WorkoutLogTest {
         assertFalse(file.exists())
     }
 
+    // --- rescale (typed treadmill time) ---------------------------------------
+
+    @Test
+    fun `stretching keeps every sample and lands on the entered time`() {
+        // 0..10 s stretched to 15 s: t * 1.5, rounded half up.
+        val l = WorkoutLog(0L, false, (0..10).map { WorkoutSample(it, 100 + it, it * 2.0) })
+        val r = l.rescaledTo(15)
+        assertEquals(listOf(0, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15), r.samples.map { it.tSec })
+        assertEquals(l.samples.map { it.hrBpm }, r.samples.map { it.hrBpm })
+        assertEquals(l.samples.map { it.distanceM }, r.samples.map { it.distanceM })
+        assertEquals(15, r.durationSec)
+    }
+
+    @Test
+    fun `squeezing drops repeats, keeps the last of each, and stays strictly increasing`() {
+        val l = WorkoutLog(0L, false, (0..10).map { WorkoutSample(it, 100 + it, it * 2.0) })
+        val r = l.rescaledTo(4)
+        val times = r.samples.map { it.tSec }
+        assertEquals(listOf(0, 1, 2, 3, 4), times)
+        assertEquals(4, r.durationSec)
+        // The final sample (full distance) always survives.
+        assertEquals(110, r.samples.last().hrBpm)
+        assertEquals(20.0, r.totalDistanceM, 1e-9)
+        // HR is an in-order subsequence of the original.
+        val hrs = r.samples.map { it.hrBpm!! }
+        assertEquals(hrs.sorted(), hrs)
+        assertTrue(l.samples.map { it.hrBpm }.containsAll(hrs))
+    }
+
+    @Test
+    fun `rescaling to the recorded time or nonsense is a no-op`() {
+        assertEquals(log, log.rescaledTo(log.durationSec))
+        assertEquals(log, log.rescaledTo(0))
+        val one = WorkoutLog(0L, false, listOf(WorkoutSample(0, 100, 0.0)))
+        assertEquals(one, one.rescaledTo(60))
+    }
+
+    @Test
+    fun `a long stretch stays strictly increasing`() {
+        val l = WorkoutLog(0L, false, (0..1799).map { WorkoutSample(it, 140, 0.0) })
+        val r = l.rescaledTo(2_345)
+        val t = r.samples.map { it.tSec }
+        assertTrue(t.zipWithNext().all { (a, b) -> b > a })
+        assertEquals(2_345, t.last())
+        val s = l.rescaledTo(1_000).samples.map { it.tSec }
+        assertTrue(s.zipWithNext().all { (a, b) -> b > a })
+        assertEquals(1_000, s.last())
+    }
+
     // --- store + recorder ---------------------------------------------------
 
     @Test
@@ -199,14 +248,49 @@ class WorkoutLogTest {
     }
 
     @Test
-    fun `store keeps the newest ten`() {
+    fun `store keeps the newest fifty and reports what it removed`() {
         val dir = tmp.newFolder("workouts")
-        val store = WorkoutStore(dir)
-        for (i in 1..12) store.fileFor(i * 1000L).writeText(WorkoutLog(i * 1000L, false, emptyList()).serialize())
+        val removed = mutableListOf<Long>()
+        val store = WorkoutStore(dir) { removed += it }
+        for (i in 1..52) store.fileFor(i * 1000L).writeText(WorkoutLog(i * 1000L, false, emptyList()).serialize())
         dir.resolve("notes.txt").writeText("not a workout")
         store.prune()
-        assertEquals((12 downTo 3).map { it * 1000L }, store.files().map { WorkoutStore.startOf(it) })
+        assertEquals(50, WorkoutStore.KEEP)
+        assertEquals((52 downTo 3).map { it * 1000L }, store.files().map { WorkoutStore.startOf(it) })
+        assertEquals(listOf(2000L, 1000L), removed)
         assertTrue(dir.resolve("notes.txt").exists())
+    }
+
+    @Test
+    fun `delete removes the file and reports it`() {
+        val removed = mutableListOf<Long>()
+        val store = WorkoutStore(tmp.newFolder("workouts")) { removed += it }
+        store.fileFor(1L).writeText(WorkoutLog(1L, false, emptyList()).serialize())
+        store.fileFor(2L).writeText(WorkoutLog(2L, false, emptyList()).serialize())
+        assertTrue(store.delete(1L))
+        assertEquals(listOf(2L), store.files().map { WorkoutStore.startOf(it) })
+        assertEquals(listOf(1L), removed)
+        // Already gone still counts, so stale per-workout state is cleared either way.
+        assertTrue(store.delete(99L))
+        assertEquals(listOf(1L, 99L), removed)
+    }
+
+    @Test
+    fun `summaries are newest first and skip the file being recorded`() {
+        val store = WorkoutStore(tmp.newFolder("workouts"))
+        store.fileFor(1L).writeText(log.copy(startEpochMs = 1L).serialize())
+        store.fileFor(2L).writeText("garbage")
+        store.fileFor(3L).writeText(log.copy(startEpochMs = 3L, simulated = true).serialize())
+        assertEquals(
+            listOf(
+                WorkoutSummary(3L, true, 3, 7.5, 145),
+                WorkoutSummary(1L, false, 3, 7.5, 145),
+            ),
+            store.summaries(),
+        )
+        assertEquals(listOf(1L), store.summaries(skipNewest = true).map { it.startEpochMs })
+        assertEquals(log.copy(startEpochMs = 3L, simulated = true), store.load(3L))
+        assertNull(store.load(42L))
     }
 
     @Test

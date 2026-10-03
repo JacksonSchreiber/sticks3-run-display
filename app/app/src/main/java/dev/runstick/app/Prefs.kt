@@ -98,8 +98,17 @@ class Prefs(context: Context) : StravaCredentials {
         sp.edit().putInt(KEY_TRIMMED_PREFIX + startEpochMs, recordedSec).apply()
     }
 
+    /** A re-upload replaces the old id: the newest activity is the one to open. */
     fun setUploaded(startEpochMs: Long, activityId: Long) {
         sp.edit().putLong(KEY_UPLOADED_PREFIX + startEpochMs, activityId).apply()
+    }
+
+    /** Drops everything kept for one workout; called when its file is deleted or pruned. */
+    fun forgetWorkout(startEpochMs: Long) {
+        sp.edit()
+            .remove(KEY_UPLOADED_PREFIX + startEpochMs)
+            .remove(KEY_TRIMMED_PREFIX + startEpochMs)
+            .apply()
     }
 
     private companion object {

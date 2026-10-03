@@ -1,7 +1,6 @@
 package dev.runstick.app
 
 import android.Manifest
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -21,23 +20,17 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import dev.runstick.app.databinding.ActivityMainBinding
 import dev.runstick.app.databinding.DialogStravaSetupBinding
-import dev.runstick.app.databinding.DialogUploadBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var prefs: Prefs
     private val picker by lazy { DevicePicker(this) }
-    private val workouts by lazy { WorkoutStore(File(filesDir, "workouts")) }
+    private val workouts by lazy { workoutStore(this, prefs) }
+    private val uploadFlow by lazy { UploadFlow(this, prefs) { showStravaSetup() } }
 
     /** Newest recorded workout, loaded off the main thread. */
     private var lastLog: WorkoutLog? = null
@@ -105,7 +98,10 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        binding.btnUpload.setOnClickListener { onUploadClicked() }
+        binding.btnUpload.setOnClickListener { lastLog?.let { uploadFlow.start(it) } }
+        binding.btnAllWorkouts.setOnClickListener {
+            startActivity(Intent(this, WorkoutsActivity::class.java))
+        }
         binding.btnStravaSetup.setOnClickListener { showStravaSetup() }
         binding.btnOpenActivity.setOnClickListener {
             val id = StravaJobs.state.value.activityId ?: return@setOnClickListener
@@ -309,7 +305,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderWorkout() {
         val log = lastLog
-        binding.tvWorkout.text = if (log == null) getString(R.string.no_workout) else summary(log)
+        binding.tvWorkout.text =
+            if (log == null) getString(R.string.no_workout) else workoutSummaryText(this, prefs, log.summary)
 
         // A run that auto-stop cut back to the last heartbeat says so in both places it is
         // shown, and a tap explains why, so a shorter time than expected is never a mystery.
@@ -330,32 +327,9 @@ class MainActivity : AppCompatActivity() {
     private fun showTrimmedInfo(recordedSec: Int, keptSec: Int) {
         AlertDialog.Builder(this)
             .setTitle(R.string.trimmed_title)
-            .setMessage(
-                getString(
-                    R.string.trimmed_message,
-                    AutoStop.AUTO_STOP_SEC / 60,
-                    formatElapsed(recordedSec),
-                    formatElapsed(keptSec),
-                )
-            )
+            .setMessage(trimmedMessage(this, recordedSec, keptSec))
             .setPositiveButton(android.R.string.ok, null)
             .show()
-    }
-
-    private fun summary(log: WorkoutLog): String {
-        val start = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
-            .withZone(ZoneId.systemDefault())
-            .format(Instant.ofEpochMilli(log.startEpochMs))
-        val miles = String.format(Locale.US, "%.2f mi", log.totalDistanceM / PaceEstimator.METERS_PER_MILE)
-        val parts = mutableListOf(start, formatElapsed(log.durationSec), miles)
-        parts += log.avgHr?.let { getString(R.string.workout_avg_hr, it) } ?: getString(R.string.workout_no_hr)
-        var text = parts.joinToString(" · ")
-        if (log.simulated) text += " " + getString(R.string.workout_simulated)
-        if (prefs.trimmedFromSec(log.startEpochMs) != null) text += " · " + getString(R.string.workout_trimmed)
-        if (prefs.uploadedActivityId(log.startEpochMs) != null) {
-            text += " · " + getString(R.string.workout_uploaded)
-        }
-        return text
     }
 
     private fun renderStrava(s: StravaUi) {
@@ -432,68 +406,6 @@ class MainActivity : AppCompatActivity() {
             AuthRedirect.MissingWriteScope -> StravaJobs.note(getString(R.string.strava_missing_scope))
             is AuthRedirect.Failed -> StravaJobs.note(getString(R.string.strava_auth_error, result.error))
             AuthRedirect.Stale -> Unit
-        }
-    }
-
-    private fun onUploadClicked() {
-        val log = lastLog ?: return
-        if (!prefs.stravaConnected) {
-            showStravaSetup()
-            return
-        }
-        if (prefs.uploadedActivityId(log.startEpochMs) == null) {
-            showUploadDialog(log)
-            return
-        }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.upload_again_title)
-            .setMessage(R.string.upload_again_message)
-            .setPositiveButton(R.string.upload_again) { _, _ -> showUploadDialog(log) }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
-    }
-
-    private fun showUploadDialog(log: WorkoutLog) {
-        val dialogBinding = DialogUploadBinding.inflate(layoutInflater)
-        dialogBinding.etName.setText(UploadDefaults.name(log))
-        dialogBinding.etDistance.setText(UploadDefaults.miles(log))
-        dialogBinding.cbTreadmill.isChecked = UploadDefaults.treadmill(log)
-
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(R.string.upload_title)
-            .setView(dialogBinding.root)
-            .setPositiveButton(R.string.upload, null)
-            .setNegativeButton(android.R.string.cancel, null)
-            .create()
-        dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val override = UploadDefaults.overrideMeters(
-                    log, dialogBinding.etDistance.text?.toString().orEmpty(),
-                )
-                if (override != null && override.isNaN()) {
-                    dialogBinding.tilDistance.error = getString(R.string.upload_need_distance)
-                    return@setOnClickListener
-                }
-                val name = dialogBinding.etName.text?.toString()?.trim()
-                    .takeUnless { it.isNullOrEmpty() } ?: UploadDefaults.name(log)
-                dialog.dismiss()
-                StravaJobs.upload(
-                    context = this,
-                    log = log,
-                    name = name,
-                    distanceOverrideM = override,
-                    trainer = dialogBinding.cbTreadmill.isChecked,
-                )
-            }
-        }
-        dialog.show()
-    }
-
-    private fun openUrl(url: String) {
-        try {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-        } catch (e: ActivityNotFoundException) {
-            Toast.makeText(this, R.string.strava_no_browser, Toast.LENGTH_LONG).show()
         }
     }
 }

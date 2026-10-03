@@ -19,12 +19,15 @@ While Strava records on the same phone, this app reads the strap over the standa
 | `StrapClient.kt` | raw `BluetoothGatt` client for the strap. |
 | `StickClient.kt` | Nordic `BleManager` client for the RunStick. |
 | `RunService.kt` | foreground service: owns both clients + GPS, ticks at 1 Hz, holds the `UiState` flow. |
-| `MainActivity.kt` | permissions, device pickers, start/stop, live readout, battery help. |
+| `MainActivity.kt` | permissions, device pickers, start/stop, live readout, last workout + Strava setup, battery help. |
 | `DevicePicker.kt` | the "which device?" dialog (connected devices + filtered scan). |
 | `WorkoutLog.kt` | one recorded run (start time, 1 Hz HR + distance samples), its line-based file format and summaries. Pure. |
-| `WorkoutStore.kt` | `filesDir/workouts/` (newest 10 kept) and the incremental `WorkoutRecorder`. java.io only. |
+| `WorkoutStore.kt` | `filesDir/workouts/` (newest 50 kept; delete/prune report removals so Prefs entries go too) and the incremental `WorkoutRecorder`. java.io only. |
 | `TcxWriter.kt` | `WorkoutLog` -> TCX v2 (no GPS positions), with the distance override. Pure. |
-| `StravaApi.kt` | Strava URLs, form/multipart bodies, JSON parsing, upload dialog defaults. Pure. |
+| `StravaApi.kt` | Strava URLs, form/multipart bodies, JSON parsing. Pure. |
+| `UploadForm.kt` | upload dialog defaults, time/pace/miles parsing, the time-distance-pace calculator, stretch note. Pure. |
+| `WorkoutUi.kt` | shared by both screens: the store factory, the summary line, the upload flow and dialog. |
+| `WorkoutsActivity.kt` | workout history: upload / upload again, open on Strava, delete. |
 | `StravaClient.kt` | token exchange/refresh, upload + poll over `HttpURLConnection`. |
 | `StravaJobs.kt` | process-wide scope + state for connect/upload, so rotation doesn't cancel them. |
 | `Prefs.kt` | strap MAC, stick MAC, simulate flag, Strava credentials and tokens, uploaded activity ids. |
@@ -45,15 +48,19 @@ A persisted switch on the main screen. Ignores the strap and GPS and sends synth
 
 Strava's own recording didn't capture heart rate on treadmill runs, so the app records every run itself and can upload it to Strava as a Run with heart rate and pace.
 
-**Recording.** Every run (real or simulated) is written to `filesDir/workouts/workout_<startEpochMs>.csv`: one row per second with the same heart rate and distance the Stick is sent (HR blank when the strap has no fresh value). It is flushed every 5 s, so a crash loses a few seconds at most. Runs under 60 s are discarded; the newest 10 are kept. Recording needs no GPS fix — on a treadmill it just records HR with zero distance.
+**Recording.** Every run (real or simulated) is written to `filesDir/workouts/workout_<startEpochMs>.csv`: one row per second with the same heart rate and distance the Stick is sent (HR blank when the strap has no fresh value). It is flushed every 5 s, so a crash loses a few seconds at most. Runs under 60 s are discarded; the newest 50 are kept. Recording needs no GPS fix — on a treadmill it just records HR with zero distance.
 
 **Auto-stop.** If the strap has sent heart rate at least once in a run and then nothing arrives for 5 minutes (strap taken off, Stop forgotten), the run stops itself through the normal Stop path and a notification plus an on-screen note say so. Runs that never saw a heart rate (no strap) never auto-stop, and shorter dropouts are ignored.
 
 **Trim.** An auto-stopped run is saved only up to its last heartbeat, so duration, distance and the uploaded TCX exclude the idle 5 minutes (the file is rewritten via a temp file + rename). A manual Stop saves the run untrimmed; the 60 s minimum applies after trimming.
 
-**Upload.** *Last workout* on the main screen shows the newest run; **Upload to Strava** asks for a name, a distance in miles and whether it was a treadmill (`trainer=1`), builds a TCX file (time, distance and HR per second, no GPS positions) and posts it to Strava's upload API, then polls until the activity exists. The result links to the activity, and the workout is marked uploaded; uploading it again asks first (Strava rejects duplicates anyway, and its message is shown as-is).
+**Upload.** *Last workout* on the main screen shows the newest run; **Upload to Strava** asks for a name, the time, the distance in miles or the pace, and whether it was a treadmill (`trainer=1`), builds a TCX file (time, distance and HR per second, no GPS positions) and posts it to Strava's upload API, then polls until the activity exists. The result links to the activity, and the workout is marked uploaded; uploading it again asks first and offers to open the old activity: while it still exists on Strava, Strava will most likely reject the new upload as a duplicate (its message is shown as-is), so delete it there first. Each attempt gets its own `external_id`; on success the new activity id replaces the old one. The app never deletes anything on Strava.
+
+**All workouts.** Lists every kept workout, newest first (not the one being recorded). Tap one to upload it (or upload again), open it on Strava, or delete it from the phone; deleting leaves the Strava activity alone. Upload and Delete are disabled while an upload is running.
 
 **Treadmill distance.** GPS gives no distance indoors, so type the treadmill's distance at upload time. If the recorded distance is under 100 m (none, or just GPS drift), the typed distance is spread evenly over the run, i.e. a constant pace. If there is a real recorded distance, the typed value rescales it, keeping the pace variations. Leaving the box at its prefilled value uploads the recorded distance unchanged.
+
+**Typing what the treadmill shows.** Time is the anchor (mm:ss or h:mm:ss). Distance and pace are two views of one number: typing either fills in the other, and changing the time keeps whichever was typed last (on a GPS run nothing typed means the pace is kept, so the distance scales with the time). The upload uses the time and distance boxes. A typed time different from the recording *rescales* the whole timeline onto it, so Strava shows exactly the treadmill's time and the HR trace keeps its shape; nothing is trimmed, since the app can't know when the belt started. The dialog notes "Heart-rate trace is stretched to fit", in the warning colour beyond a 15% change. Squeezing to a shorter time drops samples that land on the same second, so the average HR can move slightly.
 
 **One-time setup.**
 

@@ -10,8 +10,11 @@ import java.nio.file.StandardCopyOption
 /**
  * The workouts folder: `workout_<startEpochMs>.csv`, newest [KEEP] kept. Plain java.io so
  * it runs in JVM tests against a temp folder.
+ *
+ * @param onRemoved called with the start time of every workout [delete] or [prune] removes,
+ *        so per-workout state kept elsewhere (Prefs) goes with it.
  */
-class WorkoutStore(val dir: File) {
+class WorkoutStore(val dir: File, private val onRemoved: (Long) -> Unit = {}) {
 
     fun fileFor(startEpochMs: Long) = File(dir, "workout_$startEpochMs.csv")
 
@@ -25,22 +28,41 @@ class WorkoutStore(val dir: File) {
     /** @param skipNewest pass true during a run: the newest file is the one being written. */
     fun latest(skipNewest: Boolean = false): WorkoutLog? {
         for (f in files().drop(if (skipNewest) 1 else 0)) {
-            val log = try {
-                WorkoutLog.parse(f.readText())
-            } catch (e: IOException) {
-                null
-            }
+            val log = read(f)
             if (log != null) return log
         }
         return null
     }
 
+    /** Every readable workout, newest first. Parses each file, so call it off the main thread. */
+    fun summaries(skipNewest: Boolean = false): List<WorkoutSummary> =
+        files().drop(if (skipNewest) 1 else 0).mapNotNull { read(it)?.summary }
+
+    fun load(startEpochMs: Long): WorkoutLog? = read(fileFor(startEpochMs))
+
+    /** Removes one workout. True if it is gone (including "was never there"). */
+    fun delete(startEpochMs: Long): Boolean {
+        val f = fileFor(startEpochMs)
+        if (f.exists() && !f.delete()) return false
+        onRemoved(startEpochMs)
+        return true
+    }
+
     fun prune(keep: Int = KEEP) {
-        files().drop(keep).forEach { it.delete() }
+        for (f in files().drop(keep)) {
+            val start = startOf(f) ?: continue
+            if (f.delete()) onRemoved(start)
+        }
+    }
+
+    private fun read(f: File): WorkoutLog? = try {
+        WorkoutLog.parse(f.readText())
+    } catch (e: IOException) {
+        null
     }
 
     companion object {
-        const val KEEP = 10
+        const val KEEP = 50
         private val NAME = Regex("""workout_(\d+)\.csv""")
 
         fun startOf(f: File): Long? = NAME.matchEntire(f.name)?.groupValues?.get(1)?.toLongOrNull()
@@ -89,15 +111,15 @@ class WorkoutRecorder(
         }
     }
 
+    /** Distance of the run after a trim in [finish]; null when nothing was trimmed. */
+    var trimmedDistanceM: Double? = null
+        private set
+
     /**
      * Flushes and closes. With [trimToLastHr] (auto-stop only) the file is rewritten to end
      * at the last heartbeat. A run shorter than [minSec] after that is deleted.
      * @return the saved run's duration in seconds, or null if it was discarded.
      */
-    /** Distance of the run after a trim in [finish]; null when nothing was trimmed. */
-    var trimmedDistanceM: Double? = null
-        private set
-
     fun finish(minSec: Int = MIN_SEC, trimToLastHr: Boolean = false): Int? {
         close()
         var duration = durationSec

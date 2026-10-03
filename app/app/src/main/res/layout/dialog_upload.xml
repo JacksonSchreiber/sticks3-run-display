@@ -20,22 +20,73 @@
             android:maxLines="1" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Time is the anchor: type what the treadmill shows. -->
     <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilDistance"
+        android:id="@+id/tilTime"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:hint="@string/upload_distance">
+        android:hint="@string/upload_time">
 
-        <!-- Plain decimal input; a comma is accepted too when parsing. -->
         <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etDistance"
+            android:id="@+id/etTime"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:digits="0123456789.,"
-            android:inputType="numberDecimal"
+            android:digits="0123456789:.,"
+            android:inputType="time"
             android:maxLines="1" />
     </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:id="@+id/tvTimeNote"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="@string/upload_time_stretched"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+    <!-- Distance and pace are two views of one number; editing either fills the other. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilDistance"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:hint="@string/upload_distance">
+
+            <!-- Plain decimal input; a comma is accepted too when parsing. -->
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etDistance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:digits="0123456789.,"
+                android:inputType="numberDecimal"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilPace"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/upload_pace">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etPace"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:digits="0123456789:.,"
+                android:inputType="time"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
 
     <CheckBox
         android:id="@+id/cbTreadmill"

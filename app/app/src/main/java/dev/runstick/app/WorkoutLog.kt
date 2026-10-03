@@ -51,6 +51,33 @@ data class WorkoutLog(
         return copy(samples = samples.subList(0, last + 1).toList())
     }
 
+    /**
+     * The same run stretched (or squeezed) onto [totalSec], e.g. the time a treadmill
+     * showed. Every sample time is multiplied by totalSec / durationSec, so the HR trace
+     * keeps its shape; times are rounded to whole seconds and kept strictly increasing.
+     * Nothing is trimmed: the app can't know where the belt actually started.
+     */
+    fun rescaledTo(totalSec: Int): WorkoutLog {
+        val recorded = durationSec
+        if (totalSec <= 0 || recorded <= 0 || totalSec == recorded) return this
+        val out = ArrayList<WorkoutSample>(samples.size)
+        for (s in samples) {
+            // Multiply first: the last sample then lands exactly on totalSec.
+            val t = Math.round(s.tSec.toDouble() * totalSec / recorded).toInt()
+            if (out.isNotEmpty() && out.last().tSec >= t) {
+                // Squeezing puts several samples on one second; keep the latest, so the
+                // final sample (end time, full distance) always survives.
+                out[out.lastIndex] = s.copy(tSec = out.last().tSec)
+            } else {
+                out += s.copy(tSec = t)
+            }
+        }
+        return copy(samples = out)
+    }
+
+    val summary: WorkoutSummary
+        get() = WorkoutSummary(startEpochMs, simulated, durationSec, totalDistanceM, avgHr)
+
     fun serialize(): String = buildString {
         append(headerLines(startEpochMs, simulated))
         samples.forEach { append(sampleLine(it)) }
@@ -105,3 +132,12 @@ data class WorkoutLog(
         }
     }
 }
+
+/** Just what a list row needs, so the history screen doesn't hold 50 full logs. */
+data class WorkoutSummary(
+    val startEpochMs: Long,
+    val simulated: Boolean,
+    val durationSec: Int,
+    val distanceM: Double,
+    val avgHr: Int?,
+)

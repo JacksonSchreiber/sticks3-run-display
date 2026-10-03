@@ -70,7 +70,9 @@ class StravaApiTest {
 
     @Test
     fun `multipart body has the file first then fields in order`() {
-        val fields = StravaApi.uploadFields(name = "Run & fun", description = "d", trainer = true, startEpochMs = 42L)
+        val fields = StravaApi.uploadFields(
+            name = "Run & fun", description = "d", trainer = true, startEpochMs = 42L, uploadEpochSec = 1_759_500_000L,
+        )
         val body = StravaApi.multipartBody("B0UND", StravaApi.tcxFilePart(42L, "<x/>"), fields)
         val expected =
             "--B0UND\r\n" +
@@ -101,7 +103,7 @@ class StravaApiTest {
                 "--B0UND\r\n" +
                 "Content-Disposition: form-data; name=\"external_id\"\r\n" +
                 "\r\n" +
-                "runstick-42\r\n" +
+                "runstick-42-1759500000\r\n" +
                 "--B0UND--\r\n"
         assertEquals(expected, String(body, Charsets.UTF_8))
         assertEquals("multipart/form-data; boundary=B0UND", StravaApi.multipartContentType("B0UND"))
@@ -109,7 +111,7 @@ class StravaApiTest {
 
     @Test
     fun `trainer is omitted for outdoor runs`() {
-        val fields = StravaApi.uploadFields("Run", "", trainer = false, startEpochMs = 1L)
+        val fields = StravaApi.uploadFields("Run", "", trainer = false, startEpochMs = 1L, uploadEpochSec = 2L)
         assertEquals(listOf("data_type", "sport_type", "name", "description", "external_id"), fields.map { it.first })
     }
 

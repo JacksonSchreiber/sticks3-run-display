@@ -123,7 +123,7 @@ class RunService : Service() {
     private val pace = PaceEstimator()
     private val tracker = RunTracker()
     private val simulator = Simulator()
-    private val workouts by lazy { WorkoutStore(java.io.File(filesDir, "workouts")) }
+    private val workouts by lazy { workoutStore(this, prefs) }
     private var recorder: WorkoutRecorder? = null
     private var recordingStartMs = 0L
     private val autoStop = AutoStop()

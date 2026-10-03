@@ -62,6 +62,7 @@ object StravaJobs {
         log: WorkoutLog,
         name: String,
         distanceOverrideM: Double?,
+        timeOverrideSec: Int?,
         trainer: Boolean,
     ) {
         if (isBusy) return
@@ -70,12 +71,19 @@ object StravaJobs {
         set(StravaUi(busy = true, status = app.getString(R.string.upload_sending)))
         scope.launch {
             val result = try {
-                val tcx = withContext(Dispatchers.Default) { TcxWriter.build(log, distanceOverrideM) }
+                val tcx = withContext(Dispatchers.Default) {
+                    TcxWriter.build(log, distanceOverrideM, timeOverrideSec)
+                }
                 val fields = StravaApi.uploadFields(
                     name = name,
-                    description = UploadDefaults.description(log, distanceOverrideM != null),
+                    description = UploadDefaults.description(
+                        log,
+                        distanceTyped = distanceOverrideM != null,
+                        timeTyped = timeOverrideSec != null,
+                    ),
                     trainer = trainer,
                     startEpochMs = log.startEpochMs,
+                    uploadEpochSec = System.currentTimeMillis() / 1000L,
                 )
                 val activityId = StravaClient(prefs).upload(log.startEpochMs, tcx, fields) {
                     set(_state.value.copy(status = app.getString(R.string.upload_processing)))
