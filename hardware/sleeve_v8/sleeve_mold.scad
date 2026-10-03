@@ -125,7 +125,8 @@ front_tex = true;       // raised diamond lattice on the sleeve's front face rou
 ft_w = 0.5; ft_h = 0.4; ft_pitch = 2.1084; ft_angle = 35;   // ridge width, height, line spacing, angle (0.4 tall is the minimum for the cup's channels to carry air)
 ft_shift = 0.3970;       // pitch and shift are chosen so the ribs the two line families leave on the side and end walls are evenly spaced (2 HW cos a = 11.5 pitch; shift evens the end walls)
 ft_sides = true;        // the lines fold over the front edge and run down the side and end walls as vertical ribs (vertical grooves in the cup: a straight path to the rim)
-ft_z_lo = 1.5;          // ... down to this height above the wrist face (clear of the lid ridge)
+                        // ... down to the rebate floor (0.9 above the wrist edge, following the saddle), so each rib's groove in the cup
+                        // opens into the rebate, which stands 0.5 clear of the walls: the ribs slide straight out of the cup
 front_mode = "lattice"; // [lattice, ribs] lattice: diamonds like the straps. ribs: straight ribs across the sleeve, grille style (every channel runs to a side wall)
 ft_keep = 0.6;          // flat margin round the window pad (its rim must seat on bare floor) and the button bump
 
@@ -410,18 +411,41 @@ module front_lattice2d() {
         translate([(x0 + x1) / 2, (y0 + y1) / 2]) rrect(x1 - x0 + 2 * ft_keep, y1 - y0 + 2 * ft_keep, 1.5 + ft_keep);
     }
 }
-module front_lattice() {
-    z_lo = ft_sides ? ft_z_lo : TOP - front_r - 0.3;
-    // (the solid overlaps the body: subtracted from the cup it only matters outside the cavity; unioned into the band it only adds outside)
-    if (front_tex) difference() {
+// A rib that ends above a side-button pad would have to pass plain wall on its way out of the cup, so every lattice line
+// whose rib on a long wall would come near a pad is removed whole, on the wall and over the edge round; on the front face it
+// ends where the round begins.
+module pad_column_cuts() {
+    for (s = [[BTN_XMINUS, sign(sy(0))], [BTN_XPLUS, sign(sy(STICK_W))]]) {
+        x0 = sx(s[0][0]) - 1.5 - ft_keep; x1 = sx(s[0][1]) + 1.5 + ft_keep; yw = s[1] * BODY_HW;
+        bw = ft_w / sin(ft_angle) / 2 + ft_h / tan(ft_angle) + 0.05;   // half the band of x a rib sweeps on the wall
         intersection() {
-            translate([0, 0, z_lo]) linear_extrude(TOP + ft_h + 0.1 - z_lo) front_lattice2d();
-            minkowski() { body(); sphere(r = ft_h, $fn = 16); }
+            translate([0, 0, -10]) linear_extrude(TOP + ft_h + 1 + 10) translate([ft_shift, 0])   // above the ribs' tops
+                for (a = [ft_angle, -ft_angle], k = [-30 : 30]) let(xr = ft_shift + (cos(a) * yw - k * ft_pitch) / sin(a))
+                    if (xr + bw > x0 && xr - bw < x1) rotate(a) translate([0, k * ft_pitch]) square([140, ft_w + 0.2], center = true);
+            // the whole edge round and wall, cut along the line where the round meets the flat front face: a cut at a fixed
+            // height would leave rib stubs overhanging the round, which catch on the way out
+            translate([-50, s[1] > 0 ? BODY_HW - front_r : -(BODY_HW + 2), -20]) cube([100, front_r + 2, 50]);
         }
-        side_bumps(ft_keep);                                                     // keep off the side-button pads
-        if (port) translate([-(END_X - 1), 0, 0]) rotate([0, -90, 0]) linear_extrude(3) keyhole_rib_cut2d();   // and whole ribs near the keyhole
     }
-    if (front_tex) strip_ribs();
+}
+module front_lattice() {
+    z_lo = ft_sides ? -saddle_d - 1 : TOP - front_r - 0.3;
+    // (the solid overlaps the body: subtracted from the cup it only matters outside the cavity; unioned into the band it only adds outside)
+    if (front_tex) {
+        difference() {
+            intersection() {
+                translate([0, 0, z_lo]) linear_extrude(TOP + ft_h + 0.1 - z_lo) front_lattice2d();
+                union() {
+                    minkowski() { body(); sphere(r = ft_h, $fn = 16); }
+                    if (ft_sides) translate([0, 0, z_lo]) linear_extrude(0.5 - z_lo) offset(r = ft_h) rrect(2 * END_X, 2 * BODY_HW, body_r);   // walls below the body (saddle)
+                }
+            }
+            side_bumps(ft_keep);                                                         // off the side-button pads
+            if (ft_sides) pad_column_cuts();                                             // and whole columns near them
+            if (ft_sides) warp() translate([-300, -300, -60]) cube([600, 600, 60 + REBATE_D]);   // ribs end at the rebate floor
+        }
+        strip_ribs();   // the wall ribs run straight into the USB strip, whose channel leads out of the cup; these ride on top of it
+    }
 }
 module envelope() { body(); side_bumps(); front_bump(); strap(1); strap(-1); if (port) port_pad(); }   // flat: for the plan outline
 // the saddle: under the sleeve's plan, from the curved wrist face up to the old flat back (built from the same profile as the straps)
@@ -466,18 +490,6 @@ module port_pad2d(i = 0) {
         translate([PORT_Z, 0]) rrect(fin_t + 2 * pad_m, fin_len + 2 * pad_m, fin_t / 2 + pad_m - eps);                       // border round the slot
         translate([-2 - saddle_d, -strip_hw]) square([PORT_Z + 2 + saddle_d, 2 * strip_hw]);                                 // the blade's channel
         translate([-2 - saddle_d, -(strip_hw + kh_flare)]) square([KH_ZG - 0.7 + 2 + saddle_d, 2 * (strip_hw + kh_flare)]);   // flare, its corners buried in the root fillet
-    }
-}
-// The end wall's ribs lean 35 deg away from the wall, so trimming them along y at the keyhole's edge would leave wedges standing
-// free of the wall. Instead every rib that would come within ft_keep of the keyhole is removed whole, across just the height
-// where it would, with clean horizontal ends.
-function rib_ys(xw) = concat([for (m = [-12 : 12]) (m * ft_pitch + sin(ft_angle) * (xw - ft_shift)) / cos(ft_angle)],
-                             [for (m = [-12 : 12]) (m * ft_pitch - sin(ft_angle) * (xw - ft_shift)) / cos(ft_angle)]);
-module keyhole_rib_cut2d() {
-    bw = ft_w / cos(ft_angle) / 2 + ft_h * tan(ft_angle) + 0.05;   // half the band of y a rib sweeps through its height
-    for (y = rib_ys(-END_X)) if (abs(y) < 12) intersection() {
-        hull() for (d = [-1, 1]) translate([0, d * 2 * bw]) intersection() { offset(delta = ft_keep) port_pad2d(); translate([-50, y - bw]) square([100, 2 * bw]); }
-        translate([-50, y - bw]) square([100, 2 * bw]);
     }
 }
 // ribs on the strip's face, carrying the end wall's rib lines across it (on the cup: grooves in the channel floor, which the blade slides over)
@@ -534,7 +546,7 @@ module band() {
 // ---- mold ---------------------------------------------------------------------------------------------------
 margin = 6; cup_floor = 4;
 CUP_H = TOP + FRONT_BUMP + cup_floor;
-LID_T = 3.0; RIDGE_OVER = 0.15; REBATE_D = 0.9;
+LID_T = 3.0; RIDGE_OVER = 0.4; REBATE_D = 0.9;   // RIDGE_OVER: the lid's ridge and boss reach this far past the outline, the cup's rebate 0.1 more (clears the 0.4 wall ribs)
 // vents: [x, y, d]. Along the long strap they sit off the centreline, clear of the hole pins.
 // vents: [x, y, d]. Ten over the jacket; along the straps one every 10 mm, between the hole columns (2.5 mm off centre,
 // half a pitch from the centre holes), alternating sides; plus the thick end and the tip.
