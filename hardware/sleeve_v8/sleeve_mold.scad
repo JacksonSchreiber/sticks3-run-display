@@ -110,6 +110,11 @@ node_gap = 0;           // > 0 cuts the cup's ridges at every crossing so the ce
 tex_hole_margin = 0.5;  // ridge/dimple modes: smooth collar round every hole (tropic mode: the hole sits in the pit's floor, no collar)
 breather_d = 0.6;       // breather holes through the cup floor at the dead-end pockets (button recess, window lips)
 
+/* [Sleeve texture] */
+front_tex = true;       // raised diamond lattice on the sleeve's front face round the window: ridges on the silicone = grooves in the cup floor, a connected channel network from the window pad's edge out to the walls (self-venting, like the straps). Adds nothing but material: the lips stay 1.4 mm.
+ft_w = 0.6; ft_h = 0.4; ft_pitch = 2.0; ft_angle = 35;   // ridge width, height, line spacing, angle
+ft_keep = 0.6;          // flat margin round the window pad (its rim must seat on bare floor) and the button bump
+
 /* [Keeper] */
 kp_in_w = 19.5; kp_in_h = 6.2; kp_wall = 2.0; kp_w = 5.0; kp_r = 1.5;
 
@@ -330,6 +335,32 @@ module texture() {   // the ridge/bump volume: solid in the cup, empty in the ba
     }
 }
 
+// front-face lattice: lines in plan, kept off the window pad and the button bump, applied as a 0.4 mm shell over the
+// front face and its rounded perimeter (so the grooves in the cup run right down to the vertical walls)
+module front_lattice2d() {
+    x0 = sx(FRONT_BTN[1][0]) - 1.5; x1 = sx(FRONT_BTN[1][1]) + 1.5;
+    y0 = min(sy(FRONT_BTN[0][0]), sy(FRONT_BTN[0][1])) - 1.5; y1 = max(sy(FRONT_BTN[0][0]), sy(FRONT_BTN[0][1])) + 1.5;
+    difference() {
+        intersection() {
+            for (a = [ft_angle, -ft_angle]) rotate(a) for (k = [-30 : 30]) translate([0, k * ft_pitch]) square([140, ft_w], center = true);
+            difference() {   // 0.8 inside the plan (the last 0.8 mm of the perimeter round is nearly vertical anyway) and off the four plan corners
+                rrect(2 * END_X - 1.6, 2 * BODY_HW - 1.6, body_r);
+                for (sx_ = [-1, 1], sy_ = [-1, 1]) translate([sx_ * (END_X - 2), sy_ * (BODY_HW - 2)]) circle(r = 3.5);
+            }
+        }
+        win2d(-ft_keep);
+        translate([(x0 + x1) / 2, (y0 + y1) / 2]) rrect(x1 - x0 + 2 * ft_keep, y1 - y0 + 2 * ft_keep, 1.5 + ft_keep);
+    }
+}
+module front_lattice() {
+    if (front_tex) difference() {
+        intersection() {
+            translate([0, 0, TOP - front_r - 0.3]) linear_extrude(front_r + 0.3 + ft_h + 0.1) front_lattice2d();
+            minkowski() { body(); sphere(r = ft_h, $fn = 12); }
+        }
+        body();
+    }
+}
 module envelope() { body(); side_bumps(); front_bump(); strap(1); strap(-1); if (port) port_pad(); }
 module outline2d() { projection() envelope(); }
 
@@ -387,6 +418,7 @@ module keeper_mold() {
 // ---- silicone preview ------------------------------------------------------------------------------------
 module window_through() { translate([0, 0, TOP - 1.5]) linear_extrude(4) win2d(); }
 module band() {
+    front_lattice();
     difference() {
         envelope();
         core_full(); if (port) { tunnel_block(); port_fin(); }
@@ -442,6 +474,7 @@ module cup() {
         union() { cup_plain(); tongue_rib(); panel(); texture(); }   // rib for the tongue slot; panel plateau and knurl ridges on the trough floors
         for (h = HOLES) translate([h[0], h[1], ZP - tr_depth - 1]) cylinder(d = hole_d + 0.3, h = 1 + tr_depth + panel_d + 0.8, $fn = 32);   // sockets for the hole pins: through the texture bumps and the plateau into the floor
         breathers();
+        front_lattice();   // grooves in the floor round the window: the venting channels
         pin_notches();
     }
 }
