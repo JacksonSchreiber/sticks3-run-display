@@ -19,6 +19,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import dev.runstick.app.databinding.ActivityMainBinding
+import dev.runstick.app.databinding.DialogMaxHrBinding
 import dev.runstick.app.databinding.DialogStravaSetupBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -84,6 +85,8 @@ class MainActivity : AppCompatActivity() {
                 renderStatic()
             }
         }
+
+        binding.btnMaxHr.setOnClickListener { showMaxHrDialog() }
 
         binding.btnStart.setOnClickListener { startRun() }
         binding.btnStop.setOnClickListener { RunService.stop(this) }
@@ -239,6 +242,11 @@ class MainActivity : AppCompatActivity() {
         binding.btnPickStick.text =
             if (stick == null) getString(R.string.pick_stick) else getString(R.string.stick_named, stick)
 
+        val maxHr = prefs.maxHr
+        binding.btnMaxHr.text =
+            if (maxHr == null) getString(R.string.max_hr_unset) else getString(R.string.max_hr_set, maxHr)
+        binding.tvZones.text = if (maxHr == null) getString(R.string.max_hr_prompt) else HrZones.rangesText(maxHr)
+
         val missing = missingPermissions()
         binding.btnPermissions.isEnabled = missing.isNotEmpty()
         binding.btnPermissions.text =
@@ -291,6 +299,47 @@ class MainActivity : AppCompatActivity() {
         if (wasRunning && !ui.running) loadLastWorkout()
         wasRunning = ui.running
         renderWorkout()
+    }
+
+    // --- max heart rate -----------------------------------------------------
+
+    private fun showMaxHrDialog() {
+        val b = DialogMaxHrBinding.inflate(layoutInflater)
+        prefs.maxHr?.let { b.etMaxHr.setText(it.toString()) }
+
+        val builder = AlertDialog.Builder(this)
+            .setTitle(R.string.max_hr_title)
+            .setView(b.root)
+            .setPositiveButton(R.string.save, null)
+            .setNegativeButton(android.R.string.cancel, null)
+        if (prefs.maxHr != null) {
+            builder.setNeutralButton(R.string.max_hr_clear) { _, _ ->
+                prefs.maxHr = null
+                renderStatic()
+            }
+        }
+        val dialog = builder.create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val bpm = b.etMaxHr.text?.toString()?.trim()?.toIntOrNull()
+                if (bpm == null || !HrZones.validMaxHr(bpm)) {
+                    b.tilMaxHr.error = getString(R.string.max_hr_invalid, HrZones.MIN_MAX_HR, HrZones.MAX_MAX_HR)
+                    return@setOnClickListener
+                }
+                prefs.maxHr = bpm
+                dialog.dismiss()
+                renderStatic()
+            }
+        }
+        dialog.show()
+
+        // Hint only: a strap spike in any saved run would make it wrong, so never auto-fill.
+        lifecycleScope.launch {
+            val highest = withContext(Dispatchers.IO) { workouts.highestSustainedHr() } ?: return@launch
+            if (!dialog.isShowing) return@launch
+            b.tvHighest.text = getString(R.string.max_hr_highest, highest, WorkoutLog.SUSTAIN_SEC)
+            b.tvHighest.visibility = View.VISIBLE
+        }
     }
 
     // --- last workout + Strava ----------------------------------------------

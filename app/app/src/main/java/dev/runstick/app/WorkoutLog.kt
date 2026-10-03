@@ -37,6 +37,36 @@ data class WorkoutLog(
 
     val maxHr: Int? get() = samples.mapNotNull { it.hrBpm }.maxOrNull()
 
+    /**
+     * The highest heart rate held for [sustainSec]: the max, over every run of consecutive
+     * samples covering at least that long, of the lowest HR in it. A null HR or a time gap
+     * of more than 1 s between neighbours breaks a run. At 1 Hz and 2 s that is the max of
+     * min(hr[i], hr[i+1]) over adjacent valid pairs, so a one-sample strap spike never
+     * counts. Null when no run is long enough.
+     */
+    fun sustainedMaxHr(sustainSec: Int = SUSTAIN_SEC): Int? {
+        var best: Int? = null
+        var runStart = 0 // index where the current unbroken run began
+        for (end in samples.indices) {
+            val s = samples[end]
+            if (s.hrBpm == null) {
+                runStart = end + 1
+                continue
+            }
+            if (end > runStart && s.tSec - samples[end - 1].tSec > 1) runStart = end
+            // Shortest window ending here that covers sustainSec; longer ones can only
+            // have a lower minimum, so this is the only one worth checking.
+            var start = end
+            var low: Int = s.hrBpm
+            while (s.tSec - samples[start].tSec + 1 < sustainSec && start > runStart) {
+                start--
+                low = minOf(low, samples[start].hrBpm!!)
+            }
+            if (s.tSec - samples[start].tSec + 1 >= sustainSec) best = maxOf(best ?: low, low)
+        }
+        return best
+    }
+
     /** No usable GPS distance: a treadmill, or a run with no fix at all. */
     val hasNoDistance: Boolean get() = totalDistanceM < NO_DISTANCE_M
 
@@ -90,6 +120,9 @@ data class WorkoutLog(
          * window, and scaling a typed-in 5 km onto that drift would make nonsense splits.
          */
         const val NO_DISTANCE_M = 100.0
+
+        /** How long a heart rate must be held to count for [sustainedMaxHr]. */
+        const val SUSTAIN_SEC = 2
 
         private const val MAGIC = "#runstick-workout v1"
         private const val COLUMNS = "t,hr,dist_m"

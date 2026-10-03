@@ -74,6 +74,7 @@ static void buildUiState(UiState& st, uint32_t now, const BleSnapshot& snap) {
   st.connected  = snap.connected;
   st.stale      = stale;
   st.hrShown    = !stale && snap.data.hrValid();
+  st.hrZone     = st.hrShown ? snap.data.hrZone() : 0;
   st.paceShown  = !stale && snap.data.paceValid();
   st.gpsOk      = snap.data.gpsOk();
   st.strapOk    = snap.data.strapOk();
@@ -194,13 +195,17 @@ static void logRun(uint32_t now, const BleSnapshot& snap) {
   formatElapsed(snap.data.elapsed_s, elapsed, sizeof(elapsed));
   formatDistance(snap.data.distance_cmi, dist, sizeof(dist));
 
-  char flags[32];
-  snprintf(flags, sizeof(flags), "%s%s%s%s%s",
+  char zone[16] = "";
+  if (snap.data.hrZone() != 0) snprintf(zone, sizeof(zone), " Z%u", (unsigned)snap.data.hrZone());
+
+  char flags[40];
+  snprintf(flags, sizeof(flags), "%s%s%s%s%s%s",
            snap.data.hrValid()   ? " HR"    : "",
            snap.data.paceValid() ? " PACE"  : "",
            snap.data.runActive() ? " RUN"   : "",
            snap.data.gpsOk()     ? " GPS"   : "",
-           snap.data.strapOk()   ? " STRAP" : "");
+           snap.data.strapOk()   ? " STRAP" : "",
+           zone);
 
   Serial.printf("[run] hr=%-3s pace=%-5s t=%-8s d=%-8s flags=0x%02X%s age=%ums%s "
                 "batt=%d%% %dmV %dmA%s pkt=%u bad=%u\n",

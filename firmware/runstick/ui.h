@@ -27,6 +27,7 @@ struct UiState {
   bool     connected;
   bool     stale;
   bool     hrShown;      // fresh AND the HR_VALID bit is set
+  uint8_t  hrZone;       // 0 = none, 1-5 (drawn only while hrShown)
   bool     paceShown;
   bool     gpsOk;
   bool     strapOk;
@@ -39,7 +40,7 @@ struct UiState {
 
   bool sameAs(const UiState& o) const {
     return screen == o.screen && connected == o.connected && stale == o.stale
-        && hrShown == o.hrShown && paceShown == o.paceShown
+        && hrShown == o.hrShown && hrZone == o.hrZone && paceShown == o.paceShown
         && gpsOk == o.gpsOk && strapOk == o.strapOk && charging == o.charging
         && hr == o.hr && pace == o.pace && elapsed == o.elapsed
         && distance == o.distance && batteryPct == o.batteryPct;
@@ -204,6 +205,34 @@ inline void uiDrawNumberBlock(lgfx::LGFXBase& g, int top, const char* value, boo
   g.drawString(label, kScreenW / 2, top + kHalfH - kLabelH / 2);
 }
 
+// The heart-rate zone as one coloured digit right of the "BPM" label, which stays
+// centred where it always was. FreeSansBold12pt digits are 17 px of bold ink
+// against Font2's ~10 px caps, so even Z4 (red, like the label) reads as a
+// separate thing; 17 px sits inside the 22 px label band with room to spare.
+inline void uiDrawZone(lgfx::LGFXBase& g, int blockTop, uint8_t zone) {
+  if (zone < 1 || zone > kHrZoneMax) return;
+
+  g.setFont(&fonts::Font2);
+  g.setTextSize(1.0f);
+  const int labelW     = g.textWidth("BPM");                 // 26 px
+  const int labelRight = kScreenW / 2 - labelW / 2 + labelW;  // middle_center: 54 + 26 = 80
+
+  // Centre the digit's ink on the label's centre line: the glyphs are 17 px tall
+  // sitting on the baseline, so the baseline goes ~8 px below that line.
+  const int labelMidY = blockTop + kHalfH - kLabelH / 2;     // 119 for the HR block
+  const int baseline  = labelMidY + 8;                        // ink 111..127, band 108..130
+
+  const char digit[2] = { (char)('0' + zone), '\0' };
+  g.setFont(&fonts::FreeSansBold12pt7b);
+  g.setTextSize(1.0f);
+  g.setTextDatum(textdatum_t::baseline_left);
+  // Foreground only: with a background colour LovyanGFX fills the font's whole cell
+  // (tallest ascender to deepest descender, ~110..132 here), which would reach past
+  // the band into the pace block. The sprite was cleared to black already.
+  g.setTextColor(kColZone[zone]);
+  g.drawString(digit, labelRight + kZoneGapX, baseline);
+}
+
 inline void uiDrawMain(lgfx::LGFXBase& g, const UiState& st) {
   g.fillScreen(kColBg);
   uiDrawStrip(g, st);
@@ -214,6 +243,8 @@ inline void uiDrawMain(lgfx::LGFXBase& g, const UiState& st) {
   formatPace(st.pace, paceText, sizeof(paceText));
 
   uiDrawNumberBlock(g, kHrTop, hrText, st.hrShown, "BPM", kColHrLabel);
+  // Only next to a live heart rate: never on a greyed-out stale "--".
+  if (st.hrShown) uiDrawZone(g, kHrTop, st.hrZone);
   g.drawFastHLine(0, kPaceTop, kScreenW, kColRule);
   uiDrawNumberBlock(g, kPaceTop, paceText, st.paceShown, "/MI", kColPaceLabel);
 }

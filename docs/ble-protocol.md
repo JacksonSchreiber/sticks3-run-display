@@ -48,16 +48,24 @@ No pairing or bonding. Default MTU is enough.
 | 2 | `RUN_ACTIVE` | the run timer is running |
 | 3 | `GPS_OK` | the phone has a usable GPS fix |
 | 4 | `STRAP_OK` | the phone is connected to the chest strap |
-| 5–7 | reserved | send `0`, ignore on receive |
+| 5–7 | `hr_zone` | 3-bit heart-rate zone, `(flags >> 5) & 7`: `0` = none / unknown, `1`–`5` = zone. `6` and `7` are treated as `0` on receive. |
 
 A field is shown only if its valid bit is set; otherwise the Stick shows `--`.
 
-**Golden test vector** (both sides unit-test against it):
+**`hr_zone`.** The phone computes the zone (percent of the runner's max heart rate, with hysteresis so it doesn't flicker on a boundary) and sends it only when `HR_VALID` is set; otherwise the bits are `0`. The Stick shows it as a coloured digit next to the `BPM` label, only while the heart rate itself is shown. Bits 5–7 used to be "reserved, send `0`, ignore on receive", and the length and `version` are unchanged: firmware from before this field never checked those bits (its `parsePacket` accepts any `flags` value and reads only bits 0–4), so a newer app works with an older Stick, which simply shows no zone. An older app sends `0`, which means "no zone".
+
+**Golden test vectors** (both sides unit-test against them):
 
 ```
-HR 152, pace 8:45 /mi (525 s), elapsed 1:02:03 (3723 s), distance 7.12 mi (712), all five flags set
+HR 152, pace 8:45 /mi (525 s), elapsed 1:02:03 (3723 s), distance 7.12 mi (712), all five flags set, zone 0
 
 01 1F 98 0D 02 8B 0E C8 02
+```
+
+```
+The same, with hr_zone 4: flags = 0x1F | (4 << 5) = 0x9F
+
+01 9F 98 0D 02 8B 0E C8 02
 ```
 
 ### STATUS — 2 bytes
@@ -80,6 +88,7 @@ Notified when either byte changes, and at least every 60 s while connected.
 | Value | Format | Example |
 |---|---|---|
 | heart rate | integer | `152` |
+| heart-rate zone | one digit `1`–`5` right of the `BPM` label, coloured per zone; nothing for `0` | `4` |
 | pace | `m:ss`, capped at `59:59` | `8:45` |
 | elapsed | `h:mm:ss` (or `mm:ss` under an hour) | `1:02:03` |
 | distance | two decimals + `mi` | `7.12 mi` |

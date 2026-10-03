@@ -74,6 +74,18 @@ static const uint16_t kColLinkWait  = rgb565( 96,  96,  96);
 static const uint16_t kColFlagOk    = rgb565(  0, 224,  96);
 static const uint16_t kColFlagBad   = rgb565(110, 110, 110);
 
+// Heart-rate zone digit, index = zone (0 unused). Saturated and far apart in hue so
+// they stay distinct on the small panel in daylight. Z4 is the same family as the
+// red BPM label; the digit is told apart by being a much bigger, bolder glyph.
+static const uint16_t kColZone[6] = {
+  rgb565(  0,   0,   0),   // 0: no zone, never drawn
+  rgb565(  0, 230,  90),   // 1 green
+  rgb565(255, 225,   0),   // 2 yellow
+  rgb565(255, 140,   0),   // 3 orange
+  rgb565(255,  30,  30),   // 4 red
+  rgb565(230,   0, 170),   // 5 reddish purple
+};
+
 // ------------------------------------------------------------------ layout
 // Portrait: the Stick lies across the wrist, so the panel is 135 wide x 240
 // tall (rotation 0, or 2 when flipped for the other wrist).
@@ -90,3 +102,6 @@ static const int kLabelH  = 22;                        // "BPM" / "/MI" band
 static const int kNumMarginX = 4;
 static const int kNumMaxW    = kScreenW - 2 * kNumMarginX;          // 127
 static const int kNumMaxH    = kHalfH - kLabelH - 4;                // 84
+
+// Zone digit: to the right of the centred "BPM" label, inside the label band.
+static const int kZoneGapX = 6;   // label's right edge -> digit's pen position

@@ -20,7 +20,7 @@ static const uint8_t  kProtocolVersion = 1;
 static const size_t   kDataPacketLen   = 9;
 static const uint16_t kPaceInvalid     = 0xFFFF;
 
-// flags bits (bits 5-7 are reserved: send 0, ignore on receive)
+// flags bits 0-4; bits 5-7 carry hr_zone (see RunData::hrZone)
 enum : uint8_t {
   FLAG_HR_VALID   = 1u << 0,
   FLAG_PACE_VALID = 1u << 1,
@@ -28,6 +28,8 @@ enum : uint8_t {
   FLAG_GPS_OK     = 1u << 3,
   FLAG_STRAP_OK   = 1u << 4,
 };
+static const uint8_t kHrZoneShift = 5;
+static const uint8_t kHrZoneMax   = 5;
 
 struct RunData {
   uint8_t  flags;
@@ -45,6 +47,12 @@ struct RunData {
   bool runActive() const { return (flags & FLAG_RUN_ACTIVE) != 0; }
   bool gpsOk()     const { return (flags & FLAG_GPS_OK) != 0; }
   bool strapOk()   const { return (flags & FLAG_STRAP_OK) != 0; }
+  // Heart-rate zone 1-5, or 0 for none. 6 and 7 are not zones: read them as 0,
+  // so a future meaning for them can never light up a wrong colour here.
+  uint8_t hrZone() const {
+    const uint8_t z = (uint8_t)((flags >> kHrZoneShift) & 0x07u);
+    return z > kHrZoneMax ? 0 : z;
+  }
 };
 
 // Returns false (and leaves `out` untouched) for anything that is not a
@@ -124,6 +132,11 @@ static const uint8_t kGoldenPacket[kDataPacketLen] = {
   0x01, 0x1F, 0x98, 0x0D, 0x02, 0x8B, 0x0E, 0xC8, 0x02
 };
 
+// The same fields with hr_zone 4 in flags bits 5-7: 0x1F | (4 << 5) = 0x9F.
+static const uint8_t kGoldenPacketZone4[kDataPacketLen] = {
+  0x01, 0x9F, 0x98, 0x0D, 0x02, 0x8B, 0x0E, 0xC8, 0x02
+};
+
 // ------------------------------------------------------------- self-test
 
 #ifdef RUNSTICK_SELFTEST
@@ -161,6 +174,22 @@ inline int runstickSelfTest(char* out, size_t n) {
   RS_CHECK(d.flags           == 0x1F, "flags == 0x1F");
   RS_CHECK(d.hrValid() && d.paceValid() && d.runActive() && d.gpsOk() && d.strapOk(),
            "all five flag accessors true");
+  RS_CHECK(d.hrZone() == 0, "golden vector: hr_zone 0");
+
+  // second golden vector: same fields, hr_zone 4
+  RunData z;
+  z.flags = 0; z.hr_bpm = 0; z.pace_s_per_mile = 0; z.elapsed_s = 0; z.distance_cmi = 0;
+  RS_CHECK(parsePacket(kGoldenPacketZone4, kDataPacketLen, z), "zone-4 vector accepted");
+  RS_CHECK(z.flags == 0x9F && z.hrZone() == 4, "zone-4 vector: flags 0x9F, hr_zone 4");
+  RS_CHECK(z.hr_bpm == 152 && z.pace_s_per_mile == 525 && z.elapsed_s == 3723 && z.distance_cmi == 712,
+           "zone-4 vector: other fields unchanged");
+  RS_CHECK(z.hrValid() && z.paceValid() && z.runActive() && z.gpsOk() && z.strapOk(),
+           "zone bits leave the five flag accessors alone");
+  RunData zz = z;
+  zz.flags = (uint8_t)(0x1F | (5u << kHrZoneShift)); RS_CHECK(zz.hrZone() == 5, "hr_zone 5 read as 5");
+  zz.flags = (uint8_t)(0x1F | (1u << kHrZoneShift)); RS_CHECK(zz.hrZone() == 1, "hr_zone 1 read as 1");
+  zz.flags = (uint8_t)(0x1F | (6u << kHrZoneShift)); RS_CHECK(zz.hrZone() == 0, "hr_zone 6 read as 0");
+  zz.flags = (uint8_t)(0x1F | (7u << kHrZoneShift)); RS_CHECK(zz.hrZone() == 0, "hr_zone 7 read as 0");
 
   // rejections
   RunData junk = d;

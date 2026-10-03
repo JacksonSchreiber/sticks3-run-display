@@ -40,6 +40,12 @@ class WorkoutStore(val dir: File, private val onRemoved: (Long) -> Unit = {}) {
 
     fun load(startEpochMs: Long): WorkoutLog? = read(fileFor(startEpochMs))
 
+    /**
+     * Highest heart rate held for [WorkoutLog.SUSTAIN_SEC] in any stored workout: a hint
+     * for the max HR box, never filled in. Held, not peak, so a strap spike doesn't count.
+     */
+    fun highestSustainedHr(): Int? = files().mapNotNull { read(it)?.sustainedMaxHr() }.maxOrNull()
+
     /** Removes one workout. True if it is gone (including "was never there"). */
     fun delete(startEpochMs: Long): Boolean {
         val f = fileFor(startEpochMs)

@@ -32,6 +32,14 @@ class Prefs(context: Context) : StravaCredentials {
         get() = sp.getBoolean(KEY_SIMULATE, false)
         set(value) = sp.edit().putBoolean(KEY_SIMULATE, value).apply()
 
+    /** For heart-rate zones; unset by default, and then no zone is sent to the Stick. */
+    var maxHr: Int?
+        get() = sp.getInt(KEY_MAX_HR, 0).takeIf { it > 0 }
+        set(value) {
+            if (value == null) sp.edit().remove(KEY_MAX_HR).apply()
+            else sp.edit().putInt(KEY_MAX_HR, value).apply()
+        }
+
     /** Why the last run ended itself; shown on screen until the next run starts. */
     var autoStopNote: String?
         get() = sp.getString(KEY_AUTO_STOP_NOTE, null)
@@ -117,6 +125,7 @@ class Prefs(context: Context) : StravaCredentials {
         const val KEY_STICK_MAC = "stick_mac"
         const val KEY_STICK_NAME = "stick_name"
         const val KEY_SIMULATE = "simulate"
+        const val KEY_MAX_HR = "max_hr"
         const val KEY_AUTO_STOP_NOTE = "auto_stop_note"
         const val KEY_TRIMMED_PREFIX = "trimmed_from_"
         const val KEY_STRAVA_CLIENT_ID = "strava_client_id"

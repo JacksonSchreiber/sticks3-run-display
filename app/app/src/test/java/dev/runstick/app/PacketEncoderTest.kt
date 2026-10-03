@@ -30,6 +30,41 @@ class PacketEncoderTest {
     }
 
     @Test
+    fun `second golden vector carries zone 4 in bits 5-7`() {
+        // Same fields as above with hr_zone 4: flags 0x1F | (4 << 5) = 0x9F.
+        val packet = PacketEncoder.encode(
+            RunData(
+                hrBpm = 152,
+                paceSecPerMile = 525,
+                elapsedSec = 3723,
+                distanceCentiMiles = 712,
+                runActive = true,
+                gpsOk = true,
+                strapOk = true,
+                hrZone = 4,
+            )
+        )
+        assertEquals("01 9F 98 0D 02 8B 0E C8 02", hex(packet))
+    }
+
+    @Test
+    fun `each zone lands in bits 5-7`() {
+        fun zoneBits(zone: Int) = (PacketEncoder.encode(RunData(150, null, 0, 0, false, false, false, zone))[1].toInt() and 0xFF) shr 5
+        for (zone in 0..5) assertEquals(zone, zoneBits(zone))
+        // Out-of-range zones go out as "none", never as the 6/7 the Stick would ignore.
+        assertEquals(0, zoneBits(6))
+        assertEquals(0, zoneBits(-1))
+    }
+
+    @Test
+    fun `zone is only sent with a valid heart rate`() {
+        val p = PacketEncoder.encode(RunData(null, 525, 0, 0, true, true, true, hrZone = 3))
+        assertEquals(0, p[1].toInt() and 0xE0)
+        val q = PacketEncoder.encode(RunData(0, 525, 0, 0, true, true, true, hrZone = 3))
+        assertEquals(0, q[1].toInt() and 0xE0)
+    }
+
+    @Test
     fun `packet is always nine bytes`() {
         assertEquals(9, PacketEncoder.encode(RunData(null, null, 0, 0, false, false, false)).size)
     }
@@ -83,7 +118,7 @@ class PacketEncoderTest {
         assertEquals(0x08, flags(RunData(null, null, 0, 0, false, true, false)))
         assertEquals(0x10, flags(RunData(null, null, 0, 0, false, false, true)))
         assertEquals(0x03, flags(RunData(70, 600, 0, 0, false, false, false)))
-        // Bits 5-7 are reserved and must go out as zero.
+        // Bits 5-7 are hr_zone: zero when there is no zone.
         assertEquals(0, flags(RunData(70, 600, 0, 0, true, true, true)) and 0xE0)
     }
 

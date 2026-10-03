@@ -273,6 +273,23 @@
                 android:text="@string/pick_stick" />
         </LinearLayout>
 
+        <!-- max heart rate, for the zone digit on the Stick -->
+
+        <Button
+            android:id="@+id/btnMaxHr"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/max_hr_unset" />
+
+        <TextView
+            android:id="@+id/tvZones"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/max_hr_prompt"
+            android:textSize="14sp" />
+
         <!-- permissions -->
 
         <View

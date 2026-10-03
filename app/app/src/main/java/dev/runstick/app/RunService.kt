@@ -127,6 +127,7 @@ class RunService : Service() {
     private var recorder: WorkoutRecorder? = null
     private var recordingStartMs = 0L
     private val autoStop = AutoStop()
+    private val zones = HrZones()
 
     private var strap: StrapClient? = null
     private var stick: StickClient? = null
@@ -192,6 +193,7 @@ class RunService : Service() {
 
         startRecording()
         autoStop.reset()
+        zones.reset()
         prefs.autoStopNote = null
         getSystemService(NotificationManager::class.java)?.cancel(AUTO_STOP_NOTIFICATION_ID)
 
@@ -404,7 +406,10 @@ class RunService : Service() {
 
     private fun tick() {
         val now = SystemClock.elapsedRealtime()
-        val data = if (simulate) simulator.next(now) else buildData(now)
+        val maxHr = prefs.maxHr
+        val raw = if (simulate) simulator.next(now, maxHr) else buildData(now)
+        // Zone from the very HR that goes to the Stick, so the digit always matches it.
+        val data = raw.copy(hrZone = zones.update(raw.hrBpm, maxHr))
 
         // Write every second even when nothing is valid: the Stick distinguishes
         // "connected but no data" from "link lost" by the 5 s packet gap alone.
@@ -557,6 +562,12 @@ class RunService : Service() {
      * heart rate wandering 120-170, pace wandering 7:30-9:30, everything else ticking.
      */
     private class Simulator {
+        companion object {
+            const val SWEEP_MS = 120_000L
+            /** Shape of the sweep when no max HR is set (the Stick then shows no zone). */
+            const val SIM_MAX_HR = 190
+        }
+
         private val random = Random(20260921)
         private var hr = 140.0
         private var paceSec = 510.0
@@ -572,10 +583,15 @@ class RunService : Service() {
             centiMiles = 0.0
         }
 
-        fun next(nowMs: Long): RunData {
+        fun next(nowMs: Long, maxHr: Int?): RunData {
             val dt = (nowMs - lastMs).coerceIn(0L, 5_000L) / 1000.0
             lastMs = nowMs
-            hr = (hr + random.nextDouble(-2.0, 2.0)).coerceIn(120.0, 170.0)
+            // Sweep 52% -> 97% of max HR and back every two minutes, so every zone colour
+            // shows on the Stick indoors. Past each boundary by more than the hysteresis.
+            val max = (maxHr ?: SIM_MAX_HR).toDouble()
+            val phase = ((nowMs - startMs) % SWEEP_MS).toDouble() / SWEEP_MS
+            val triangle = if (phase < 0.5) phase * 2.0 else (1.0 - phase) * 2.0
+            hr = max * (0.52 + 0.45 * triangle) + random.nextDouble(-1.0, 1.0)
             paceSec = (paceSec + random.nextDouble(-4.0, 4.0)).coerceIn(450.0, 570.0)
             centiMiles += 100.0 * dt / paceSec
             return RunData(

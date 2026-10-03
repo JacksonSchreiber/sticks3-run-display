@@ -293,6 +293,71 @@ class WorkoutLogTest {
         assertNull(store.load(42L))
     }
 
+    // --- sustained max HR (the max HR dialog's hint) ------------------------
+
+    private fun hrLog(vararg hr: Int?) = WorkoutLog(0L, false, hr.mapIndexed { t, v -> WorkoutSample(t, v, 0.0) })
+
+    @Test
+    fun `a one-sample spike is ignored`() {
+        // Pairs hold 150, 152, 151, 149: the 220 spike only ever counts as its lower neighbour.
+        assertEquals(152, hrLog(150, 152, 220, 151, 149).sustainedMaxHr())
+    }
+
+    @Test
+    fun `a two-sample plateau counts`() {
+        assertEquals(186, hrLog(150, 186, 188, 160).sustainedMaxHr())
+        assertEquals(186, hrLog(186, 186).sustainedMaxHr())
+    }
+
+    @Test
+    fun `a null heart rate splits a window`() {
+        assertEquals(150, hrLog(150, 150, 190, null, 190, 140).sustainedMaxHr())
+    }
+
+    @Test
+    fun `a time gap splits a window`() {
+        val l = WorkoutLog(
+            0L, false,
+            listOf(
+                WorkoutSample(0, 140, 0.0), WorkoutSample(1, 141, 0.0),
+                WorkoutSample(2, 190, 0.0), WorkoutSample(4, 190, 0.0), // 2 s apart: not held
+                WorkoutSample(5, 150, 0.0),
+            ),
+        )
+        assertEquals(150, l.sustainedMaxHr())
+    }
+
+    @Test
+    fun `no valid pair means no value`() {
+        assertNull(hrLog(180).sustainedMaxHr())
+        assertNull(hrLog(180, null, 181, null).sustainedMaxHr())
+        assertNull(hrLog(null, null).sustainedMaxHr())
+        assertNull(WorkoutLog(0L, false, emptyList()).sustainedMaxHr())
+    }
+
+    @Test
+    fun `longer sustain needs a longer plateau`() {
+        val l = hrLog(150, 190, 189, 170, 170, 170, 160)
+        assertEquals(189, l.sustainedMaxHr(2))
+        assertEquals(170, l.sustainedMaxHr(3))
+        assertEquals(190, l.sustainedMaxHr(1))
+        assertEquals(2, WorkoutLog.SUSTAIN_SEC)
+    }
+
+    @Test
+    fun `highest held heart rate across stored workouts`() {
+        val store = WorkoutStore(tmp.newFolder("workouts"))
+        assertNull(store.highestSustainedHr())
+        store.fileFor(1L).writeText(hrLog(150, 176, 175, 120).copy(startEpochMs = 1L).serialize()) // 175
+        store.fileFor(2L).writeText(hrLog(181, null, 140).copy(startEpochMs = 2L).serialize()) // spike only
+        store.fileFor(3L).writeText("garbage")
+        assertEquals(175, store.highestSustainedHr())
+        // A store whose runs have no valid pair gives null, and the dialog hides the hint.
+        val spikes = WorkoutStore(tmp.newFolder("spikes"))
+        spikes.fileFor(4L).writeText(hrLog(200, null, 199).copy(startEpochMs = 4L).serialize())
+        assertNull(spikes.highestSustainedHr())
+    }
+
     @Test
     fun `latest skips an unreadable newest file`() {
         val store = WorkoutStore(tmp.newFolder("workouts"))

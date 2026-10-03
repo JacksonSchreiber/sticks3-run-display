@@ -16,6 +16,7 @@ While Strava records on the same phone, this app reads the strap over the standa
 | `HeartRateParser.kt` | 0x2A37 payload -> bpm (flags bit 0 picks u8 / u16 LE). Pure. |
 | `PaceEstimator.kt` | time-aware EMA over `Location.getSpeed()` -> seconds per mile, or null. Pure. |
 | `RunTracker.kt` | elapsed time + distance integrated from speed. Pure. |
+| `HrZones.kt` | heart-rate zone 1-5 from % of max HR, with 2 bpm hysteresis. Pure. |
 | `StrapClient.kt` | raw `BluetoothGatt` client for the strap. |
 | `StickClient.kt` | Nordic `BleManager` client for the RunStick. |
 | `RunService.kt` | foreground service: owns both clients + GPS, ticks at 1 Hz, holds the `UiState` flow. |
@@ -40,9 +41,13 @@ While Strava records on the same phone, this app reads the strap over the standa
 - **The service is started from the visible activity only.** That is what lets it use location without `ACCESS_BACKGROUND_LOCATION`, which is deliberately not requested. `START_NOT_STICKY` for the same reason.
 - **Foreground service types are computed at runtime.** `connectedDevice` always; `location` only when not simulating and fine location is granted — claiming `location` without the permission throws on Android 14+.
 
+## Heart-rate zones
+
+Set **Max heart rate** on the main screen (120-230 bpm; unset by default) and the Stick shows the current zone as a coloured digit next to `BPM`: Z1 under 60% of max, Z2 60-70, Z3 70-80, Z4 80-90, Z5 90+. The zone moves up only once HR is 2 bpm past a boundary and down only once it is 2 bpm below, so it doesn't flicker at 1 Hz. It travels in DATA `flags` bits 5-7 (`docs/ble-protocol.md`) and only with a valid HR. The dialog shows the highest HR in saved runs as a hint, never filled in automatically (strap spikes). These are standard %-of-max zones; Strava's may differ unless set to match.
+
 ## Simulate mode
 
-A persisted switch on the main screen. Ignores the strap and GPS and sends synthetic data (HR wandering 120-170, pace 7:30-9:30, elapsed and distance ticking), so the Stick can be tested indoors. Location permission is not requested in this mode; Bluetooth still is, because it is still writing to a real Stick.
+A persisted switch on the main screen. Ignores the strap and GPS and sends synthetic data (HR sweeping from 52% to 97% of max HR and back every two minutes so every zone colour shows, or of 190 when no max is set, in which case no zone is sent; pace 7:30-9:30, elapsed and distance ticking), so the Stick can be tested indoors. Location permission is not requested in this mode; Bluetooth still is, because it is still writing to a real Stick.
 
 ## Strava upload
 

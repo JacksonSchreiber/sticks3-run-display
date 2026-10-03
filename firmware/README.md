@@ -68,7 +68,7 @@ board menu option is not set to CDC — add it to the FQBN:
 ```
 
 and the Stick parses it at boot and prints a PASS/FAIL line per check to Serial:
-field decode, short/long/null/wrong-version rejection, and every display
+field decode, the second (zone 4) vector and the `hr_zone` bits, short/long/null/wrong-version rejection, and every display
 format (`8:45`, `1:02:03`, `7.12 mi`). Leave the flag off for normal builds.
 
 ## Screen

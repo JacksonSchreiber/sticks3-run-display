@@ -13,6 +13,8 @@ data class RunData(
     val runActive: Boolean,
     val gpsOk: Boolean,
     val strapOk: Boolean,
+    /** Heart-rate zone 1-5, 0 for none. Sent only alongside a valid heart rate. */
+    val hrZone: Int = 0,
 )
 
 /** phone -> Stick DATA characteristic: 9 bytes, little-endian, protocol version 1. */
@@ -26,6 +28,10 @@ object PacketEncoder {
     const val FLAG_RUN_ACTIVE = 0x04
     const val FLAG_GPS_OK = 0x08
     const val FLAG_STRAP_OK = 0x10
+
+    /** `hr_zone` lives in flags bits 5-7 (0 = none, 1-5 = zone). */
+    const val HR_ZONE_SHIFT = 5
+    const val HR_ZONE_MAX = 5
 
     const val PACE_INVALID = 0xFFFF
 
@@ -42,6 +48,8 @@ object PacketEncoder {
         if (d.runActive) flags = flags or FLAG_RUN_ACTIVE
         if (d.gpsOk) flags = flags or FLAG_GPS_OK
         if (d.strapOk) flags = flags or FLAG_STRAP_OK
+        // A zone without a heart rate would be a colour with nothing to describe.
+        if (hrValid && d.hrZone in 1..HR_ZONE_MAX) flags = flags or (d.hrZone shl HR_ZONE_SHIFT)
 
         val out = ByteArray(PACKET_SIZE)
         out[0] = VERSION.toByte()

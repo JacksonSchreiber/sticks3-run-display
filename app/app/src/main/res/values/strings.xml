@@ -37,6 +37,17 @@
     <string name="grant_permissions">Grant permissions</string>
     <string name="permissions_ok">All permissions granted</string>
 
+    <string name="max_hr_unset">Max heart rate: not set</string>
+    <string name="max_hr_set">Max heart rate: %1$d bpm</string>
+    <string name="max_hr_prompt">Set your max heart rate to show zones on the Stick</string>
+    <string name="max_hr_title">Max heart rate</string>
+    <string name="max_hr_hint">Max heart rate (bpm)</string>
+    <string name="max_hr_highest">Highest in your saved runs: %1$d bpm (the highest heart rate held for %2$d seconds, so short strap spikes don\'t count)</string>
+    <string name="max_hr_zone_note" formatted="false">These are standard % of max HR zones (Z1 under 60%, Z2 60-70%, Z3 70-80%, Z4 80-90%, Z5 90%+). Strava\'s zones can differ unless you set Strava\'s to match.</string>
+    <string name="max_hr_invalid">Enter a number from %1$d to %2$d.</string>
+    <string name="max_hr_clear">Clear</string>
+    <string name="save">Save</string>
+
     <string name="need_strap">Pick a chest strap first, or turn on Simulate.</string>
     <string name="need_stick">Pick the RunStick first.</string>
 
