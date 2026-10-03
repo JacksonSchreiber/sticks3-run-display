@@ -30,7 +30,7 @@
 //   1. Release on everything. Core on the cup floor, pad down, port blade down its relief in the end wall, two
 //      M3x8 up through the cup. Lay the pin across the short strap's end: handle into the wide
 //      notch, rod into the rib's seat and the narrow notch in the far wall.
-//   2. Mix 45.5 g A + 4.5 g B (pigment into A first). Degas if you can. BRUSH a thin coat over the
+//   2. Mix 54.5 g A + 5.5 g B (pigment into A first; the lid's boss pushes about 6 g back out). Degas if you can. BRUSH a thin coat over the
 //      whole cup floor, the button recess, the strap troughs and round the core's pad (this is what
 //      stops the craters), then pour in a thin stream at ONE end so the front advances along the cup.
 //   3. Tap the cup and leave it 10-15 min so bubbles rise and pop. Then the lid, one end first,
@@ -85,6 +85,11 @@ mid_w = 16;             // long strap: end of the slow taper
 tip_w = 12; tip_len = 18;   // long strap: quicker taper over the last tip_len to a squared-off tip
 tip_corner_r = 1.0;
 tail = 25;              // long strap beyond the last hole
+strap_angle = 15;       // [0:1:25] the straps leave the sleeve angled this far toward the wrist, then level out lower (0 = flat straps, as v7)
+bend_x0 = 0.6;          // the bend starts this far beyond the end wall (clear of the port border)
+bend_len = 12.4;        // ... and the strap is level again this much further on, before the textured panel starts
+bend_round = 3.0;       // a round at each end of the straight angled part
+bend_steps = 5;         // facets per round
 
 /* [Buckle end] */
 bar_pin_w = 1.5;        // diameter of the printed pin that casts the spring-bar hole (the bar is ~1.4 mm)
@@ -184,8 +189,37 @@ HOLES = concat(
     [for (s = LONG_ROWS) if (s + hole_pitch / 2 <= LONG_END && side_ok(-1, s + hole_pitch / 2)) for (sg = [-1, 1]) [-(END_X + s + hole_pitch / 2), sg * side_y]],
     [for (s = SHORT_ROWS) [END_X + s, 0]],
     [for (s = SHORT_ROWS) if (s + hole_pitch / 2 <= SHORT_END && side_ok(1, s + hole_pitch / 2)) for (sg = [-1, 1]) [END_X + s + hole_pitch / 2, sg * side_y]]);
+// ---- strap bend: a shear z += P(|x|) applied to everything on the strap side. P = 0 up to X_B0, then a round, a
+// straight part at strap_angle, a round back to level, and P = -D_BEND beyond. Vertical things (pins, vents) stay vertical.
+X_B0 = END_X + bend_x0;
+BEND_SEGS = strap_angle == 0 ? [] : concat(
+    [for (k = [0 : bend_steps - 1]) [bend_round / bend_steps, -tan(strap_angle * (k + 0.5) / bend_steps)]],
+    [[bend_len - 2 * bend_round, -tan(strap_angle)]],
+    [for (k = [0 : bend_steps - 1]) [bend_round / bend_steps, -tan(strap_angle * (1 - (k + 0.5) / bend_steps))]]);
+function seg_x(i) = i == 0 ? X_B0 : seg_x(i - 1) + BEND_SEGS[i - 1][0];
+function seg_p(i) = i == 0 ? 0 : seg_p(i - 1) + BEND_SEGS[i - 1][0] * BEND_SEGS[i - 1][1];
+X_B1 = seg_x(len(BEND_SEGS));
+D_BEND = strap_angle == 0 ? 0 : -seg_p(len(BEND_SEGS));
+warp_ov = 0.05;         // neighbouring slices overlap this much so they fuse (abutting slices stay separate shells); the
+                        // shears differ by under 0.003 mm across the overlap
+module warp() {
+    if (strap_angle == 0) children();
+    else {
+        intersection() { children(); translate([-X_B0 - warp_ov, -500, -500]) cube([2 * (X_B0 + warp_ov), 1000, 1000]); }
+        for (dir = [-1, 1]) {
+            for (i = [0 : len(BEND_SEGS) - 1]) {
+                xa = seg_x(i) - warp_ov; xb = seg_x(i + 1) + warp_ov; m = BEND_SEGS[i][1]; pa = seg_p(i) - m * warp_ov;   // pa = P at xa
+                multmatrix([[1, 0, 0, 0], [0, 1, 0, 0], [dir * m, 0, 1, pa - m * xa], [0, 0, 0, 1]])
+                    intersection() { children(); translate([dir > 0 ? xa : -xb, -500, -500]) cube([xb - xa, 1000, 1000]); }
+            }
+            translate([0, 0, -D_BEND]) intersection() { children(); translate([dir > 0 ? X_B1 - warp_ov : -2000, -500, -500]) cube([2000 - X_B1 + warp_ov, 1000, 1000]); }
+        }
+    }
+}
+// everything beyond the bend only moves down: shift it once instead of slicing it (the slicing is what makes warp() heavy)
+module far() { translate([0, 0, -D_BEND]) children(); }
 function s_list(L, r, n) = concat([for (k = [0 : n]) S_START + (L - r - S_START) * k / n], [for (a = [10 : 10 : 90]) L - r + r * sin(a)]);
-echo(str("v8: jacket ", 2 * END_X, " x ", 2 * BODY_HW, " x ", TOP, " (+", FRONT_BUMP, "); short strap ", short_len, ", long strap ", long_len,
+echo(str("v8: strap bend ", strap_angle, " deg, drop ", D_BEND, " mm over ", X_B1 - X_B0, " mm; jacket ", 2 * END_X, " x ", 2 * BODY_HW, " x ", TOP, " (+", FRONT_BUMP, "); short strap ", short_len, ", long strap ", long_len,
          ", overall ", 2 * END_X + short_len + long_len, " mm; ", len(HOLES), " holes; sizes (centre column) ", 2 * END_X + short_len + LONG_ROWS[0], "-", 2 * END_X + short_len + LONG_ROWS[len(LONG_ROWS) - 1], " step ", hole_pitch,
          "; taper exponent ", taper_p, "; long strap width at the old 9 holes ", [for (i = [0 : 8]) round(w_long(hole_s(i)) * 10) / 10],
          ", at buckle reach ", w_long(hole_s(0) - buckle_reach)));
@@ -297,6 +331,8 @@ module lid_bosses() {   // lid: the slot former above the pin, and the fill abov
 // The panel is the strap's plan inset by the edge radius plus the 0.7 mm outline; it is recessed panel_d,
 // and the diamond grooves are cut into it. In the cup the panel is a plateau and the grooves are ridges.
 S_PANEL0 = root_len + 1;                 // past the hinge
+assert(END_X + S_PANEL0 + edge_r + rim_w >= X_B1, "the strap bend runs into the textured panel: shorten bend_len");
+assert(END_X + S_H0 - pyr_w / 2 >= X_B1, "the strap bend runs into the first holes: shorten bend_len");
 module panel_side2d(dir) { offset(delta = -(edge_r + rim_w)) strap_plan2d(dir, S_PANEL0, dir > 0 ? S_BAR - end_ramp : long_len); }
 module panel2d() { panel_side2d(-1); panel_side2d(1); }
 module hatch_lines2d(w) { for (a = [tex_angle, -tex_angle]) rotate(a) for (k = [-48 : 48]) translate([0, k * tex_pitch]) square([440, w], center = true); }
@@ -425,7 +461,8 @@ module keeper_mold() {
 
 // ---- silicone preview ------------------------------------------------------------------------------------
 module window_through() { translate([0, 0, TOP - 1.5]) linear_extrude(4) win2d(); }
-module band() {
+module band() { warp() band_flat(); }
+module band_flat() {
     difference() {
         union() { envelope(); front_lattice(); }
         core_full(); if (port) { tunnel_block(); port_fin(); }
@@ -476,34 +513,54 @@ module cup_plain() {
         for (p = JACKS) translate([p[0], p[1], TOP - 1]) cylinder(d = jack_d, h = 20);
     }
 }
+module screws_jacks() {
+    for (p = SCREWS) translate([p[0], p[1], 0]) { translate([0, 0, TOP - 1]) cylinder(d = screw_d + 0.4, h = 20); translate([0, 0, CUP_H - screw_head_h]) cylinder(d = screw_head_d, h = screw_head_h + 1); }
+    for (p = JACKS) translate([p[0], p[1], TOP - 1]) cylinder(d = jack_d, h = 20);
+}
+// everything cut from the block that moves with the straps: the cavity, and over its footprint the rebate for the lid
+// ridge, which (with bent straps) also opens the recess over the sleeve that the lid's boss fills
+module cup_cavity() {
+    envelope();
+    translate([0, 0, -60]) linear_extrude(60 + REBATE_D) footprint2d(RIDGE_OVER + 0.1);
+}
+module hole_sockets() { for (h = HOLES) translate([h[0], h[1], ZP - tr_depth - 1]) cylinder(d = hole_d + 0.3, h = 1 + tr_depth + panel_d + 0.8, $fn = 32); }   // through the texture bumps and the plateau into the floor
+// The block is never warped (the cup prints on its bottom): with bent straps its top is one flat plane at the straps'
+// level, z = -D_BEND, so an open pour fills every part of the cavity, and the lid's boss pushes down over the sleeve.
 module cup() {
     difference() {
-        union() { cup_plain(); tongue_rib(); panel(); texture(); }   // rib for the tongue slot; panel plateau and knurl ridges on the trough floors
-        for (h = HOLES) translate([h[0], h[1], ZP - tr_depth - 1]) cylinder(d = hole_d + 0.3, h = 1 + tr_depth + panel_d + 0.8, $fn = 32);   // sockets for the hole pins: through the texture bumps and the plateau into the floor
+        union() {
+            difference() { block(-D_BEND, CUP_H + D_BEND); warp() cup_cavity(); screws_jacks(); }
+            far() { tongue_rib(); panel(); texture(); }   // rib for the tongue slot; panel plateau and texture bumps on the trough floors (all beyond the bend)
+        }
+        far() { hole_sockets(); pin_notches(); }
         breathers();
         front_lattice();   // grooves in the floor round the window: the venting channels
-        pin_notches();
     }
 }
+// The plate is never warped (the lid prints on its top). With bent straps a boss under it fills the cup's recess over the
+// footprint, down to the parting surface: D_BEND deep over the sleeve, nothing over the level part of the straps.
 module lid() {
     difference() {
         union() {
-            translate([0, 0, -LID_T]) linear_extrude(LID_T) offset(r = margin) outline2d();
-            lid_ridge();
-            holes();   // tapered pins
-            lid_bosses();
+            translate([0, 0, -D_BEND - LID_T]) linear_extrude(LID_T) offset(r = margin) outline2d();
+            if (D_BEND > 0) intersection() {
+                translate([0, 0, -D_BEND - LID_T]) linear_extrude(LID_T + D_BEND) footprint2d(RIDGE_OVER);
+                warp() translate([0, 0, -60]) linear_extrude(60) footprint2d(RIDGE_OVER + 1);
+            }
+            warp() lid_ridge();                       // fillet ridge round the wrist edge
+            far() { holes(); lid_bosses(); }          // tapered hole pins, tongue-slot boss (beyond the bend)
         }
-        for (v = VENTS) translate([v[0], v[1], -LID_T - 1]) cylinder(d = v[2], h = LID_T + 2);
+        for (v = VENTS) translate([v[0], v[1], -D_BEND - LID_T - 1]) cylinder(d = v[2], h = D_BEND + LID_T + 2);
     }
 }
 
 // ---- exports ----------------------------------------------------------------------------------------------------
 if (part == "core")             translate([0, 0, -Z0]) core_part();
 else if (part == "cup")         translate([0, 0, CUP_H]) rotate([180, 0, 0]) cup();
-else if (part == "lid")         translate([0, 0, LID_T]) lid();
+else if (part == "lid")         translate([0, 0, LID_T + D_BEND]) lid();
 else if (part == "keeper_mold") keeper_mold();
 else if (part == "check_core")  intersection() { core_part(); cup(); }
 else if (part == "check_lid")   intersection() { lid(); union() { cup(); core_part(); } }
 else if (part == "pin")         for (i = [-1 : 1]) translate([i * 12, 0, PIN_Z1]) rotate([180, 0, 0]) translate([-X_BAR, 0, 0]) pin_part();   // three (two spares), rod on the bed
-else if (part == "check_pin")   intersection() { pin_part(); union() { cup(); lid(); } }
+else if (part == "check_pin")   intersection() { far() pin_part(); union() { cup(); lid(); } }
 else band();
