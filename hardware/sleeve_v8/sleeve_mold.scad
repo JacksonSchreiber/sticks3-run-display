@@ -33,9 +33,10 @@
 //   2. Mix 54.5 g A + 5.5 g B (pigment into A first; the lid's boss pushes about 6 g back out). Degas if you can. BRUSH a thin coat over the
 //      whole cup floor, the button recess, the strap troughs and round the core's pad (this is what
 //      stops the craters), then pour in a thin stream at ONE end so the front advances along the cup.
-//   3. Tap the cup and leave it 10-15 min so bubbles rise and pop. Then the lid, one end first,
-//      pressed down onto the rim. Excess bleeds from the vents; a bead weeps from the breather holes
-//      under the cup, so stand it on parchment.
+//   3. Tap the cup and leave it 10-15 min so bubbles rise and pop. Then the lid, lowered LEVEL and slowly: its
+//      boss is deepest at the sleeve's centre, touches there first and pushes the air out to the vents. Press
+//      until the plate sits flat on the cup. Excess bleeds from the vents; a bead weeps from the breather holes
+//      under the cup, so stand it on parchment, and pour the leftover over the lid to cover the vents.
 //   4. Cure 18 h at room temperature, or about 6 h at 45 C. Fill the keeper mold from the same mix.
 //   5. Lid off, then pull the pin out sideways by its handle. M3 screws out, card down the jacket's long sides,
 //      M4 screws into the jack holes until the core and band rise. Peel the straps out, lift the
@@ -90,6 +91,10 @@ bend_x0 = 0.6;          // the bend starts this far beyond the end wall (clear o
 bend_len = 12.4;        // ... and the strap is level again this much further on, before the textured panel starts
 bend_round = 3.0;       // a round at each end of the straight angled part
 bend_steps = 5;         // facets per round
+saddle_d = 2.25;        // extra silicone under the sleeve's ends so its back follows the wrist instead of bridging it: about 3/4 of
+                        // the measured gap (3 mm). Flat under the middle; curves over the outer part only, reaching strap_angle at the
+                        // end wall, so it can never lift the middle and the strap leaves on the same slope. 0 = flat back
+bend_out = 4.0;         // with the saddle: the strap leaves at the saddle's end slope and rounds back to level over this length
 
 /* [Buckle end] */
 bar_pin_w = 1.5;        // diameter of the printed pin that casts the spring-bar hole (the bar is ~1.4 mm)
@@ -191,19 +196,27 @@ HOLES = concat(
     [for (s = SHORT_ROWS) if (s + hole_pitch / 2 <= SHORT_END && side_ok(1, s + hole_pitch / 2)) for (sg = [-1, 1]) [END_X + s + hole_pitch / 2, sg * side_y]]);
 // ---- strap bend: a shear z += P(|x|) applied to everything on the strap side. P = 0 up to X_B0, then a round, a
 // straight part at strap_angle, a round back to level, and P = -D_BEND beyond. Vertical things (pins, vents) stay vertical.
-X_B0 = END_X + bend_x0;
-BEND_SEGS = strap_angle == 0 ? [] : concat(
+SAD_LC = saddle_d == 0 ? 0 : (strap_angle > 0 ? min(2 * saddle_d / tan(strap_angle), END_X) : END_X);   // length of the saddle's curve
+SAD_X0 = END_X - SAD_LC;                                                    // flat under |x| < SAD_X0
+SAD_EXIT = saddle_d == 0 ? 0 : atan(2 * saddle_d / SAD_LC);                 // slope at the end wall (= strap_angle unless the saddle is very deep)
+function sad_z(x) = x <= SAD_X0 ? 0 : -saddle_d * pow((min(x, END_X) - SAD_X0) / SAD_LC, 2);
+sad_n = 8;
+X_B0 = saddle_d > 0 ? SAD_X0 : END_X + bend_x0;
+BEND_SEGS = saddle_d > 0 ? concat(
+    [for (k = [0 : sad_n - 1]) let(xa = SAD_X0 + SAD_LC * k / sad_n, xb = SAD_X0 + SAD_LC * (k + 1) / sad_n) [xb - xa, (sad_z(xb) - sad_z(xa)) / (xb - xa)]],
+    [for (k = [0 : bend_steps - 1]) [bend_out / bend_steps, -tan(SAD_EXIT * (1 - (k + 0.5) / bend_steps))]])
+  : strap_angle == 0 ? [] : concat(
     [for (k = [0 : bend_steps - 1]) [bend_round / bend_steps, -tan(strap_angle * (k + 0.5) / bend_steps)]],
     [[bend_len - 2 * bend_round, -tan(strap_angle)]],
     [for (k = [0 : bend_steps - 1]) [bend_round / bend_steps, -tan(strap_angle * (1 - (k + 0.5) / bend_steps))]]);
 function seg_x(i) = i == 0 ? X_B0 : seg_x(i - 1) + BEND_SEGS[i - 1][0];
 function seg_p(i) = i == 0 ? 0 : seg_p(i - 1) + BEND_SEGS[i - 1][0] * BEND_SEGS[i - 1][1];
 X_B1 = seg_x(len(BEND_SEGS));
-D_BEND = strap_angle == 0 ? 0 : -seg_p(len(BEND_SEGS));
+D_BEND = len(BEND_SEGS) == 0 ? 0 : -seg_p(len(BEND_SEGS));
 warp_ov = 0.05;         // neighbouring slices overlap this much so they fuse (abutting slices stay separate shells); the
                         // shears differ by under 0.003 mm across the overlap
 module warp() {
-    if (strap_angle == 0) children();
+    if (len(BEND_SEGS) == 0) children();
     else {
         intersection() { children(); translate([-X_B0 - warp_ov, -500, -500]) cube([2 * (X_B0 + warp_ov), 1000, 1000]); }
         for (dir = [-1, 1]) {
@@ -219,7 +232,7 @@ module warp() {
 // everything beyond the bend only moves down: shift it once instead of slicing it (the slicing is what makes warp() heavy)
 module far() { translate([0, 0, -D_BEND]) children(); }
 function s_list(L, r, n) = concat([for (k = [0 : n]) S_START + (L - r - S_START) * k / n], [for (a = [10 : 10 : 90]) L - r + r * sin(a)]);
-echo(str("v8: strap bend ", strap_angle, " deg, drop ", D_BEND, " mm over ", X_B1 - X_B0, " mm; jacket ", 2 * END_X, " x ", 2 * BODY_HW, " x ", TOP, " (+", FRONT_BUMP, "); short strap ", short_len, ", long strap ", long_len,
+echo(str("v8: saddle ", saddle_d, " mm deep over the outer ", SAD_LC, " mm (flat for |x| < ", SAD_X0, "), exit ", SAD_EXIT, " deg; straps level ", D_BEND, " mm below the sleeve's centre; jacket ", 2 * END_X, " x ", 2 * BODY_HW, " x ", TOP, " (+", FRONT_BUMP, "); short strap ", short_len, ", long strap ", long_len,
          ", overall ", 2 * END_X + short_len + long_len, " mm; ", len(HOLES), " holes; sizes (centre column) ", 2 * END_X + short_len + LONG_ROWS[0], "-", 2 * END_X + short_len + LONG_ROWS[len(LONG_ROWS) - 1], " step ", hole_pitch,
          "; taper exponent ", taper_p, "; long strap width at the old 9 holes ", [for (i = [0 : 8]) round(w_long(hole_s(i)) * 10) / 10],
          ", at buckle reach ", w_long(hole_s(0) - buckle_reach)));
@@ -405,7 +418,16 @@ module front_lattice() {
         if (port) translate([-(END_X + 5), -(fin_len / 2 + pad_m + ft_keep), -1]) cube([5 + 0.5, fin_len + 2 * (pad_m + ft_keep), PORT_Z + fin_t / 2 + pad_m + ft_keep + 1]);   // and off the port border + strip
     }
 }
-module envelope() { body(); side_bumps(); front_bump(); strap(1); strap(-1); if (port) port_pad(); }
+module envelope() { body(); side_bumps(); front_bump(); strap(1); strap(-1); if (port) port_pad(); }   // flat: for the plan outline
+// the saddle: under the sleeve's plan, from the curved wrist face up to the old flat back (built from the same profile as the straps)
+module saddle() {
+    intersection() {
+        translate([0, 0, -saddle_d - 1]) linear_extrude(saddle_d + 1 + eps) rrect(2 * END_X, 2 * BODY_HW, body_r);
+        warp() translate([-300, -300, 0]) cube([600, 600, 20]);
+    }
+}
+module sleeve_env() { body(); side_bumps(); front_bump(); if (port) port_pad(); if (saddle_d > 0) saddle(); }   // never sheared
+module straps_env() { strap(1); strap(-1); }                                                                     // sheared (the root too)
 module outline2d() { projection() envelope(); }
 
 // ---- core ------------------------------------------------------------------------------------------
@@ -432,13 +454,13 @@ module tunnel_block() { hull() { port_core(skin_t, fin_len / 2 + 0.5); port_core
 module port_fin() { translate([-(END_X - skin_t - 0.5), 0, PORT_Z]) rotate([0, -90, 0]) linear_extrude(skin_t + 0.5 + pad_h) rrect(fin_t, fin_len, fin_t / 2 - eps); }
 // Raised border round the slot. The blade reaches its face, and the core drops in from the rim, so the same 0.5 mm
 // relief has to run from the border to the rim: the border continues toward the strap as a raised strip. Nothing to cut off.
-module port_pad2d(i = 0) { offset(delta = -i) hull() { translate([PORT_Z, 0]) rrect(fin_t + 2 * pad_m, fin_len + 2 * pad_m, fin_t / 2 + pad_m - eps); translate([-2, -(fin_len / 2 + pad_m)]) square([1, fin_len + 2 * pad_m]); } }
+module port_pad2d(i = 0) { offset(delta = -i) hull() { translate([PORT_Z, 0]) rrect(fin_t + 2 * pad_m, fin_len + 2 * pad_m, fin_t / 2 + pad_m - eps); translate([-2 - saddle_d, -(fin_len / 2 + pad_m)]) square([1, fin_len + 2 * pad_m]); } }
 module port_pad() {
     steps = 5;
     intersection() {
         for (k = [0 : steps - 1]) { h0 = pad_h * k / steps; h1 = pad_h * (k + 1) / steps;
             translate([-(END_X - eps) - h0, 0, 0]) rotate([0, -90, 0]) linear_extrude(h1 - h0 + eps) port_pad2d(pad_h - sqrt(pad_h * pad_h - h0 * h0)); }
-        translate([-100, -50, 0]) cube([200, 100, 100]);
+        translate([-100, -50, -saddle_d]) cube([200, 100, 100]);   // (with the saddle the strip runs down to the lowered strap root)
     }
 }
 SCREWS = [[-4, 0], [12.5, 0]]; JACKS = [[2, -4.5], [7.5, 4.5]];   // all inside the window pad
@@ -461,13 +483,13 @@ module keeper_mold() {
 
 // ---- silicone preview ------------------------------------------------------------------------------------
 module window_through() { translate([0, 0, TOP - 1.5]) linear_extrude(4) win2d(); }
-module band() { warp() band_flat(); }
-module band_flat() {
+module band() {
     difference() {
-        union() { envelope(); front_lattice(); }
+        union() { sleeve_env(); warp() straps_env(); front_lattice(); }
         core_full(); if (port) { tunnel_block(); port_fin(); }
         window_through();
-        holes(); lid_ridge(); panel(); texture(); tongue_slot_solid(); rod();
+        warp() lid_ridge();
+        far() { holes(); panel(); texture(); tongue_slot_solid(); rod(); }   // all beyond the bend
     }
 }
 
@@ -520,8 +542,8 @@ module screws_jacks() {
 // everything cut from the block that moves with the straps: the cavity, and over its footprint the rebate for the lid
 // ridge, which (with bent straps) also opens the recess over the sleeve that the lid's boss fills
 module cup_cavity() {
-    envelope();
-    translate([0, 0, -60]) linear_extrude(60 + REBATE_D) footprint2d(RIDGE_OVER + 0.1);
+    sleeve_env(); warp() straps_env();
+    warp() translate([0, 0, -60]) linear_extrude(60 + REBATE_D) footprint2d(RIDGE_OVER + 0.1);
 }
 module hole_sockets() { for (h = HOLES) translate([h[0], h[1], ZP - tr_depth - 1]) cylinder(d = hole_d + 0.3, h = 1 + tr_depth + panel_d + 0.8, $fn = 32); }   // through the texture bumps and the plateau into the floor
 // The block is never warped (the cup prints on its bottom): with bent straps its top is one flat plane at the straps'
@@ -529,7 +551,7 @@ module hole_sockets() { for (h = HOLES) translate([h[0], h[1], ZP - tr_depth - 1
 module cup() {
     difference() {
         union() {
-            difference() { block(-D_BEND, CUP_H + D_BEND); warp() cup_cavity(); screws_jacks(); }
+            difference() { block(-D_BEND, CUP_H + D_BEND); cup_cavity(); screws_jacks(); }
             far() { tongue_rib(); panel(); texture(); }   // rib for the tongue slot; panel plateau and texture bumps on the trough floors (all beyond the bend)
         }
         far() { hole_sockets(); pin_notches(); }
@@ -562,5 +584,8 @@ else if (part == "keeper_mold") keeper_mold();
 else if (part == "check_core")  intersection() { core_part(); cup(); }
 else if (part == "check_lid")   intersection() { lid(); union() { cup(); core_part(); } }
 else if (part == "pin")         for (i = [-1 : 1]) translate([i * 12, 0, PIN_Z1]) rotate([180, 0, 0]) translate([-X_BAR, 0, 0]) pin_part();   // three (two spares), rod on the bed
+else if (part == "check_lift")  intersection() { minkowski() { core_part(); translate([0, 0, -40]) cylinder(d = 0.02, h = 40, $fn = 4); } cup(); }   // the core lifted straight out must not touch the cup
 else if (part == "check_pin")   intersection() { far() pin_part(); union() { cup(); lid(); } }
+else if (part == "check_pin_cup") intersection() { far() pin_part(); cup(); }   // (the two halves of check_pin, lighter on memory)
+else if (part == "check_pin_lid") intersection() { far() pin_part(); lid(); }
 else band();
