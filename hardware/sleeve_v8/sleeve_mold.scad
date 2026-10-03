@@ -112,7 +112,10 @@ breather_d = 0.6;       // breather holes through the cup floor at the dead-end 
 
 /* [Sleeve texture] */
 front_tex = true;       // raised diamond lattice on the sleeve's front face round the window: ridges on the silicone = grooves in the cup floor, a connected channel network from the window pad's edge out to the walls (self-venting, like the straps). Adds nothing but material: the lips stay 1.4 mm.
-ft_w = 0.6; ft_h = 0.4; ft_pitch = 2.0; ft_angle = 35;   // ridge width, height, line spacing, angle
+ft_w = 0.5; ft_h = 0.4; ft_pitch = 2.1084; ft_angle = 35;   // ridge width, height, line spacing, angle (0.4 tall is the minimum for the cup's channels to carry air)
+ft_shift = 0.3970;       // pitch and shift are chosen so the ribs the two line families leave on the side and end walls are evenly spaced (2 HW cos a = 11.5 pitch; shift evens the end walls)
+ft_sides = true;        // the lines fold over the front edge and run down the side and end walls as vertical ribs (vertical grooves in the cup: a straight path to the rim)
+ft_z_lo = 1.5;          // ... down to this height above the wrist face (clear of the lid ridge)
 front_mode = "lattice"; // [lattice, ribs] lattice: diamonds like the straps. ribs: straight ribs across the sleeve, grille style (every channel runs to a side wall)
 ft_keep = 0.6;          // flat margin round the window pad (its rim must seat on bare floor) and the button bump
 
@@ -344,10 +347,10 @@ module front_lattice2d() {
     difference() {
         intersection() {
             if (front_mode == "ribs") for (k = [-20 : 20]) translate([k * ft_pitch, 0]) square([ft_w, 60], center = true);
-            else for (a = [ft_angle, -ft_angle]) rotate(a) for (k = [-30 : 30]) translate([0, k * ft_pitch]) square([140, ft_w], center = true);
-            difference() {   // 0.8 inside the plan (the last 0.8 mm of the perimeter round is nearly vertical anyway) and off the four plan corners
-                rrect(2 * END_X - 1.6, 2 * BODY_HW - 1.6, body_r);
-                for (sx_ = [-1, 1], sy_ = [-1, 1]) translate([sx_ * (END_X - 2), sy_ * (BODY_HW - 2)]) circle(r = 3.5);
+            else translate([ft_shift, 0]) for (a = [ft_angle, -ft_angle]) rotate(a) for (k = [-30 : 30]) translate([0, k * ft_pitch]) square([140, ft_w], center = true);
+            difference() {   // past the walls (so the lines run down them), but off the four plan corners, where the roundings meet
+                rrect(2 * END_X + 2, 2 * BODY_HW + 2, body_r + 1);
+                for (sx_ = [-1, 1], sy_ = [-1, 1]) translate([sx_ * (END_X - 2), sy_ * (BODY_HW - 2)]) circle(r = 4.5);
             }
         }
         win2d(-ft_keep);
@@ -355,12 +358,15 @@ module front_lattice2d() {
     }
 }
 module front_lattice() {
+    z_lo = ft_sides ? ft_z_lo : TOP - front_r - 0.3;
+    // (the solid overlaps the body: subtracted from the cup it only matters outside the cavity; unioned into the band it only adds outside)
     if (front_tex) difference() {
         intersection() {
-            translate([0, 0, TOP - front_r - 0.3]) linear_extrude(front_r + 0.3 + ft_h + 0.1) front_lattice2d();
-            minkowski() { body(); sphere(r = ft_h, $fn = 12); }
+            translate([0, 0, z_lo]) linear_extrude(TOP + ft_h + 0.1 - z_lo) front_lattice2d();
+            minkowski() { body(); sphere(r = ft_h, $fn = 16); }
         }
-        body();
+        side_bumps(ft_keep);                                                     // keep off the side-button pads
+        if (port) translate([-(END_X + 5), -(fin_len / 2 + pad_m + ft_keep), -1]) cube([5 + 0.5, fin_len + 2 * (pad_m + ft_keep), PORT_Z + fin_t / 2 + pad_m + ft_keep + 1]);   // and off the port border + strip
     }
 }
 module envelope() { body(); side_bumps(); front_bump(); strap(1); strap(-1); if (port) port_pad(); }
@@ -420,9 +426,8 @@ module keeper_mold() {
 // ---- silicone preview ------------------------------------------------------------------------------------
 module window_through() { translate([0, 0, TOP - 1.5]) linear_extrude(4) win2d(); }
 module band() {
-    front_lattice();
     difference() {
-        envelope();
+        union() { envelope(); front_lattice(); }
         core_full(); if (port) { tunnel_block(); port_fin(); }
         window_through();
         holes(); lid_ridge(); panel(); texture(); tongue_slot_solid(); rod();
